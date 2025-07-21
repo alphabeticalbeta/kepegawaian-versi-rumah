@@ -66,7 +66,7 @@
                 </li>
 
                 <li>
-                    <a href="#" class="rounded px-4 py-2 text-sm font-semibold bg-yellow-400 hover:bg-yellow-500 transition-colors duration-300 text-black">LOGIN</a>
+                    <a href="{{ route('login') }}" class="rounded px-4 py-2 text-sm font-semibold bg-yellow-400 hover:bg-yellow-500 transition-colors duration-300 text-black">LOGIN</a>
                 </li>
             </ul>
         </div>

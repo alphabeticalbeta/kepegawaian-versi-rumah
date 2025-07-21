@@ -21,3 +21,7 @@ Route::prefix('layanan')->group(function () {
 });
 
 Route::view('/blangko-surat', 'frontend.layouts.blangko-surat')->name('blangko.surat');
+
+Route::get('/login', function () {
+    return view('auth.login');
+})->name('login');
