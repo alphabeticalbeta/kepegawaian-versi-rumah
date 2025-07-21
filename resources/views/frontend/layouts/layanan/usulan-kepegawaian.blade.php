@@ -20,7 +20,7 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-2 sm:grid-cols-4 sm:grid-cols-4 gap-8 px-20 py-4">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-8 px-20 py-4">
         <a href="{{ url('/nuptk') }}">
             <img src="{{ asset('images/frontend/Usulan-NUPTK.webp') }}" alt="Usulan Nomor Dosen dan Tendik NUPTK" class="hover:scale-105 transition duration-300">
         </a>
