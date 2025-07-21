@@ -13,7 +13,7 @@
     @include('frontend.components.header')
     <div class="container mx-auto px-4 py-12">
         <h1 class="text-4xl font-bold text-center mb-2">Struktur Organisasi</h1>
-        <h2 class="text-2xl font-semibold text-center mb-8">Universitas Mulawarman</h2>
+        <h2 class="text-4xl font-bold text-center mb-8">Universitas Mulawarman</h2>
 
         <div class="flex justify-center">
             <img

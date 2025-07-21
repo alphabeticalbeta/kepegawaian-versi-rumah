@@ -3,7 +3,7 @@
         <div class="container mx-auto flex flex-wrap items-center justify-between px-4 py-3 lg:px-6">
 
             <div class="flex items-center gap-4">
-                <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjPRk7uFa-UUklUlbQKhqHxsOk3enV2vtQEF8f8qdTh0cUE2qM169rsZ_0IQzUIzeXnbCiSrKprByuC6si7ft95dalB_39pj9HwDrDRKWrQbAGkObRs_bf3lTH83RzF5avRlsdBpfii0FEEb7MB7nAs4ypMG-cyTX_8ISorpm2tPrqSnj0SnjNN4Q/w320-h320/Unmul%20%5BKoleksiLogo.com%5D.png" alt="Logo Universitas Mulawarman" class="h-14">
+                <img src="{{ asset('images/logo-unmul.png') }}" alt="Logo Universitas Mulawarman" class="h-14">
                 <div class="flex flex-col leading-tight">
                     <span class="font-bold">BAGIAN KEPEGAWAIAN</span>
                     <span class="text-sm">BIRO UMUM DAN KEUANGAN</span>
@@ -29,8 +29,8 @@
                         <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
                     </a>
                     <div class="absolute left-0 w-48 bg-white text-black rounded-md shadow-lg hidden group-hover:block z-10 pt-1">
-                        <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">Aplikasi</a>
-                        <a href="#" class="block px-4 py-2 text-sm hover:bg-gray-100">Usulan Kepegawaian</a>
+                        <a href="{{ route('layanan.aplikasi') }}" class="block px-4 py-2 text-sm hover:bg-gray-100">Aplikasi</a>
+                        <a href="{{ route('layanan.usulan-kepegawaian') }}" class="block px-4 py-2 text-sm hover:bg-gray-100">Usulan Kepegawaian</a>
                     </div>
                 </li>
 
@@ -79,28 +79,28 @@
                     <h3 class="mb-1 text-2xl font-bold text-gray-900">SISTER</h3>
                     <p class="text-xs leading-tight">Sistem Informasi Sumberdaya Terintegrasi</p>
                 </div>
-                <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjPRk7uFa-UUklUlbQKhqHxsOk3enV2vtQEF8f8qdTh0cUE2qM169rsZ_0IQzUIzeXnbCiSrKprByuC6si7ft95dalB_39pj9HwDrDRKWrQbAGkObRs_bf3lTH83RzF5avRlsdBpfii0FEEb7MB7nAs4ypMG-cyTX_8ISorpm2tPrqSnj0SnjNN4Q/w320-h320/Unmul%20%5BKoleksiLogo.com%5D.png" alt="Logo" class="h-12">
+                <img src="{{ asset('images/logo-unmul.png') }}" alt="Logo" class="h-12">
             </a>
             <a href="#" class="flex items-center justify-between rounded-md bg-gray-100 p-4 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <div class="text-gray-800">
                     <h3 class="mb-1 text-2xl font-bold text-gray-900">DIKBUDHR</h3>
                     <p class="text-xs leading-tight">Direktorat Kepercayaan Terhadap Tuhan YME dan Tradisi</p>
                 </div>
-                <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjPRk7uFa-UUklUlbQKhqHxsOk3enV2vtQEF8f8qdTh0cUE2qM169rsZ_0IQzUIzeXnbCiSrKprByuC6si7ft95dalB_39pj9HwDrDRKWrQbAGkObRs_bf3lTH83RzF5avRlsdBpfii0FEEb7MB7nAs4ypMG-cyTX_8ISorpm2tPrqSnj0SnjNN4Q/w320-h320/Unmul%20%5BKoleksiLogo.com%5D.png" alt="Logo" class="h-12">
+                <img src="{{ asset('images/logo-unmul.png') }}" alt="Logo" class="h-12">
             </a>
             <a href="#" class="flex items-center justify-between rounded-md bg-gray-100 p-4 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <div class="text-gray-800">
                     <h3 class="mb-1 text-2xl font-bold text-gray-900">E-SKP</h3>
                     <p class="text-xs leading-tight">Aplikasi Penilaian Kinerja Kementerian Pendidikan...</p>
                 </div>
-                <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjPRk7uFa-UUklUlbQKhqHxsOk3enV2vtQEF8f8qdTh0cUE2qM169rsZ_0IQzUIzeXnbCiSrKprByuC6si7ft95dalB_39pj9HwDrDRKWrQbAGkObRs_bf3lTH83RzF5avRlsdBpfii0FEEb7MB7nAs4ypMG-cyTX_8ISorpm2tPrqSnj0SnjNN4Q/w320-h320/Unmul%20%5BKoleksiLogo.com%5D.png" alt="Logo" class="h-12">
+                <img src="{{ asset('images/logo-unmul.png') }}" alt="Logo" class="h-12">
             </a>
             <a href="#" class="flex items-center justify-between rounded-md bg-gray-100 p-4 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 <div class="text-gray-800">
                     <h3 class="mb-1 text-2xl font-bold text-gray-900">SIDAK UNMUL</h3>
                     <p class="text-xs leading-tight">Sistem Informasi Database Administrasi Kepegawaian</p>
                 </div>
-                <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjPRk7uFa-UUklUlbQKhqHxsOk3enV2vtQEF8f8qdTh0cUE2qM169rsZ_0IQzUIzeXnbCiSrKprByuC6si7ft95dalB_39pj9HwDrDRKWrQbAGkObRs_bf3lTH83RzF5avRlsdBpfii0FEEb7MB7nAs4ypMG-cyTX_8ISorpm2tPrqSnj0SnjNN4Q/w320-h320/Unmul%20%5BKoleksiLogo.com%5D.png" alt="Logo" class="h-12">
+                <img src="{{ asset('images/logo-unmul.png') }}" alt="Logo" class="h-12">
             </a>
         </div>
     </div>

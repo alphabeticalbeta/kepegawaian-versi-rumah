@@ -14,7 +14,7 @@
 
     <div class="container mx-auto px-4 py-12">
         <h1 class="text-4xl font-bold text-center mb-2">Visi dan Misi</h1>
-        <h2 class="text-2xl font-semibold text-center mb-8">Universitas Mulawarman</h2>
+        <h2 class="text-4xl font-bold text-center mb-8">Universitas Mulawarman</h2>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-100 p-6 rounded-lg shadow">
             <!-- Visi -->
