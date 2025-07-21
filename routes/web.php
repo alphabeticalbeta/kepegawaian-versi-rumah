@@ -5,6 +5,7 @@ use App\Http\Controllers\Frontend\ProfilController as FrontendProfil;
 use App\Http\Controllers\Frontend\LayananController as FrontendLayanan;
 
 
+
 Route::get('/', function () {
     return view('frontend.index');
 });
@@ -18,3 +19,5 @@ Route::prefix('layanan')->group(function () {
     Route::get('/aplikasi', [FrontendLayanan::class, 'aplikasi'])->name('layanan.aplikasi');
     Route::get('/usulan-kepegawaian', [FrontendLayanan::class, 'usulanKepegawaian'])->name('layanan.usulan-kepegawaian');
 });
+
+Route::view('/blangko-surat', 'frontend.layouts.blangko-surat')->name('blangko.surat');

@@ -36,7 +36,7 @@
 
                 <li><a href="#" class="rounded px-3 py-2 text-sm font-semibold transition-colors duration-300 hover:bg-gray-800">JABATAN</a></li>
                 <li><a href="#" class="rounded px-3 py-2 text-sm font-semibold transition-colors duration-300 hover:bg-gray-800">STATISTIK</a></li>
-                <li><a href="#" class="rounded px-3 py-2 text-sm font-semibold transition-colors duration-300 hover:bg-gray-800">BLANGKO SURAT</a></li>
+                <li><a href="{{ route('blangko.surat') }}" class="rounded px-3 py-2 text-sm font-semibold transition-colors duration-300 hover:bg-gray-800">BLANGKO SURAT</a></li>
 
                 <li class="relative group">
                     <a href="#" class="flex items-center gap-2 rounded px-3 py-2 text-sm font-semibold transition-colors duration-300 hover:bg-gray-800">
