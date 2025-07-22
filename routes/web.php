@@ -3,7 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Frontend\ProfilController as FrontendProfil;
 use App\Http\Controllers\Frontend\LayananController as FrontendLayanan;
-use App\Http\Controllers\Backend\DashboardController;
+use App\Http\Controllers\Backend\AdminUniversitas\DashboardController as AdminUniversitasDashboardController;
+use App\Http\Controllers\Backend\AdminUnivUsulan\DashboardController as AdminUnivUsulanDashboardController;
 
 
 // ------ RUTE HALAMAN FRONTEND ------//
@@ -28,7 +29,12 @@ Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
 
-// ------ RUTE HALAMAN BACKEND ------//
-Route::prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+// ------ RUTE HALAMAN BACKEND ADMIN UNIVERSITAS ------//
+Route::prefix('admin-universitas')->name('admin-universitas.')->group(function () {
+    Route::get('/dashboard', [AdminUniversitasDashboardController::class, 'index'])->name('dashboard-universitas');
+});
+
+// ------ RUTE HALAMAN BACKEND ADMIN UNIVERSITAS USULAN------//
+Route::prefix('admin-universitas-usulan')->name('admin-universitas-usulan.')->group(function () {
+    Route::get('/dashboard', [AdminUnivUsulanDashboardController::class, 'index'])->name('dashboard-universitas-usulan');
 });

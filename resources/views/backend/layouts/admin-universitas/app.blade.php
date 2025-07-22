@@ -10,7 +10,7 @@
 <body class="bg-gray-100 font-sans">
 
     <div class="flex h-screen">
-        @include('backend.components.sidebar')
+        @include('backend.components.sidebar-admin-universitas')
 
         <div class="flex-1 flex flex-col overflow-hidden">
             @include('backend.components.header')
