@@ -3,9 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Frontend\ProfilController as FrontendProfil;
 use App\Http\Controllers\Frontend\LayananController as FrontendLayanan;
+use App\Http\Controllers\Backend\DashboardController;
 
 
-
+// ------ RUTE HALAMAN FRONTEND ------//
 Route::get('/', function () {
     return view('frontend.index');
 });
@@ -22,6 +23,12 @@ Route::prefix('layanan')->group(function () {
 
 Route::view('/blangko-surat', 'frontend.layouts.blangko-surat')->name('blangko.surat');
 
+// ------ RUTE HALAMAN LOGIN ------//
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
+
+// ------ RUTE HALAMAN BACKEND ------//
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+});
