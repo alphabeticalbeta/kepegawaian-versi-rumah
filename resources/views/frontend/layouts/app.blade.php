@@ -6,17 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kepegawaian UNMUL</title>
-    @php
-        $manifestPath = public_path('build/manifest.json');
-    @endphp
-    @if (file_exists($manifestPath))
-        @php
-            $manifest = json_decode(file_get_contents($manifestPath), true);
-        @endphp
-        @isset($manifest['resources/css/app.css'])
-            @vite('resources/css/app.css')
-        @endisset
-    @endif
+    @vite('resources/css/app.css')
 </head>
 <body class="bg-gray-50">
 
