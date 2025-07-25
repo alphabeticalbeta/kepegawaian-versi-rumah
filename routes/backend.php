@@ -8,6 +8,7 @@ use App\Http\Controllers\Backend\AdminFakultas\DashboardController as AdminFakul
 use App\Http\Controllers\Backend\PenilaiUniversitas\DashboardController as PenilaiUniversitasDashboardController;
 use App\Http\Controllers\Backend\AdminUnivUsulan\UnitKerjaController as UnitKerjaController;
 use App\Http\Controllers\Backend\AdminUnivUsulan\SubUnitKerjaController as SubUnitKerjaController;
+use App\Http\Controllers\Backend\AdminUnivUsulan\SubSubUnitKerjaController as SubSubUnitKerjaController;
 
 
 // ------ RUTE HALAMAN LOGIN ------//
@@ -52,6 +53,22 @@ Route::prefix('admin-univ-usulan')->name('backend.admin-univ-usulan.')->group(fu
     Route::get('/sub-unitkerja/{subUnitKerja}/edit', [SubUnitKerjaController::class, 'edit'])->name('sub-unitkerja.edit');
     Route::put('/sub-unitkerja/{subUnitKerja}', [SubUnitKerjaController::class, 'update'])->name('sub-unitkerja.update');
     Route::delete('/sub-unitkerja/{subUnitKerja}', [SubUnitKerjaController::class, 'destroy'])->name('sub-unitkerja.destroy');
+
+    // Sub Sub Unit Kerja Routes
+    Route::get('/sub-sub-unitkerja', [SubSubUnitKerjaController::class, 'index'])->name('sub-sub-unitkerja.index');
+    Route::get('/sub-sub-unitkerja/create', [SubSubUnitKerjaController::class, 'create'])->name('sub-sub-unitkerja.create');
+    Route::post('/sub-sub-unitkerja', [SubSubUnitKerjaController::class, 'store'])->name('sub-sub-unitkerja.store');
+    Route::get('/sub-sub-unitkerja/{subSubUnitKerja}/edit', [SubSubUnitKerjaController::class, 'edit'])->name('sub-sub-unitkerja.edit');
+    Route::put('/sub-sub-unitkerja/{subSubUnitKerja}', [SubSubUnitKerjaController::class, 'update'])->name('sub-sub-unitkerja.update');
+    Route::delete('/sub-sub-unitkerja/{subSubUnitKerja}', [SubSubUnitKerjaController::class, 'destroy'])->name('sub-sub-unitkerja.destroy');
+
+    // Sub Sub Unit Kerja Import/Export Routes
+    Route::get('/sub-sub-unitkerja/import-form', [SubSubUnitKerjaController::class, 'importForm'])->name('sub-sub-unitkerja.import-form');
+    Route::post('/sub-sub-unitkerja/import', [SubSubUnitKerjaController::class, 'import'])->name('sub-sub-unitkerja.import');
+    Route::get('/sub-sub-unitkerja/export-template', [SubSubUnitKerjaController::class, 'exportTemplate'])->name('sub-sub-unitkerja.export-template');
+
+    // AJAX Route for getting Sub Unit Kerjas based on Unit Kerja
+    Route::get('/get-sub-unit-kerjas', [SubSubUnitKerjaController::class, 'getSubUnitKerjas'])->name('get-sub-unit-kerjas');
 });
 
 // ------ RUTE HALAMAN BACKEND USUL PEGAWAI UNMUL------//

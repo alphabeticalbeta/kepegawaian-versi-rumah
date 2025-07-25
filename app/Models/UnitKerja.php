@@ -22,4 +22,12 @@ class UnitKerja extends Model
     {
         return $this->hasMany(SubUnitKerja::class);
     }
+
+    /**
+     * Get the sub sub unit kerjas through sub unit kerjas.
+     */
+    public function subSubUnitKerjas()
+    {
+        return $this->hasManyThrough(SubSubUnitKerja::class, SubUnitKerja::class);
+    }
 }

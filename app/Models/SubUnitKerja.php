@@ -23,4 +23,12 @@ class SubUnitKerja extends Model
     {
         return $this->belongsTo(UnitKerja::class);
     }
+
+    /**
+     * Get the sub sub unit kerjas for the sub unit kerja.
+     */
+    public function subSubUnitKerjas()
+    {
+        return $this->hasMany(SubSubUnitKerja::class);
+    }
 }
