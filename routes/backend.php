@@ -6,6 +6,7 @@ use App\Http\Controllers\Backend\AdminUnivUsulan\DashboardController as AdminUni
 use App\Http\Controllers\Backend\PegawaiUnmul\DashboardController as PegawaiUnmulDashboardController;
 use App\Http\Controllers\Backend\AdminFakultas\DashboardController as AdminFakultasDashboardController;
 use App\Http\Controllers\Backend\PenilaiUniversitas\DashboardController as PenilaiUniversitasDashboardController;
+use App\Http\Controllers\Backend\AdminUnivUsulan\UnitKerjaController as UnitKerjaController;
 
 
 // ------ RUTE HALAMAN LOGIN ------//
@@ -18,9 +19,28 @@ Route::prefix('admin-universitas')->name('admin-universitas.')->group(function (
     Route::get('/dashboard', [AdminUniversitasDashboardController::class, 'index'])->name('dashboard-universitas');
 });
 
+// ------ REDIRECT FOR OLD URL FORMAT ------//
+Route::prefix('admin-universitas-usulan')->group(function () {
+    Route::get('/dashboard', function () {
+        return redirect()->route('backend.admin-univ-usulan.dashboard');
+    });
+    Route::get('/dashboard/masterdata-unitkerja', function () {
+        return redirect()->route('backend.admin-univ-usulan.unitkerja.index');
+    });
+    Route::get('/dashboard/masterdata-unitkerja/create', function () {
+        return redirect()->route('backend.admin-univ-usulan.unitkerja.create');
+    });
+});
+
 // ------ RUTE HALAMAN BACKEND ADMIN UNIVERSITAS USULAN------//
-Route::prefix('admin-universitas-usulan')->name('admin-universitas-usulan.')->group(function () {
-    Route::get('/dashboard', [AdminUnivUsulanDashboardController::class, 'index'])->name('dashboard-universitas-usulan');
+Route::prefix('admin-univ-usulan')->name('backend.admin-univ-usulan.')->group(function () {
+    Route::get('/dashboard', [AdminUnivUsulanDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/unitkerja', [UnitKerjaController::class, 'index'])->name('unitkerja.index');
+    Route::get('/unitkerja/create', [UnitKerjaController::class, 'create'])->name('unitkerja.create');
+    Route::post('/unitkerja', [UnitKerjaController::class, 'store'])->name('unitkerja.store');
+    Route::get('/unitkerja/{unitKerja}/edit', [UnitKerjaController::class, 'edit'])->name('unitkerja.edit');
+    Route::put('/unitkerja/{unitKerja}', [UnitKerjaController::class, 'update'])->name('unitkerja.update');
+    Route::delete('/unitkerja/{unitKerja}', [UnitKerjaController::class, 'destroy'])->name('unitkerja.destroy');
 });
 
 // ------ RUTE HALAMAN BACKEND USUL PEGAWAI UNMUL------//
