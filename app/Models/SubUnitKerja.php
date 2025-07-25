@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class UnitKerja extends Model
+class SubUnitKerja extends Model
 {
     /**
      * The attributes that are mass assignable.
@@ -12,14 +12,15 @@ class UnitKerja extends Model
      * @var array
      */
     protected $fillable = [
+        'unit_kerja_id',
         'nama',
     ];
 
     /**
-     * Get the sub unit kerjas for the unit kerja.
+     * Get the unit kerja that owns the sub unit kerja.
      */
-    public function subUnitKerjas()
+    public function unitKerja()
     {
-        return $this->hasMany(SubUnitKerja::class);
+        return $this->belongsTo(UnitKerja::class);
     }
 }

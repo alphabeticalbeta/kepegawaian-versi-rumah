@@ -7,6 +7,7 @@ use App\Http\Controllers\Backend\PegawaiUnmul\DashboardController as PegawaiUnmu
 use App\Http\Controllers\Backend\AdminFakultas\DashboardController as AdminFakultasDashboardController;
 use App\Http\Controllers\Backend\PenilaiUniversitas\DashboardController as PenilaiUniversitasDashboardController;
 use App\Http\Controllers\Backend\AdminUnivUsulan\UnitKerjaController as UnitKerjaController;
+use App\Http\Controllers\Backend\AdminUnivUsulan\SubUnitKerjaController as SubUnitKerjaController;
 
 
 // ------ RUTE HALAMAN LOGIN ------//
@@ -35,12 +36,22 @@ Route::prefix('admin-universitas-usulan')->group(function () {
 // ------ RUTE HALAMAN BACKEND ADMIN UNIVERSITAS USULAN------//
 Route::prefix('admin-univ-usulan')->name('backend.admin-univ-usulan.')->group(function () {
     Route::get('/dashboard', [AdminUnivUsulanDashboardController::class, 'index'])->name('dashboard');
+
+    // Unit Kerja Routes
     Route::get('/unitkerja', [UnitKerjaController::class, 'index'])->name('unitkerja.index');
     Route::get('/unitkerja/create', [UnitKerjaController::class, 'create'])->name('unitkerja.create');
     Route::post('/unitkerja', [UnitKerjaController::class, 'store'])->name('unitkerja.store');
     Route::get('/unitkerja/{unitKerja}/edit', [UnitKerjaController::class, 'edit'])->name('unitkerja.edit');
     Route::put('/unitkerja/{unitKerja}', [UnitKerjaController::class, 'update'])->name('unitkerja.update');
     Route::delete('/unitkerja/{unitKerja}', [UnitKerjaController::class, 'destroy'])->name('unitkerja.destroy');
+
+    // Sub Unit Kerja Routes
+    Route::get('/sub-unitkerja', [SubUnitKerjaController::class, 'index'])->name('sub-unitkerja.index');
+    Route::get('/sub-unitkerja/create', [SubUnitKerjaController::class, 'create'])->name('sub-unitkerja.create');
+    Route::post('/sub-unitkerja', [SubUnitKerjaController::class, 'store'])->name('sub-unitkerja.store');
+    Route::get('/sub-unitkerja/{subUnitKerja}/edit', [SubUnitKerjaController::class, 'edit'])->name('sub-unitkerja.edit');
+    Route::put('/sub-unitkerja/{subUnitKerja}', [SubUnitKerjaController::class, 'update'])->name('sub-unitkerja.update');
+    Route::delete('/sub-unitkerja/{subUnitKerja}', [SubUnitKerjaController::class, 'destroy'])->name('sub-unitkerja.destroy');
 });
 
 // ------ RUTE HALAMAN BACKEND USUL PEGAWAI UNMUL------//

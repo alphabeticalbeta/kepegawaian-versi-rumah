@@ -36,7 +36,7 @@
         {{-- Menu Master Data dengan dropdown --}}
         <div class="mb-2">
             <button type="button"
-                class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg group {{ request()->routeIs('backend.admin-univ-usulan.unitkerja.*') || request()->routeIs('backend.admin-univ-usulan.pangkat.*') || request()->routeIs('backend.admin-univ-usulan.jabatan.*') || request()->routeIs('backend.admin-univ-usulan.jurusan.*') || request()->routeIs('backend.admin-univ-usulan.prodi.*') ? 'active' : '' }}"
+                class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg group {{ request()->routeIs('backend.admin-univ-usulan.unitkerja.*') || request()->routeIs('backend.admin-univ-usulan.sub-unitkerja.*') || request()->routeIs('backend.admin-univ-usulan.pangkat.*') || request()->routeIs('backend.admin-univ-usulan.jabatan.*') || request()->routeIs('backend.admin-univ-usulan.jurusan.*') || request()->routeIs('backend.admin-univ-usulan.prodi.*') ? 'active' : '' }}"
                 aria-controls="dropdown-master"
                 data-collapse-toggle="dropdown-master">
                 <div class="flex items-center">
@@ -45,11 +45,17 @@
                 </div>
                 <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-[aria-expanded=true]:rotate-180"></i>
             </button>
-            <div id="dropdown-master" class="{{ request()->routeIs('backend.admin-univ-usulan.unitkerja.*') || request()->routeIs('backend.admin-univ-usulan.pangkat.*') || request()->routeIs('backend.admin-univ-usulan.jabatan.*') || request()->routeIs('backend.admin-univ-usulan.jurusan.*') || request()->routeIs('backend.admin-univ-usulan.prodi.*') ? '' : 'hidden' }} space-y-1 pl-4 mt-1">
+            <div id="dropdown-master" class="{{ request()->routeIs('backend.admin-univ-usulan.unitkerja.*') || request()->routeIs('backend.admin-univ-usulan.sub-unitkerja.*') || request()->routeIs('backend.admin-univ-usulan.pangkat.*') || request()->routeIs('backend.admin-univ-usulan.jabatan.*') || request()->routeIs('backend.admin-univ-usulan.jurusan.*') || request()->routeIs('backend.admin-univ-usulan.prodi.*') ? '' : 'hidden' }} space-y-1 pl-4 mt-1">
                 <div class="relative menu-item {{ request()->routeIs('backend.admin-univ-usulan.unitkerja.*') ? 'active' : '' }}">
                     <a href="{{ route('backend.admin-univ-usulan.unitkerja.index') }}" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i data-lucide="building-2" class="w-5 h-5 mr-3 flex-shrink-0"></i>
                         <span class="font-medium sidebar-text">Unit Kerja</span>
+                    </a>
+                </div>
+                <div class="relative menu-item {{ request()->routeIs('backend.admin-univ-usulan.sub-unitkerja.*') ? 'active' : '' }}">
+                    <a href="{{ route('backend.admin-univ-usulan.sub-unitkerja.index') }}" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
+                        <i data-lucide="building" class="w-5 h-5 mr-3 flex-shrink-0"></i>
+                        <span class="font-medium sidebar-text">Sub Unit Kerja</span>
                     </a>
                 </div>
                 <div class="relative menu-item {{ request()->routeIs('backend.admin-univ-usulan.pangkat.*') ? 'active' : '' }}">
