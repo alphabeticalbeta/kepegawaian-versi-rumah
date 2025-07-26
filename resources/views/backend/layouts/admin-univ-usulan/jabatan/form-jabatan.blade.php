@@ -26,6 +26,28 @@
             @endif
 
             <div class="mb-4">
+                <label class="block mb-1 font-medium">Jenis Jabatan</label>
+                <select name="jenis_jabatan" class="w-full border px-3 py-2 rounded @error('jenis_jabatan') border-red-500 @enderror" required>
+                    <option value="">-- Pilih Jenis Jabatan --</option>
+                    @foreach([
+                        'Dosen Fungsional',
+                        'Dosen Fungsi Tambahan',
+                        'Tenaga Kependidikan Struktural',
+                        'Tenaga Kependidikan Fungsional Umum',
+                        'Tenaga Kependidikan Fungsional Tertentu',
+                        'Tenaga Kependidikan Tugas Tambahan',
+                    ] as $option)
+                        <option value="{{ $option }}" {{ old('jenis_jabatan', $jabatan->jenis_jabatan ?? '') == $option ? 'selected' : '' }}>
+                            {{ $option }}
+                        </option>
+                    @endforeach
+                </select>
+                @error('jenis_jabatan')
+                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="mb-4">
                 <label class="block mb-1 font-medium">Nama Jabatan</label>
                 <input type="text" name="jabatan"
                     value="{{ old('jabatan', $jabatan->jabatan ?? '') }}"

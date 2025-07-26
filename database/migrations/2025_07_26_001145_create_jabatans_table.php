@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('jabatans', function (Blueprint $table) {
             $table->id();
-            $table->string('jabatan')->unique(); // Nama jabatan, unik
+            $table->string('jenis_jabatan'); // Dropdown, misal: Dosen Fungsional, dst
+            $table->string('jabatan');       // Nama jabatan
             $table->timestamps();
         });
     }

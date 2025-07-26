@@ -9,13 +9,44 @@
 
     {{-- Navigasi Menu --}}
     <nav class="flex-1 overflow-y-auto py-2">
+
         {{-- Master Data Dropdown --}}
         @php
-            $isMasterActive = request()->routeIs('backend.admin-univ-usulan.unitkerja.*')
-                || request()->routeIs('backend.admin-univ-usulan.sub-unitkerja.*')
-                || request()->routeIs('backend.admin-univ-usulan.sub-sub-unitkerja.*')
-                || request()->routeIs('backend.admin-univ-usulan.pangkat.*')
-                || request()->routeIs('backend.admin-univ-usulan.jabatan.*');
+            $masterMenus = [
+                [
+                    'route' => 'backend.admin-univ-usulan.unitkerja.index',
+                    'icon' => 'building-2',
+                    'label' => 'Unit Kerja',
+                    'pattern' => 'backend.admin-univ-usulan.unitkerja.*',
+                ],
+                [
+                    'route' => 'backend.admin-univ-usulan.sub-unitkerja.index',
+                    'icon' => 'building',
+                    'label' => 'Sub Unit Kerja',
+                    'pattern' => 'backend.admin-univ-usulan.sub-unitkerja.*',
+                ],
+                [
+                    'route' => 'backend.admin-univ-usulan.sub-sub-unitkerja.index',
+                    'icon' => 'book-open',
+                    'label' => 'Sub-Sub Unit Kerja',
+                    'pattern' => 'backend.admin-univ-usulan.sub-sub-unitkerja.*',
+                ],
+                [
+                    'route' => 'backend.admin-univ-usulan.pangkat.index',
+                    'icon' => 'award',
+                    'label' => 'Pangkat',
+                    'pattern' => 'backend.admin-univ-usulan.pangkat.*',
+                ],
+                [
+                    'route' => 'backend.admin-univ-usulan.jabatan.index',
+                    'icon' => 'briefcase',
+                    'label' => 'Jabatan',
+                    'pattern' => 'backend.admin-univ-usulan.jabatan.*',
+                ],
+            ];
+            $isMasterActive = collect($masterMenus)->contains(function($menu){
+                return request()->routeIs($menu['pattern']);
+            });
         @endphp
 
         <div class="mb-2">
@@ -30,49 +61,16 @@
                 <i data-lucide="chevron-down" class="w-4 h-4 transition-transform {{ $isMasterActive ? 'rotate-180' : '' }}"></i>
             </button>
             <div id="dropdown-master" class="{{ $isMasterActive ? '' : 'hidden' }} space-y-1 pl-4 mt-1">
-                {{-- Unit Kerja --}}
+                @foreach($masterMenus as $menu)
                 <div class="relative">
-                    <a href="{{ route('backend.admin-univ-usulan.unitkerja.index') }}"
+                    <a href="{{ route($menu['route']) }}"
                        class="flex items-center px-3 py-2.5 rounded-lg transition
-                       {{ request()->routeIs('backend.admin-univ-usulan.unitkerja.*') ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-100' }}">
-                        <i data-lucide="building-2" class="w-5 h-5 mr-3"></i>
-                        <span class="font-medium">Unit Kerja</span>
+                       {{ request()->routeIs($menu['pattern']) ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-100' }}">
+                        <i data-lucide="{{ $menu['icon'] }}" class="w-5 h-5 mr-3"></i>
+                        <span class="font-medium">{{ $menu['label'] }}</span>
                     </a>
                 </div>
-                {{-- Sub Unit Kerja --}}
-                <div class="relative">
-                    <a href="{{ route('backend.admin-univ-usulan.sub-unitkerja.index') }}"
-                       class="flex items-center px-3 py-2.5 rounded-lg transition
-                       {{ request()->routeIs('backend.admin-univ-usulan.sub-unitkerja.*') ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-100' }}">
-                        <i data-lucide="building" class="w-5 h-5 mr-3"></i>
-                        <span class="font-medium">Sub Unit Kerja</span>
-                    </a>
-                </div>
-                {{-- Sub-Sub Unit Kerja --}}
-                <div class="relative">
-                    <a href="{{ route('backend.admin-univ-usulan.sub-sub-unitkerja.index') }}"
-                       class="flex items-center px-3 py-2.5 rounded-lg transition
-                       {{ request()->routeIs('backend.admin-univ-usulan.sub-sub-unitkerja.*') ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-100' }}">
-                        <i data-lucide="book-open" class="w-5 h-5 mr-3"></i>
-                        <span class="font-medium">Sub-Sub Unit Kerja</span>
-                    </a>
-                </div>
-                {{-- Pangkat --}}
-                <div class="relative">
-                    <a href="{{ route('backend.admin-univ-usulan.pangkat.index') }}"
-                       class="flex items-center px-3 py-2.5 rounded-lg transition
-                       {{ request()->routeIs('backend.admin-univ-usulan.pangkat.*') ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-100' }}">
-                        <i data-lucide="award" class="w-5 h-5 mr-3"></i>
-                        <span class="font-medium">Pangkat</span>
-                    </a>
-                </div>
-                {{-- Jabatan --}}
-                <div class="relative">
-                    <a href="{{ route('backend.admin-univ-usulan.jabatan.index') }}" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
-                        <i data-lucide="briefcase" class="w-5 h-5 mr-3"></i>
-                        <span class="font-medium">Jabatan</span>
-                    </a>
-                </div>
+                @endforeach
             </div>
         </div>
 
@@ -90,14 +88,14 @@
                 <i data-lucide="chevron-down" class="w-4 h-4 transition-transform {{ $isUsulanActive ? 'rotate-180' : '' }}"></i>
             </button>
             <div id="dropdown-usulan" class="{{ $isUsulanActive ? '' : 'hidden' }} space-y-1 pl-4 mt-1">
-                {{-- Contoh usulan --}}
+                {{-- Usulan menu contoh --}}
                 <div class="relative">
                     <a href="#" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i data-lucide="user-check" class="w-5 h-5 mr-3"></i>
                         <span class="font-medium">Usulan NUPTK</span>
                     </a>
                 </div>
-                {{-- ... dst --}}
+                {{-- Tambah menu lain di sini sesuai kebutuhan --}}
             </div>
         </div>
     </nav>
