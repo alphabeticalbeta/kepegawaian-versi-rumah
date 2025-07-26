@@ -9,6 +9,8 @@ use App\Http\Controllers\Backend\PenilaiUniversitas\DashboardController as Penil
 use App\Http\Controllers\Backend\AdminUnivUsulan\UnitKerjaController as UnitKerjaController;
 use App\Http\Controllers\Backend\AdminUnivUsulan\SubUnitKerjaController as SubUnitKerjaController;
 use App\Http\Controllers\Backend\AdminUnivUsulan\SubSubUnitKerjaController as SubSubUnitKerjaController;
+use App\Http\Controllers\Backend\AdminUnivUsulan\PangkatController as PangkatController;
+use App\Http\Controllers\Backend\AdminUnivUsulan\JabatanController as JabatanController;
 
 
 // ------ RUTE HALAMAN LOGIN ------//
@@ -63,12 +65,28 @@ Route::prefix('admin-univ-usulan')->name('backend.admin-univ-usulan.')->group(fu
     Route::delete('/sub-sub-unitkerja/{subSubUnitKerja}', [SubSubUnitKerjaController::class, 'destroy'])->name('sub-sub-unitkerja.destroy');
 
     // Sub Sub Unit Kerja Import/Export Routes
-    Route::get('/sub-sub-unitkerja/import-form', [SubSubUnitKerjaController::class, 'importForm'])->name('sub-sub-unitkerja.import-form');
-    Route::post('/sub-sub-unitkerja/import', [SubSubUnitKerjaController::class, 'import'])->name('sub-sub-unitkerja.import');
-    Route::get('/sub-sub-unitkerja/export-template', [SubSubUnitKerjaController::class, 'exportTemplate'])->name('sub-sub-unitkerja.export-template');
+    // Route::get('/sub-sub-unitkerja/import-form', [SubSubUnitKerjaController::class, 'importForm'])->name('sub-sub-unitkerja.import-form');
+    // Route::post('/sub-sub-unitkerja/import', [SubSubUnitKerjaController::class, 'import'])->name('sub-sub-unitkerja.import');
+    // Route::get('/sub-sub-unitkerja/export-template', [SubSubUnitKerjaController::class, 'exportTemplate'])->name('sub-sub-unitkerja.export-template');
 
     // AJAX Route for getting Sub Unit Kerjas based on Unit Kerja
     Route::get('/get-sub-unit-kerjas', [SubSubUnitKerjaController::class, 'getSubUnitKerjas'])->name('get-sub-unit-kerjas');
+
+    // Pangkat Routes
+    Route::get('/pangkat', [PangkatController::class, 'index'])->name('pangkat.index');
+    Route::get('/pangkat/create', [PangkatController::class, 'create'])->name('pangkat.create');
+    Route::post('/pangkat', [PangkatController::class, 'store'])->name('pangkat.store');
+    Route::get('/pangkat/{pangkat}/edit', [PangkatController::class, 'edit'])->name('pangkat.edit');
+    Route::put('/pangkat/{pangkat}', [PangkatController::class, 'update'])->name('pangkat.update');
+    Route::delete('/pangkat/{pangkat}', [PangkatController::class, 'destroy'])->name('pangkat.destroy');
+
+    // Jabatan Routes
+    Route::get('/jabatan', [JabatanController::class, 'index'])->name('jabatan.index');
+    Route::get('/jabatan/create', [JabatanController::class, 'create'])->name('jabatan.create');
+    Route::post('/jabatan', [JabatanController::class, 'store'])->name('jabatan.store');
+    Route::get('/jabatan/{jabatan}/edit', [JabatanController::class, 'edit'])->name('jabatan.edit');
+    Route::put('/jabatan/{jabatan}', [JabatanController::class, 'update'])->name('jabatan.update');
+    Route::delete('/jabatan/{jabatan}', [JabatanController::class, 'destroy'])->name('jabatan.destroy');
 });
 
 // ------ RUTE HALAMAN BACKEND USUL PEGAWAI UNMUL------//
