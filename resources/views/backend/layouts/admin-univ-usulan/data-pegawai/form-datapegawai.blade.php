@@ -212,11 +212,6 @@
                 <div>
                      <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Informasi Berkas & Kinerja</h3>
                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div id="field_sk_konversi" class="sm:col-span-2 hidden">
-                            <label for="sk_konversi" class="block text-sm font-medium text-gray-700">SK Konversi NIP/Jabatan</label>
-                            <input type="file" name="sk_konversi" id="sk_konversi" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                            @error('sk_konversi') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                        </div>
                         @php
                             $kinerjaOptions = ['Sangat Baik', 'Baik', 'Cukup', 'Kurang', 'Sangat Kurang'];
                         @endphp
@@ -248,15 +243,19 @@
                             <input type="file" name="skp_tahun_kedua" id="skp_tahun_kedua" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                             @error('skp_tahun_kedua') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
-                        <div>
-                            <label for="nilai_konversi" class="block text-sm font-medium text-gray-700">Nilai Konversi <span class="text-red-500">*</span></label>
-                            <input type="number" name="nilai_konversi" id="nilai_konversi" step="any" value="{{ old('nilai_konversi', $pegawai->nilai_konversi ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Contoh: 112.50">
-                            @error('nilai_konversi') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                        </div>
-                        <div>
-                            <label for="pak_konversi" class="block text-sm font-medium text-gray-700">PAK Konversi <span class="text-red-500">*</span></label>
-                            <input type="file" name="pak_konversi" id="pak_konversi" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                            @error('pak_konversi') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                        <div class="md:col-span-2">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                                <div id="field_nilai_konversi" class="hidden">
+                                    <label for="nilai_konversi" class="block text-sm font-medium text-gray-700">Nilai Konversi <span class="text-red-500">*</span></label>
+                                    <input type="number" name="nilai_konversi" id="nilai_konversi" step="any" value="{{ old('nilai_konversi', $pegawai->nilai_konversi ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Contoh: 112.50">
+                                    @error('nilai_konversi') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                </div>
+                                <div id="field_pak_konversi" class="hidden">
+                                    <label for="pak_konversi" class="block text-sm font-medium text-gray-700">PAK Konversi</label>
+                                    <input type="file" name="pak_konversi" id="pak_konversi" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                    @error('pak_konversi') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
                         </div>
                      </div>
                 </div>
@@ -301,7 +300,8 @@
         const jenisPegawaiSelect = document.getElementById('jenis_pegawai');
         const nuptkField = document.getElementById('field_nuptk');
         const dosenFieldsWrapper = document.getElementById('dosen_fields_wrapper');
-        const skKonversiField = document.getElementById('field_sk_konversi');
+        const skKonversiField = document.getElementById('field_pak_konversi');
+        const nilaiKonversiField = document.getElementById('field_nilai_konversi');
         const unitKerjaSelect = document.getElementById('unit_kerja_terakhir_id');
         const pathDisplay = document.getElementById('unit_kerja_path_display');
 
@@ -311,6 +311,7 @@
             nuptkField.classList.toggle('hidden', !isDosen);
             dosenFieldsWrapper.classList.toggle('hidden', !isDosen);
             skKonversiField.classList.toggle('hidden', !isDosen);
+            nilaiKonversiField.classList.toggle('hidden', !isDosen);
         }
 
         function displayUnitKerjaPath() {
