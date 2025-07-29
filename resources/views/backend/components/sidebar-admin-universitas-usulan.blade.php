@@ -13,12 +13,18 @@
         {{-- Master Data Dropdown --}}
         @php
             $masterMenus = [
-                // --- PENAMBAHAN MENU DATA PEGAWAI DI SINI ---
                 [
                     'route' => 'backend.admin-univ-usulan.data-pegawai.index',
                     'icon' => 'users',
                     'label' => 'Data Pegawai',
                     'pattern' => 'backend.admin-univ-usulan.data-pegawai.*',
+                ],
+                // --- PENAMBAHAN MENU ROLE PEGAWAI DI SINI ---
+                [
+                    'route' => 'backend.admin-univ-usulan.role-pegawai.index',
+                    'icon' => 'user-cog',
+                    'label' => 'Role Pegawai',
+                    'pattern' => 'backend.admin-univ-usulan.role-pegawai.*',
                 ],
                 // ---------------------------------------------
                 [
@@ -61,6 +67,7 @@
             <button type="button"
                     class="flex items-center justify-between w-full px-4 py-3 rounded-lg group transition {{ $isMasterActive ? 'bg-gray-100 font-semibold' : 'text-gray-700 hover:bg-gray-100' }}"
                     aria-controls="dropdown-master"
+                    data-collapse-toggle="dropdown-master"
                     aria-expanded="{{ $isMasterActive ? 'true' : 'false' }}">
                 <div class="flex items-center">
                     <i data-lucide="database" class="w-5 h-5 mr-3"></i>
@@ -88,6 +95,7 @@
             <button type="button"
                     class="flex items-center justify-between w-full px-4 py-3 rounded-lg group transition {{ $isUsulanActive ? 'bg-gray-100 font-semibold' : 'text-gray-700 hover:bg-gray-100' }}"
                     aria-controls="dropdown-usulan"
+                    data-collapse-toggle="dropdown-usulan"
                     aria-expanded="{{ $isUsulanActive ? 'true' : 'false' }}">
                 <div class="flex items-center">
                     <i data-lucide="file-text" class="w-5 h-5 mr-3"></i>
@@ -111,14 +119,23 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Lucide Icons
         lucide.createIcons();
-        document.querySelectorAll('button[aria-controls]').forEach(btn => {
+
+        // Dropdown Toggle Logic
+        document.querySelectorAll('button[data-collapse-toggle]').forEach(btn => {
             btn.addEventListener('click', function() {
-                const targetId = btn.getAttribute('aria-controls');
+                const targetId = this.getAttribute('data-collapse-toggle');
                 const dropdown = document.getElementById(targetId);
-                const expanded = btn.getAttribute('aria-expanded') === 'true';
-                btn.setAttribute('aria-expanded', String(!expanded));
+                const isExpanded = this.getAttribute('aria-expanded') === 'true';
+
+                this.setAttribute('aria-expanded', !isExpanded);
                 dropdown.classList.toggle('hidden');
+
+                const chevron = this.querySelector('[data-lucide="chevron-down"]');
+                if (chevron) {
+                    chevron.classList.toggle('rotate-180', !isExpanded);
+                }
             });
         });
     });

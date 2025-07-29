@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Pegawai extends Model
 {
@@ -50,6 +51,8 @@ class Pegawai extends Model
         'sk_cpns',
         'sk_pns',
         'role',
+        'email',
+        'foto',
     ];
 
     /**
@@ -88,4 +91,13 @@ class Pegawai extends Model
     {
         return $this->belongsTo(SubSubUnitKerja::class, 'unit_kerja_terakhir_id');
     }
+
+    //  * Relasi many-to-many ke model Role.
+    //  * Seorang pegawai bisa memiliki banyak role.
+    //  */
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'pegawai_role');
+    }
+
 }

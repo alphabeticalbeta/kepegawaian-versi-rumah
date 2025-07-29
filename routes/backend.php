@@ -12,6 +12,7 @@ use App\Http\Controllers\Backend\AdminUnivUsulan\SubUnitKerjaController as SubUn
 use App\Http\Controllers\Backend\AdminUnivUsulan\SubSubUnitKerjaController as SubSubUnitKerjaController;
 use App\Http\Controllers\Backend\AdminUnivUsulan\PangkatController as PangkatController;
 use App\Http\Controllers\Backend\AdminUnivUsulan\JabatanController as JabatanController;
+use App\Http\Controllers\Backend\AdminUnivUsulan\RolePegawaiController as RolePegawaiController;
 
 
 // ------ RUTE HALAMAN LOGIN ------//
@@ -100,6 +101,11 @@ Route::prefix('admin-univ-usulan')->name('backend.admin-univ-usulan.')->group(fu
     Route::get('/jabatan/{jabatan}/edit', [JabatanController::class, 'edit'])->name('jabatan.edit');
     Route::put('/jabatan/{jabatan}', [JabatanController::class, 'update'])->name('jabatan.update');
     Route::delete('/jabatan/{jabatan}', [JabatanController::class, 'destroy'])->name('jabatan.destroy');
+
+    // Role Pegawai Routes
+    Route::get('/role-pegawai', [RolePegawaiController::class, 'index'])->name('role-pegawai.index');
+    Route::get('/role-pegawai/{pegawai}/edit', [RolePegawaiController::class, 'edit'])->name('role-pegawai.edit');
+    Route::put('/role-pegawai/{pegawai}', [RolePegawaiController::class, 'update'])->name('role-pegawai.update');
 });
 
 // ------ RUTE HALAMAN BACKEND USUL PEGAWAI UNMUL------//
