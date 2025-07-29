@@ -48,6 +48,7 @@ Route::prefix('admin-univ-usulan')->name('backend.admin-univ-usulan.')->group(fu
     Route::get('/data-pegawai/{pegawai}/edit', [DataPegawaiController::class, 'edit'])->name('data-pegawai.edit');
     Route::put('/data-pegawai/{pegawai}', [DataPegawaiController::class, 'update'])->name('data-pegawai.update');
     Route::delete('/data-pegawai/{pegawai}', [DataPegawaiController::class, 'destroy'])->name('data-pegawai.destroy');
+    Route::get('/data-pegawai/{pegawai}/show', [DataPegawaiController::class, 'show'])->name('data-pegawai.show');
 
     // Unit Kerja Routes
     Route::get('/unitkerja', [UnitKerjaController::class, 'index'])->name('unitkerja.index');

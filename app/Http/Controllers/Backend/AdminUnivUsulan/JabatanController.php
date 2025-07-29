@@ -13,16 +13,12 @@ class JabatanController extends Controller
      */
     public function index(Request $request)
     {
-        // Memulai query builder
         $query = Jabatan::query();
 
-        // Menerapkan filter berdasarkan 'jenis_jabatan' jika ada input dari request
         $query->when($request->filter_jenis_jabatan, function ($q, $jenis_jabatan) {
             return $q->where('jenis_jabatan', $jenis_jabatan);
         });
 
-        // Mengurutkan hasil berdasarkan nama jabatan dan melakukan paginasi
-        // appends($request->all()) digunakan agar parameter filter tetap ada di link pagination
         $jabatans = $query->orderBy('jabatan')->paginate(10)->appends($request->all());
 
         return view('backend.layouts.admin-univ-usulan.jabatan.master-data-jabatan', compact('jabatans'));
@@ -41,12 +37,15 @@ class JabatanController extends Controller
      */
     public function store(Request $request)
     {
+        // Penambahan validasi untuk jenis_pegawai
         $request->validate([
+            'jenis_pegawai' => 'required|string|in:Dosen,Tenaga Kependidikan',
             'jenis_jabatan' => 'required|string|max:255',
             'jabatan' => 'required|string|max:255|unique:jabatans,jabatan',
         ]);
 
-        Jabatan::create($request->only('jenis_jabatan', 'jabatan'));
+        // Penambahan jenis_pegawai saat create
+        Jabatan::create($request->only('jenis_pegawai', 'jenis_jabatan', 'jabatan'));
 
         return redirect()->route('backend.admin-univ-usulan.jabatan.index')
                          ->with('success', 'Data Jabatan berhasil ditambahkan.');
@@ -65,12 +64,15 @@ class JabatanController extends Controller
      */
     public function update(Request $request, Jabatan $jabatan)
     {
+        // Penambahan validasi untuk jenis_pegawai
         $request->validate([
+            'jenis_pegawai' => 'required|string|in:Dosen,Tenaga Kependidikan',
             'jenis_jabatan' => 'required|string|max:255',
             'jabatan' => 'required|string|max:255|unique:jabatans,jabatan,' . $jabatan->id,
         ]);
 
-        $jabatan->update($request->only('jenis_jabatan', 'jabatan'));
+        // Penambahan jenis_pegawai saat update
+        $jabatan->update($request->only('jenis_pegawai', 'jenis_jabatan', 'jabatan'));
 
         return redirect()->route('backend.admin-univ-usulan.jabatan.index')
                          ->with('success', 'Data Jabatan berhasil diperbarui.');

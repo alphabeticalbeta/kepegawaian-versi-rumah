@@ -183,12 +183,19 @@
                             <input type="file" name="sk_pangkat_terakhir" id="sk_pangkat_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                             @error('sk_pangkat_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
-                         <div class="sm:col-span-3">
-                            <label for="jabatan_terakhir_id" class="block text-sm font-medium text-gray-700">Jabatan Terakhir <span class="text-red-500">*</span></label>
+                        <div class="sm:col-span-3">
+                            <label for="jabatan_terakhir_id" class="block text-sm font-medium text-gray-700">
+                                Jabatan Terakhir <span id="jenis_jabatan_display" class="text-indigo-600 font-normal"></span>
+                                <span class="text-red-500">*</span>
+                            </label>
                             <select name="jabatan_terakhir_id" id="jabatan_terakhir_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                 <option value="">Pilih Jabatan</option>
+                                {{-- Menambahkan data-attributes untuk diakses oleh JavaScript --}}
                                 @foreach($jabatans as $jabatan)
-                                    <option value="{{ $jabatan->id }}" {{ old('jabatan_terakhir_id', $pegawai->jabatan_terakhir_id ?? '') == $jabatan->id ? 'selected' : '' }}>
+                                    <option value="{{ $jabatan->id }}"
+                                            data-jenis-pegawai="{{ $jabatan->jenis_pegawai }}"
+                                            data-jenis-jabatan="{{ $jabatan->jenis_jabatan }}"
+                                            {{ old('jabatan_terakhir_id', $pegawai->jabatan_terakhir_id ?? '') == $jabatan->id ? 'selected' : '' }}>
                                         {{ $jabatan->jabatan }}
                                     </option>
                                 @endforeach
@@ -297,7 +304,10 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // --- Selektor Elemen ---
         const jenisPegawaiSelect = document.getElementById('jenis_pegawai');
+        const jabatanSelect = document.getElementById('jabatan_terakhir_id');
+        const jenisJabatanDisplay = document.getElementById('jenis_jabatan_display');
         const nuptkField = document.getElementById('field_nuptk');
         const dosenFieldsWrapper = document.getElementById('dosen_fields_wrapper');
         const skKonversiField = document.getElementById('field_pak_konversi');
@@ -305,26 +315,108 @@
         const unitKerjaSelect = document.getElementById('unit_kerja_terakhir_id');
         const pathDisplay = document.getElementById('unit_kerja_path_display');
 
-        function toggleConditionalFields() {
-            const isDosen = jenisPegawaiSelect.value === 'Dosen';
+        // --- Fungsi Inti ---
 
-            nuptkField.classList.toggle('hidden', !isDosen);
-            dosenFieldsWrapper.classList.toggle('hidden', !isDosen);
-            skKonversiField.classList.toggle('hidden', !isDosen);
-            nilaiKonversiField.classList.toggle('hidden', !isDosen);
+        /**
+         * Memfilter dropdown jabatan berdasarkan jenis pegawai yang dipilih.
+         */
+        function filterJabatan() {
+            const selectedJenisPegawai = jenisPegawaiSelect.value;
+            let hasVisibleOptions = false;
+
+            // Iterasi semua opsi jabatan
+            for (const option of jabatanSelect.options) {
+                if (option.value === "") { // Selalu tampilkan opsi "Pilih Jabatan"
+                    option.style.display = "block";
+                    continue;
+                }
+
+                const optionJenisPegawai = option.dataset.jenisPegawai;
+
+                // Tampilkan jika jenis pegawai cocok atau jika tidak ada jenis pegawai yang dipilih
+                if (!selectedJenisPegawai || optionJenisPegawai === selectedJenisPegawai) {
+                    option.style.display = "block";
+                    hasVisibleOptions = true;
+                } else {
+                    option.style.display = "none";
+                }
+            }
+
+            // Jika jabatan yang terpilih saat ini disembunyikan, reset pilihan
+            if (jabatanSelect.options[jabatanSelect.selectedIndex]?.style.display === 'none') {
+                jabatanSelect.value = "";
+            }
         }
 
+        /**
+         * Memperbarui label untuk menampilkan jenis jabatan dari jabatan yang dipilih.
+         */
+        function updateJenisJabatanLabel() {
+            const selectedOption = jabatanSelect.options[jabatanSelect.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                const jenisJabatan = selectedOption.dataset.jenisJabatan;
+                jenisJabatanDisplay.textContent = `(${jenisJabatan})`;
+            } else {
+                jenisJabatanDisplay.textContent = ''; // Kosongkan jika tidak ada yang dipilih
+            }
+        }
+
+        /**
+         * Menampilkan/menyembunyikan field spesifik berdasarkan jenis pegawai dan jenis jabatan.
+         */
+        function toggleConditionalFields() {
+            const selectedJenisPegawai = jenisPegawaiSelect.value;
+            const selectedJabatanOption = jabatanSelect.options[jabatanSelect.selectedIndex];
+            const selectedJenisJabatan = selectedJabatanOption ? selectedJabatanOption.dataset.jenisJabatan : '';
+
+            // --- KONDISI UNTUK NUPTK, NILAI KONVERSI, PAK KONVERSI ---
+            // Tampilkan jika:
+            // 1. Jenis Pegawai = Dosen AND Jenis Jabatan = Dosen Fungsional OR Dosen Fungsi Tambahan
+            // 2. OR Jenis Pegawai = Tenaga Kependidikan AND Jenis Jabatan = Tenaga Kependidikan Fungsional Tertentu
+            const showNuptkAndKonversiFields = (
+                (selectedJenisPegawai === 'Dosen' && ['Dosen Fungsional', 'Dosen Fungsi Tambahan'].includes(selectedJenisJabatan)) ||
+                (selectedJenisPegawai === 'Tenaga Kependidikan' && selectedJenisJabatan === 'Tenaga Kependidikan Fungsional Tertentu')
+            );
+
+            // Toggle visibility untuk NUPTK, Nilai Konversi, PAK Konversi
+            nuptkField.classList.toggle('hidden', !showNuptkAndKonversiFields);
+            nilaiKonversiField.classList.toggle('hidden', !showNuptkAndKonversiFields);
+            skKonversiField.classList.toggle('hidden', !showNuptkAndKonversiFields);
+
+            // --- KONDISI UNTUK FIELD SPESIFIK DOSEN LAINNYA ---
+            // Field dosen lainnya (mata kuliah, ranting ilmu, sinta) tetap tampil untuk semua jenis dosen
+            const isDosen = selectedJenisPegawai === 'Dosen';
+            dosenFieldsWrapper.classList.toggle('hidden', !isDosen);
+        }
+
+        /**
+         * Menampilkan path lengkap dari unit kerja yang dipilih.
+         */
         function displayUnitKerjaPath() {
             const selectedOption = unitKerjaSelect.options[unitKerjaSelect.selectedIndex];
             pathDisplay.innerHTML = (selectedOption && selectedOption.value) ? selectedOption.dataset.path : '';
         }
 
-        // Initial calls on page load
+        // --- Panggilan Awal saat Halaman Dimuat ---
+        // Panggil semua fungsi saat halaman dimuat untuk memastikan state awal benar (penting untuk form edit)
         toggleConditionalFields();
         displayUnitKerjaPath();
+        filterJabatan();
+        updateJenisJabatanLabel();
 
-        // Event listeners
-        jenisPegawaiSelect.addEventListener('change', toggleConditionalFields);
+
+        // --- Event Listeners ---
+        jenisPegawaiSelect.addEventListener('change', function() {
+            toggleConditionalFields();
+            filterJabatan();
+            updateJenisJabatanLabel(); // Panggil juga ini untuk mereset label
+        });
+
+        jabatanSelect.addEventListener('change', function() {
+            updateJenisJabatanLabel();
+            toggleConditionalFields(); // Tambahkan ini untuk update conditional fields saat jabatan berubah
+        });
+
         unitKerjaSelect.addEventListener('change', displayUnitKerjaPath);
     });
 </script>

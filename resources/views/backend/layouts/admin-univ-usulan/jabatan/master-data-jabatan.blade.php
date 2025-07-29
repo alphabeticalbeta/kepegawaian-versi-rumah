@@ -27,6 +27,8 @@
                 <thead class="bg-gray-100 uppercase text-xs font-semibold">
                     <tr>
                         <th class="px-4 py-2 text-center">No</th>
+                        {{-- PENAMBAHAN KOLOM HEADER --}}
+                        <th class="px-4 py-2 text-center">Jenis Pegawai</th>
                         <th class="px-4 py-2 text-center">Jenis Jabatan</th>
                         <th class="px-4 py-2 text-center">Nama Jabatan</th>
                         <th class="px-4 py-2 text-center">Aksi</th>
@@ -36,6 +38,8 @@
                     @forelse($jabatans as $index => $jabatan)
                         <tr>
                             <td class="px-4 py-2 text-center">{{ $index + $jabatans->firstItem() }}</td>
+                            {{-- PENAMBAHAN DATA JENIS PEGAWAI --}}
+                            <td class="px-4 py-2 text-center">{{ $jabatan->jenis_pegawai }}</td>
                             <td class="px-4 py-2 text-center">{{ $jabatan->jenis_jabatan }}</td>
                             <td class="px-4 py-2 text-center font-medium">{{ $jabatan->jabatan }}</td>
                             <td class="px-4 py-2 text-center">
@@ -59,7 +63,8 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="py-8 text-gray-500 text-center">
+                            {{-- PENYESUAIAN COLSPAN MENJADI 5 --}}
+                            <td colspan="5" class="py-8 text-gray-500 text-center">
                                 <div class="flex flex-col items-center justify-center">
                                     <i data-lucide="database-x" class="w-12 h-12 text-gray-300 mb-2"></i>
                                     <p>Tidak ada data jabatan</p>

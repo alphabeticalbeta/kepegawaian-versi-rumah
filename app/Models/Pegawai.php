@@ -18,21 +18,17 @@ class Pegawai extends Model
         'pangkat_terakhir_id',
         'jabatan_terakhir_id',
         'unit_kerja_terakhir_id',
-        'role',
         'jenis_pegawai',
         'nip',
         'nuptk',
         'gelar_depan',
+        'nama_lengkap',
         'gelar_belakang',
         'nomor_kartu_pegawai',
         'tempat_lahir',
         'tanggal_lahir',
         'jenis_kelamin',
         'nomor_handphone',
-        'tmt_cpns',
-        'sk_cpns_terakhir',
-        'tmt_pns',
-        'sk_pns_terakhir',
         'tmt_pangkat',
         'sk_pangkat_terakhir',
         'tmt_jabatan',
@@ -51,7 +47,6 @@ class Pegawai extends Model
         'skp_tahun_kedua',
         'nilai_konversi',
         'pak_konversi',
-
     ];
 
     /**
@@ -60,10 +55,7 @@ class Pegawai extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'role' => 'array', // Otomatis mengubah JSON -> Array dan sebaliknya
         'tanggal_lahir' => 'date',
-        'tmt_cpns' => 'date',
-        'tmt_pns' => 'date',
         'tmt_pangkat' => 'date',
         'tmt_jabatan' => 'date',
     ];

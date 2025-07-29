@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class Jabatan extends Model
 {
-    protected $fillable = ['jenis_jabatan', 'jabatan'];
+    protected $fillable = ['jenis_pegawai','jenis_jabatan', 'jabatan'];
 }

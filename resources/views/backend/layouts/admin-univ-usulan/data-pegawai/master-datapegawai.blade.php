@@ -44,10 +44,9 @@
                 <thead class="bg-gray-100 uppercase text-xs font-semibold">
                     <tr>
                         <th class="px-4 py-2 text-center">No</th>
-                        <th class="px-4 py-2 text-center">Nama</th>
+                        <th class="px-4 py-2 text-left">Nama</th>
                         <th class="px-4 py-2 text-center">NIP</th>
                         <th class="px-4 py-2 text-center">Jenis Pegawai</th>
-                        <th class="px-4 py-2 text-center">Unit Kerja</th>
                         <th class="px-4 py-2 text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -55,16 +54,22 @@
                     @forelse($pegawais as $index => $pegawai)
                         <tr>
                             <td class="px-4 py-2 text-center">{{ $index + $pegawais->firstItem() }}</td>
-                            <td class="px-4 py-2 text-left font-medium">{{ $pegawai->gelar_depan }} {{ $pegawai->nama }} {{ $pegawai->gelar_belakang }}</td>
+                            <td class="px-4 py-2 text-left font-medium">{{ $pegawai->nama_lengkap }}</td>
                             <td class="px-4 py-2 text-center">{{ $pegawai->nip }}</td>
                             <td class="px-4 py-2 text-center">{{ $pegawai->jenis_pegawai }}</td>
-                            <td class="px-4 py-2 text-center">{{ $pegawai->unitKerja->nama ?? 'N/A' }}</td>
                             <td class="px-4 py-2 text-center">
                                 <div class="flex justify-center items-center space-x-2">
+                                    {{-- Tombol Lihat (Read) --}}
+                                    <a href="{{ route('backend.admin-univ-usulan.data-pegawai.show', $pegawai) }}"
+                                       class="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-700 hover:bg-green-600 hover:text-white rounded-md text-sm transition">
+                                        <i data-lucide="eye" class="w-4 h-4 mr-1"></i> Lihat
+                                    </a>
+                                    {{-- Tombol Edit (Update) --}}
                                     <a href="{{ route('backend.admin-univ-usulan.data-pegawai.edit', $pegawai) }}"
                                        class="inline-flex items-center px-3 py-1.5 bg-indigo-100 text-indigo-700 hover:bg-indigo-600 hover:text-white rounded-md text-sm transition">
                                         <i data-lucide="edit" class="w-4 h-4 mr-1"></i> Edit
                                     </a>
+                                    {{-- Tombol Hapus (Delete) --}}
                                     <form action="{{ route('backend.admin-univ-usulan.data-pegawai.destroy', $pegawai) }}"
                                           method="POST"
                                           onsubmit="return confirm('Apakah Anda yakin ingin menghapus data pegawai ini?');">
@@ -80,7 +85,8 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-8 text-gray-500 text-center">
+                            {{-- Colspan disesuaikan menjadi 5 karena ada 5 kolom --}}
+                            <td colspan="5" class="py-8 text-gray-500 text-center">
                                 <div class="flex flex-col items-center justify-center">
                                     <i data-lucide="database-x" class="w-12 h-12 text-gray-300 mb-2"></i>
                                     <p>Tidak ada data pegawai yang cocok dengan filter</p>

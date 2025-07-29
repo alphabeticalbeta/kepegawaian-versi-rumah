@@ -86,7 +86,7 @@ class DataPegawaiController extends Controller
     {
         // Hapus semua file terkait sebelum menghapus data dari database
         $fileColumns = [
-            'sk_cpns_terakhir', 'sk_pns_terakhir', 'sk_pangkat_terakhir', 'sk_jabatan_terakhir',
+            'sk_pangkat_terakhir', 'sk_jabatan_terakhir',
             'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir',
             'pak_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua'
         ];
@@ -103,23 +103,29 @@ class DataPegawaiController extends Controller
                          ->with('success', 'Data Pegawai berhasil dihapus.');
     }
 
+    public function show(Pegawai $pegawai)
+    {
+        // Eager load relasi untuk data yang akan ditampilkan
+        $pegawai->load(['pangkat', 'jabatan', 'unitKerja.subUnitKerja.unitKerja']);
+
+        return view('backend.layouts.admin-univ-usulan.data-pegawai.show-datapegawai', compact('pegawai'));
+    }
+
     /**
      *Reusable validation logic.
      */
     private function validateRequest(Request $request, $pegawaiId = null)
     {
         $rules = [
-            'role' => 'required|array',
             'jenis_pegawai' => 'required|string|in:Dosen,Tenaga Kependidikan',
             'nip' => 'required|numeric|digits:18|unique:pegawais,nip,' . $pegawaiId,
-            'gelar_depan' => 'required|string|max:255',
-            'gelar_belakang' => 'required|string|max:255',
-            'nomor_kartu_pegawai' => 'required|string|max:255',
+            'gelar_depan' => 'nullable|string|max:255',
+            'nama_lengkap' => 'required|string|max:255',
+            'gelar_belakang' => 'nullable|string|max:255',
+            'nomor_kartu_pegawai' => 'nullable|string|max:255',
             'tempat_lahir' => 'required|string|max:255',
             'tanggal_lahir' => 'required|date',
             'jenis_kelamin' => 'required|in:Laki-Laki,Perempuan',
-            'tmt_cpns' => 'required|date',
-            'tmt_pns' => 'required|date',
             'pangkat_terakhir_id' => 'required|exists:pangkats,id',
             'tmt_pangkat' => 'required|date',
             'jabatan_terakhir_id' => 'required|exists:jabatans,id',
@@ -130,11 +136,11 @@ class DataPegawaiController extends Controller
             'unit_kerja_terakhir_id' => 'required|exists:sub_sub_unit_kerjas,id',
             'nomor_handphone' => 'required|string',
             // --- Conditional & Optional Rules ---
-            'nuptk' => 'nullable|required_if:jenis_pegawai,Dosen|numeric|digits:16',
+            'nuptk' => 'nullable|numeric|digits:16',
             'mata_kuliah_diampu' => 'nullable|required_if:jenis_pegawai,Dosen|string',
             'ranting_ilmu_kepakaran' => 'nullable|required_if:jenis_pegawai,Dosen|string',
             'url_profil_sinta' => 'nullable|required_if:jenis_pegawai,Dosen|url',
-            'angka_konversi' => 'nullable', // Logika required_if bisa lebih kompleks jika perlu
+            'nilai_konversi' => 'nullable|numeric',
             // --- File Upload Rules ---
             'sk_penyetaraan_ijazah' => ['nullable', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
             'disertasi_thesis_terakhir' => ['nullable', File::types(['pdf'])->max(10 * 1024)],
@@ -142,8 +148,6 @@ class DataPegawaiController extends Controller
 
         // Aturan file yang wajib saat create, tapi opsional saat update
         $fileRules = [
-            'sk_cpns_terakhir' => ['required', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
-            'sk_pns_terakhir' => ['required', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
             'sk_pangkat_terakhir' => ['required', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
             'sk_jabatan_terakhir' => ['required', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
             'ijazah_terakhir' => ['required', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
@@ -170,7 +174,7 @@ class DataPegawaiController extends Controller
     private function handleFileUploads(Request $request, &$validatedData, $pegawai = null)
     {
         $fileColumns = [
-            'sk_cpns_terakhir', 'sk_pns_terakhir', 'sk_pangkat_terakhir', 'sk_jabatan_terakhir',
+            'sk_pangkat_terakhir', 'sk_jabatan_terakhir',
             'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir',
             'pak_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua'
         ];
