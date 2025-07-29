@@ -13,6 +13,14 @@
         {{-- Master Data Dropdown --}}
         @php
             $masterMenus = [
+                // --- PENAMBAHAN MENU DATA PEGAWAI DI SINI ---
+                [
+                    'route' => 'backend.admin-univ-usulan.data-pegawai.index',
+                    'icon' => 'users',
+                    'label' => 'Data Pegawai',
+                    'pattern' => 'backend.admin-univ-usulan.data-pegawai.*',
+                ],
+                // ---------------------------------------------
                 [
                     'route' => 'backend.admin-univ-usulan.unitkerja.index',
                     'icon' => 'building-2',
@@ -51,9 +59,9 @@
 
         <div class="mb-2">
             <button type="button"
-                class="flex items-center justify-between w-full px-4 py-3 rounded-lg group transition {{ $isMasterActive ? 'bg-gray-100 font-semibold' : 'text-gray-700 hover:bg-gray-100' }}"
-                aria-controls="dropdown-master"
-                aria-expanded="{{ $isMasterActive ? 'true' : 'false' }}">
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg group transition {{ $isMasterActive ? 'bg-gray-100 font-semibold' : 'text-gray-700 hover:bg-gray-100' }}"
+                    aria-controls="dropdown-master"
+                    aria-expanded="{{ $isMasterActive ? 'true' : 'false' }}">
                 <div class="flex items-center">
                     <i data-lucide="database" class="w-5 h-5 mr-3"></i>
                     <span class="font-medium">Master Data</span>
@@ -65,7 +73,7 @@
                 <div class="relative">
                     <a href="{{ route($menu['route']) }}"
                        class="flex items-center px-3 py-2.5 rounded-lg transition
-                       {{ request()->routeIs($menu['pattern']) ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-100' }}">
+                              {{ request()->routeIs($menu['pattern']) ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700 hover:bg-gray-100' }}">
                         <i data-lucide="{{ $menu['icon'] }}" class="w-5 h-5 mr-3"></i>
                         <span class="font-medium">{{ $menu['label'] }}</span>
                     </a>
@@ -78,9 +86,9 @@
         @php $isUsulanActive = request()->is('*/usulan/*'); @endphp
         <div class="mb-2">
             <button type="button"
-                class="flex items-center justify-between w-full px-4 py-3 rounded-lg group transition {{ $isUsulanActive ? 'bg-gray-100 font-semibold' : 'text-gray-700 hover:bg-gray-100' }}"
-                aria-controls="dropdown-usulan"
-                aria-expanded="{{ $isUsulanActive ? 'true' : 'false' }}">
+                    class="flex items-center justify-between w-full px-4 py-3 rounded-lg group transition {{ $isUsulanActive ? 'bg-gray-100 font-semibold' : 'text-gray-700 hover:bg-gray-100' }}"
+                    aria-controls="dropdown-usulan"
+                    aria-expanded="{{ $isUsulanActive ? 'true' : 'false' }}">
                 <div class="flex items-center">
                     <i data-lucide="file-text" class="w-5 h-5 mr-3"></i>
                     <span class="font-medium">Usulan</span>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Backend\AdminUnivUsulan\DashboardController as AdminUni
 use App\Http\Controllers\Backend\PegawaiUnmul\DashboardController as PegawaiUnmulDashboardController;
 use App\Http\Controllers\Backend\AdminFakultas\DashboardController as AdminFakultasDashboardController;
 use App\Http\Controllers\Backend\PenilaiUniversitas\DashboardController as PenilaiUniversitasDashboardController;
+use App\Http\Controllers\Backend\AdminUnivUsulan\DataPegawaiController as DataPegawaiController;
 use App\Http\Controllers\Backend\AdminUnivUsulan\UnitKerjaController as UnitKerjaController;
 use App\Http\Controllers\Backend\AdminUnivUsulan\SubUnitKerjaController as SubUnitKerjaController;
 use App\Http\Controllers\Backend\AdminUnivUsulan\SubSubUnitKerjaController as SubSubUnitKerjaController;
@@ -39,6 +40,14 @@ Route::prefix('admin-universitas-usulan')->group(function () {
 // ------ RUTE HALAMAN BACKEND ADMIN UNIVERSITAS USULAN------//
 Route::prefix('admin-univ-usulan')->name('backend.admin-univ-usulan.')->group(function () {
     Route::get('/dashboard', [AdminUnivUsulanDashboardController::class, 'index'])->name('dashboard');
+
+    // Data Pegawai Routes
+    Route::get('/data-pegawai', [DataPegawaiController::class, 'index'])->name('data-pegawai.index');
+    Route::get('/data-pegawai/create', [DataPegawaiController::class, 'create'])->name('data-pegawai.create');
+    Route::post('/data-pegawai', [DataPegawaiController::class, 'store'])->name('data-pegawai.store');
+    Route::get('/data-pegawai/{pegawai}/edit', [DataPegawaiController::class, 'edit'])->name('data-pegawai.edit');
+    Route::put('/data-pegawai/{pegawai}', [DataPegawaiController::class, 'update'])->name('data-pegawai.update');
+    Route::delete('/data-pegawai/{pegawai}', [DataPegawaiController::class, 'destroy'])->name('data-pegawai.destroy');
 
     // Unit Kerja Routes
     Route::get('/unitkerja', [UnitKerjaController::class, 'index'])->name('unitkerja.index');
