@@ -36,9 +36,9 @@ return new class extends Migration
 
             // Data Kepegawaian (TMT & SK)
             $table->date('tmt_cpns');
-            $table->string('sk_cpns_terakhir'); // Path ke file
+            $table->string('sk_cpns'); // Path ke file
             $table->date('tmt_pns');
-            $table->string('sk_pns_terakhir'); // Path ke file
+            $table->string('sk_pns'); // Path ke file
             $table->date('tmt_pangkat');
             $table->string('sk_pangkat_terakhir'); // Path ke file
             $table->date('tmt_jabatan');

@@ -47,6 +47,9 @@ class Pegawai extends Model
         'skp_tahun_kedua',
         'nilai_konversi',
         'pak_konversi',
+        'sk_cpns',
+        'sk_pns',
+        'role',
     ];
 
     /**
@@ -58,6 +61,8 @@ class Pegawai extends Model
         'tanggal_lahir' => 'date',
         'tmt_pangkat' => 'date',
         'tmt_jabatan' => 'date',
+        'tmt_cpns' => 'date',
+        'tmt_pns' => 'date',
     ];
 
     /**

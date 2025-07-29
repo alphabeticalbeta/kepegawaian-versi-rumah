@@ -4,35 +4,91 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-8">
-    <h2 class="text-2xl font-semibold leading-tight mb-6">
-        {{ isset($pegawai) ? 'Edit Data Pegawai' : 'Tambah Data Pegawai' }}
-    </h2>
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-3xl font-bold leading-tight text-gray-800">
+            {{ isset($pegawai) ? 'Edit Data Pegawai' : 'Tambah Data Pegawai' }}
+        </h2>
+        <a href="{{ route('backend.admin-univ-usulan.data-pegawai.index') }}" class="text-sm text-gray-600 hover:text-indigo-600 flex items-center">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i>
+            Kembali ke Daftar Pegawai
+        </a>
+    </div>
 
-    {{-- Tampilkan error validasi umum jika ada --}}
+
     @if ($errors->any())
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <strong class="font-bold">Oops!</strong>
-            <span class="block sm:inline">Terdapat beberapa kesalahan pada input Anda.</span>
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+            <strong class="font-bold">Oops! Terjadi kesalahan.</strong>
+            <ul class="mt-2 list-disc list-inside text-sm">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
     @endif
 
-    <form action="{{ isset($pegawai) ? route('backend.admin-univ-usulan.data-pegawai.update', $pegawai->id) : route('backend.admin-univ-usulan.data-pegawai.store') }}" method="POST" enctype="multipart/form-data" class="bg-white p-6 rounded-lg shadow-md">
+    <form action="{{ isset($pegawai) ? route('backend.admin-univ-usulan.data-pegawai.update', $pegawai->id) : route('backend.admin-univ-usulan.data-pegawai.store') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
         @csrf
         @if(isset($pegawai))
             @method('PUT')
         @endif
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            {{-- ============================ KOLOM KIRI (INFORMASI UTAMA) =============================== --}}
+            <div class="xl:col-span-2 space-y-8">
+                {{-- CARD: INFORMASI DASAR --}}
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                    <div class="bg-gray-50 -m-6 mb-6 p-4 rounded-t-xl border-b">
+                        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                            <i data-lucide="user-round" class="w-5 h-5 mr-2 text-indigo-500"></i>
+                            Informasi Dasar Pegawai
+                        </h3>
+                    </div>
 
-            {{-- ======================================================================= --}}
-            {{-- ============================ KOLOM KIRI =============================== --}}
-            {{-- ======================================================================= --}}
-            <div class="space-y-6">
-                {{-- KATEGORI: INFORMASI DASAR --}}
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Informasi Dasar Pegawai</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        {{-- ... (bagian informasi dasar tidak berubah) ... --}}
+                    {{-- PERUBAHAN: Tambahkan grid untuk foto dan info dasar --}}
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {{-- KOLOM UNTUK FOTO --}}
+                        <div class="md:col-span-1">
+                             <label for="foto" class="block text-sm font-medium text-gray-700 mb-1">Foto Pegawai</label>
+                             <div class="mt-1">
+                                 {{-- Image preview --}}
+                                 <img id="foto-preview"
+                                      src="{{ isset($pegawai) && $pegawai->foto ? Storage::url($pegawai->foto) : 'https://via.placeholder.com/150' }}"
+                                      alt="Foto Pegawai"
+                                      class="w-32 h-32 object-cover rounded-full mx-auto border-4 border-gray-200 shadow-sm">
+                             </div>
+                             <div class="mt-4">
+                                 <input type="file" name="foto" id="foto" class="block w-full text-sm text-gray-500
+                                     file:mr-4 file:py-2 file:px-4
+                                     file:rounded-full file:border-0
+                                     file:text-sm file:font-semibold
+                                     file:bg-indigo-50 file:text-indigo-700
+                                     hover:file:bg-indigo-100"
+                                     onchange="previewImage(event)">
+                             </div>
+                        </div>
+
+                        {{-- KOLOM UNTUK INFO DASAR --}}
+                        <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div class="sm:col-span-2">
+                                <label for="nama_lengkap" class="block text-sm font-medium text-gray-700">Nama Lengkap (Tanpa Gelar) <span class="text-red-500">*</span></label>
+                                <input type="text" name="nama_lengkap" id="nama_lengkap" value="{{ old('nama_lengkap', $pegawai->nama_lengkap ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div>
+                                <label for="gelar_depan" class="block text-sm font-medium text-gray-700">Gelar Depan</label>
+                                <input type="text" name="gelar_depan" id="gelar_depan" value="{{ old('gelar_depan', $pegawai->gelar_depan ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div>
+                                <label for="gelar_belakang" class="block text-sm font-medium text-gray-700">Gelar Belakang</label>
+                                <input type="text" name="gelar_belakang" id="gelar_belakang" value="{{ old('gelar_belakang', $pegawai->gelar_belakang ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label for="email" class="block text-sm font-medium text-gray-700">Alamat Email <span class="text-red-500">*</span></label>
+                                <input type="email" name="email" id="email" value="{{ old('email', $pegawai->email ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="contoh@email.com">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6 border-t pt-6">
                         <div>
                             <label for="jenis_pegawai" class="block text-sm font-medium text-gray-700">Jenis Pegawai <span class="text-red-500">*</span></label>
                             <select id="jenis_pegawai" name="jenis_pegawai" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
@@ -40,47 +96,26 @@
                                 <option value="Dosen" {{ old('jenis_pegawai', $pegawai->jenis_pegawai ?? '') == 'Dosen' ? 'selected' : '' }}>Dosen</option>
                                 <option value="Tenaga Kependidikan" {{ old('jenis_pegawai', $pegawai->jenis_pegawai ?? '') == 'Tenaga Kependidikan' ? 'selected' : '' }}>Tenaga Kependidikan</option>
                             </select>
-                            @error('jenis_pegawai') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                         <div>
                             <label for="nip" class="block text-sm font-medium text-gray-700">NIP <span class="text-red-500">*</span></label>
                             <input type="text" name="nip" id="nip" value="{{ old('nip', $pegawai->nip ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="18 Karakter Numerik" maxlength="18">
-                            @error('nip') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                         <div id="field_nuptk" class="hidden">
                             <label for="nuptk" class="block text-sm font-medium text-gray-700">NUPTK <span class="text-red-500">*</span></label>
                             <input type="text" name="nuptk" id="nuptk" value="{{ old('nuptk', $pegawai->nuptk ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="16 Karakter Numerik" maxlength="16">
-                            @error('nuptk') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                        </div>
-                        <div>
-                            <label for="gelar_depan" class="block text-sm font-medium text-gray-700">Gelar Depan</label>
-                            <input type="text" name="gelar_depan" id="gelar_depan" value="{{ old('gelar_depan', $pegawai->gelar_depan ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            @error('gelar_depan') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label for="nama_lengkap" class="block text-sm font-medium text-gray-700">Nama Lengkap (Tanpa Gelar) <span class="text-red-500">*</span></label>
-                            <input type="text" name="nama_lengkap" id="nama_lengkap" value="{{ old('nama_lengkap', $pegawai->nama_lengkap ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            @error('nama_lengkap') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                        </div>
-                        <div>
-                            <label for="gelar_belakang" class="block text-sm font-medium text-gray-700">Gelar Belakang</label>
-                            <input type="text" name="gelar_belakang" id="gelar_belakang" value="{{ old('gelar_belakang', $pegawai->gelar_belakang ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            @error('gelar_belakang') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                          <div>
                             <label for="nomor_kartu_pegawai" class="block text-sm font-medium text-gray-700">Nomor Kartu Pegawai</label>
                             <input type="text" name="nomor_kartu_pegawai" id="nomor_kartu_pegawai" value="{{ old('nomor_kartu_pegawai', $pegawai->nomor_kartu_pegawai ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            @error('nomor_kartu_pegawai') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                         <div>
                             <label for="tempat_lahir" class="block text-sm font-medium text-gray-700">Tempat Lahir <span class="text-red-500">*</span></label>
                             <input type="text" name="tempat_lahir" id="tempat_lahir" value="{{ old('tempat_lahir', $pegawai->tempat_lahir ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            @error('tempat_lahir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                         <div>
                             <label for="tanggal_lahir" class="block text-sm font-medium text-gray-700">Tanggal Lahir <span class="text-red-500">*</span></label>
                             <input type="date" name="tanggal_lahir" id="tanggal_lahir" value="{{ old('tanggal_lahir', isset($pegawai) ? $pegawai->tanggal_lahir->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            @error('tanggal_lahir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                         <div>
                             <label for="jenis_kelamin" class="block text-sm font-medium text-gray-700">Jenis Kelamin <span class="text-red-500">*</span></label>
@@ -88,12 +123,10 @@
                                 <option value="Laki-Laki" {{ old('jenis_kelamin', $pegawai->jenis_kelamin ?? '') == 'Laki-Laki' ? 'selected' : '' }}>Laki-Laki</option>
                                 <option value="Perempuan" {{ old('jenis_kelamin', $pegawai->jenis_kelamin ?? '') == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
                             </select>
-                            @error('jenis_kelamin') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                         <div>
                             <label for="nomor_handphone" class="block text-sm font-medium text-gray-700">Nomor Handphone <span class="text-red-500">*</span></label>
                             <input type="text" name="nomor_handphone" id="nomor_handphone" value="{{ old('nomor_handphone', $pegawai->nomor_handphone ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            @error('nomor_handphone') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                          <div class="sm:col-span-2">
                             <label for="unit_kerja_terakhir_id" class="block text-sm font-medium text-gray-700">Unit Kerja Terakhir <span class="text-red-500">*</span></label>
@@ -108,17 +141,21 @@
                                      </option>
                                  @endforeach
                              </select>
-                             <div id="unit_kerja_path_display" class="text-sm text-gray-500 mt-1 font-medium"></div>
-                             @error('unit_kerja_terakhir_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                             <div id="unit_kerja_path_display" class="text-xs text-gray-500 mt-1 font-medium bg-gray-100 p-2 rounded-md"></div>
                         </div>
                     </div>
                 </div>
 
-                {{-- KATEGORI: PENDIDIKAN --}}
-                <div>
-                     <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Pendidikan Pegawai</h3>
+                {{-- CARD: PENDIDIKAN & BERKAS --}}
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                     <div class="bg-gray-50 -m-6 mb-6 p-4 rounded-t-xl border-b">
+                        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                            <i data-lucide="graduation-cap" class="w-5 h-5 mr-2 text-indigo-500"></i>
+                            Pendidikan & Berkas Terkait
+                        </h3>
+                    </div>
                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                         <div>
+                        <div>
                              <label for="pendidikan_terakhir" class="block text-sm font-medium text-gray-700">Pendidikan Terakhir <span class="text-red-500">*</span></label>
                              @php
                                  $pendidikanOptions = ['SD', 'SLTP/Sederajat', 'SLTA/Sederajat', 'Diploma Satu (D1)', 'Diploma Dua (D2)', 'Diploma Tiga (D3)', 'Diploma Empat (D4)/ Sarjana (S1)', 'Magister (S2)', 'Doktor (S3)'];
@@ -128,73 +165,131 @@
                                      <option value="{{ $option }}" {{ old('pendidikan_terakhir', $pegawai->pendidikan_terakhir ?? '') == $option ? 'selected' : '' }}>{{ $option }}</option>
                                  @endforeach
                              </select>
-                              @error('pendidikan_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                          </div>
-                         <div>
-                             <label for="ijazah_terakhir" class="block text-sm font-medium text-gray-700">Ijazah Terakhir <span class="text-red-500">*</span></label>
-                             <input type="file" name="ijazah_terakhir" id="ijazah_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                             {{-- TAUTAN FILE SAAT INI --}}
-                             @if(isset($pegawai) && $pegawai->ijazah_terakhir)
-                                <div class="mt-2">
-                                    <a href="{{ Storage::url($pegawai->ijazah_terakhir) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
-                                        Lihat File Saat Ini
-                                    </a>
-                                </div>
-                             @endif
-                             @error('ijazah_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                        <div class="sm:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {{-- TAMPILAN INPUT FILE --}}
+                            <div>
+                                <label for="ijazah_terakhir" class="block text-sm font-medium text-gray-700 mb-1">Ijazah Terakhir <span class="text-red-500">*</span></label>
+                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
+                                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                    </div>
+                                    <input id="ijazah_terakhir" name="ijazah_terakhir" type="file" class="hidden" />
+                                </label>
+                                @if(isset($pegawai) && $pegawai->ijazah_terakhir)
+                                <div class="mt-2 text-center"><a href="{{ route('backend.admin-univ-usulan.data-pegawai.show-document', ['pegawai' => $pegawai, 'field' => 'ijazah_terakhir']) }}" target="_blank" class="text-xs text-blue-600 hover:underline">Lihat File Saat Ini</a></div>
+                                @endif
+                            </div>
+                            <div>
+                                <label for="transkrip_nilai_terakhir" class="block text-sm font-medium text-gray-700 mb-1">Transkrip Nilai <span class="text-red-500">*</span></label>
+                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
+                                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                    </div>
+                                    <input id="transkrip_nilai_terakhir" name="transkrip_nilai_terakhir" type="file" class="hidden" />
+                                </label>
+                                 @if(isset($pegawai) && $pegawai->transkrip_nilai_terakhir)
+                                <div class="mt-2 text-center"><a href="{{ route('backend.admin-univ-usulan.data-pegawai.show-document', ['pegawai' => $pegawai, 'field' => 'transkrip_nilai_terakhir']) }}" target="_blank" class="text-xs text-blue-600 hover:underline">Lihat File Saat Ini</a></div>
+                                @endif
+                            </div>
+                        </div>
+
+                         <div class="sm:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="sk_penyetaraan_ijazah" class="block text-sm font-medium text-gray-700 mb-1">SK Penyetaraan Ijazah</label>
+                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
+                                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                    </div>
+                                    <input id="sk_penyetaraan_ijazah" name="sk_penyetaraan_ijazah" type="file" class="hidden" />
+                                </label>
+                                 @if(isset($pegawai) && $pegawai->sk_penyetaraan_ijazah)
+                                <div class="mt-2 text-center"><a href="{{ route('backend.admin-univ-usulan.data-pegawai.show-document', ['pegawai' => $pegawai, 'field' => 'sk_penyetaraan_ijazah']) }}" target="_blank" class="text-xs text-blue-600 hover:underline">Lihat File Saat Ini</a></div>
+                                @endif
+                            </div>
+                            <div>
+                                <label for="disertasi_thesis_terakhir" class="block text-sm font-medium text-gray-700 mb-1">Disertasi/Thesis</label>
+                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
+                                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                    </div>
+                                    <input id="disertasi_thesis_terakhir" name="disertasi_thesis_terakhir" type="file" class="hidden" />
+                                </label>
+                                 @if(isset($pegawai) && $pegawai->disertasi_thesis_terakhir)
+                                <div class="mt-2 text-center"><a href="{{ route('backend.admin-univ-usulan.data-pegawai.show-document', ['pegawai' => $pegawai, 'field' => 'disertasi_thesis_terakhir']) }}" target="_blank" class="text-xs text-blue-600 hover:underline">Lihat File Saat Ini</a></div>
+                                @endif
+                            </div>
                          </div>
-                         <div>
-                             <label for="transkrip_nilai_terakhir" class="block text-sm font-medium text-gray-700">Transkrip Nilai Terakhir <span class="text-red-500">*</span></label>
-                             <input type="file" name="transkrip_nilai_terakhir" id="transkrip_nilai_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                             {{-- TAUTAN FILE SAAT INI --}}
-                             @if(isset($pegawai) && $pegawai->transkrip_nilai_terakhir)
-                                <div class="mt-2">
-                                    <a href="{{ Storage::url($pegawai->transkrip_nilai_terakhir) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
-                                        Lihat File Saat Ini
-                                    </a>
-                                </div>
-                             @endif
-                             @error('transkrip_nilai_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                         </div>
-                          <div>
-                             <label for="sk_penyetaraan_ijazah" class="block text-sm font-medium text-gray-700">SK Penyetaraan Ijazah (Luar Negeri)</label>
-                             <input type="file" name="sk_penyetaraan_ijazah" id="sk_penyetaraan_ijazah" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                             {{-- TAUTAN FILE SAAT INI --}}
-                             @if(isset($pegawai) && $pegawai->sk_penyetaraan_ijazah)
-                                <div class="mt-2">
-                                    <a href="{{ Storage::url($pegawai->sk_penyetaraan_ijazah) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
-                                        Lihat File Saat Ini
-                                    </a>
-                                </div>
-                             @endif
-                             @error('sk_penyetaraan_ijazah') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                         </div>
-                         <div class="sm:col-span-2">
-                             <label for="disertasi_thesis_terakhir" class="block text-sm font-medium text-gray-700">Disertasi/Thesis Terakhir (Cover s/d Latar Belakang)</label>
-                             <input type="file" name="disertasi_thesis_terakhir" id="disertasi_thesis_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                             {{-- TAUTAN FILE SAAT INI --}}
-                             @if(isset($pegawai) && $pegawai->disertasi_thesis_terakhir)
-                                <div class="mt-2">
-                                    <a href="{{ Storage::url($pegawai->disertasi_thesis_terakhir) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
-                                        Lihat File Saat Ini
-                                    </a>
-                                </div>
-                             @endif
-                             @error('disertasi_thesis_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                         </div>
+                     </div>
+                </div>
+
+                {{-- CARD: INFORMASI CPNS & PNS --}}
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                     <div class="bg-gray-50 -m-6 mb-6 p-4 rounded-t-xl border-b">
+                        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                            <i data-lucide="file-badge-2" class="w-5 h-5 mr-2 text-indigo-500"></i>
+                            Informasi CPNS & PNS
+                        </h3>
+                    </div>
+                     <div class="space-y-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label for="tmt_cpns" class="block text-sm font-medium text-gray-700">TMT CPNS</label>
+                                <input type="date" name="tmt_cpns" id="tmt_cpns" value="{{ old('tmt_cpns', isset($pegawai) && $pegawai->tmt_cpns ? $pegawai->tmt_cpns->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div>
+                                <label for="sk_cpns" class="block text-sm font-medium text-gray-700 mb-1">SK CPNS</label>
+                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
+                                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                    </div>
+                                    <input id="sk_cpns" name="sk_cpns" type="file" class="hidden" />
+                                </label>
+                                @if(isset($pegawai) && $pegawai->sk_cpns)
+                                <div class="mt-2 text-center"><a href="{{ route('backend.admin-univ-usulan.data-pegawai.show-document', ['pegawai' => $pegawai, 'field' => 'sk_cpns']) }}" target="_blank" class="text-xs text-blue-600 hover:underline">Lihat File Saat Ini</a></div>
+                                @endif
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label for="tmt_pns" class="block text-sm font-medium text-gray-700">TMT PNS</label>
+                                <input type="date" name="tmt_pns" id="tmt_pns" value="{{ old('tmt_pns', isset($pegawai) && $pegawai->tmt_pns ? $pegawai->tmt_pns->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div>
+                                <label for="sk_pns" class="block text-sm font-medium text-gray-700 mb-1">SK PNS</label>
+                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
+                                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                    </div>
+                                    <input id="sk_pns" name="sk_pns" type="file" class="hidden" />
+                                </label>
+                                @if(isset($pegawai) && $pegawai->sk_pns)
+                                <div class="mt-2 text-center"><a href="{{ route('backend.admin-univ-usulan.data-pegawai.show-document', ['pegawai' => $pegawai, 'field' => 'sk_pns']) }}" target="_blank" class="text-xs text-blue-600 hover:underline">Lihat File Saat Ini</a></div>
+                                @endif
+                            </div>
+                        </div>
                      </div>
                 </div>
             </div>
 
-            {{-- ======================================================================= --}}
-            {{-- ============================ KOLOM KANAN ============================== --}}
-            {{-- ======================================================================= --}}
-            <div class="space-y-6">
-                {{-- KATEGORI: INFORMASI PANGKAT & JABATAN --}}
-                <div>
-                     <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Informasi Pangkat & Jabatan</h3>
-                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                        <div class="sm:col-span-3">
+            {{-- ============================ KOLOM KANAN (INFORMASI KEPEGAWAIAN) ============================== --}}
+            <div class="xl:col-span-1 space-y-8">
+                {{-- CARD: PANGKAT & JABATAN --}}
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                     <div class="bg-gray-50 -m-6 mb-6 p-4 rounded-t-xl border-b">
+                        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                            <i data-lucide="shield-check" class="w-5 h-5 mr-2 text-indigo-500"></i>
+                            Pangkat & Jabatan
+                        </h3>
+                    </div>
+                     <div class="space-y-6">
+                        <div>
                             <label for="pangkat_terakhir_id" class="block text-sm font-medium text-gray-700">Pangkat Terakhir <span class="text-red-500">*</span></label>
                             <select name="pangkat_terakhir_id" id="pangkat_terakhir_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                                 <option value="">Pilih Pangkat</option>
@@ -204,27 +299,25 @@
                                     </option>
                                 @endforeach
                             </select>
-                            @error('pangkat_terakhir_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                         <div>
                             <label for="tmt_pangkat" class="block text-sm font-medium text-gray-700">TMT Pangkat <span class="text-red-500">*</span></label>
                             <input type="date" name="tmt_pangkat" id="tmt_pangkat" value="{{ old('tmt_pangkat', isset($pegawai) ? $pegawai->tmt_pangkat->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            @error('tmt_pangkat') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
-                        <div class="sm:col-span-2">
-                            <label for="sk_pangkat_terakhir" class="block text-sm font-medium text-gray-700">SK Pangkat Terakhir <span class="text-red-500">*</span></label>
-                            <input type="file" name="sk_pangkat_terakhir" id="sk_pangkat_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                            {{-- TAUTAN FILE SAAT INI --}}
-                            @if(isset($pegawai) && $pegawai->sk_pangkat_terakhir)
-                               <div class="mt-2">
-                                   <a href="{{ Storage::url($pegawai->sk_pangkat_terakhir) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
-                                       Lihat File Saat Ini
-                                   </a>
-                               </div>
+                        <div>
+                            <label for="sk_pangkat_terakhir" class="block text-sm font-medium text-gray-700 mb-1">SK Pangkat Terakhir <span class="text-red-500">*</span></label>
+                            <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
+                                    <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                </div>
+                                <input id="sk_pangkat_terakhir" name="sk_pangkat_terakhir" type="file" class="hidden" />
+                            </label>
+                             @if(isset($pegawai) && $pegawai->sk_pangkat_terakhir)
+                            <div class="mt-2 text-center"><a href="{{ route('backend.admin-univ-usulan.data-pegawai.show-document', ['pegawai' => $pegawai, 'field' => 'sk_pangkat_terakhir']) }}" target="_blank" class="text-xs text-blue-600 hover:underline">Lihat File Saat Ini</a></div>
                             @endif
-                            @error('sk_pangkat_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
-                        <div class="sm:col-span-3">
+                         <div>
                             <label for="jabatan_terakhir_id" class="block text-sm font-medium text-gray-700">
                                 Jabatan Terakhir <span id="jenis_jabatan_display" class="text-indigo-600 font-normal"></span>
                                 <span class="text-red-500">*</span>
@@ -240,140 +333,144 @@
                                     </option>
                                 @endforeach
                             </select>
-                            @error('jabatan_terakhir_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                         <div>
                             <label for="tmt_jabatan" class="block text-sm font-medium text-gray-700">TMT Jabatan <span class="text-red-500">*</span></label>
                             <input type="date" name="tmt_jabatan" id="tmt_jabatan" value="{{ old('tmt_jabatan', isset($pegawai) ? $pegawai->tmt_jabatan->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                            @error('tmt_jabatan') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
-                        <div class="sm:col-span-2">
-                            <label for="sk_jabatan_terakhir" class="block text-sm font-medium text-gray-700">SK Jabatan Terakhir <span class="text-red-500">*</span></label>
-                            <input type="file" name="sk_jabatan_terakhir" id="sk_jabatan_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                            {{-- TAUTAN FILE SAAT INI --}}
-                            @if(isset($pegawai) && $pegawai->sk_jabatan_terakhir)
-                               <div class="mt-2">
-                                   <a href="{{ Storage::url($pegawai->sk_jabatan_terakhir) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
-                                       Lihat File Saat Ini
-                                   </a>
-                               </div>
+                        <div>
+                            <label for="sk_jabatan_terakhir" class="block text-sm font-medium text-gray-700 mb-1">SK Jabatan Terakhir <span class="text-red-500">*</span></label>
+                             <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
+                                    <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                </div>
+                                <input id="sk_jabatan_terakhir" name="sk_jabatan_terakhir" type="file" class="hidden" />
+                            </label>
+                             @if(isset($pegawai) && $pegawai->sk_jabatan_terakhir)
+                            <div class="mt-2 text-center"><a href="{{ route('backend.admin-univ-usulan.data-pegawai.show-document', ['pegawai' => $pegawai, 'field' => 'sk_jabatan_terakhir']) }}" target="_blank" class="text-xs text-blue-600 hover:underline">Lihat File Saat Ini</a></div>
                             @endif
-                            @error('sk_jabatan_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                      </div>
                 </div>
 
-                {{-- KATEGORI: BERKAS & KINERJA --}}
-                <div>
-                     <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Informasi Berkas & Kinerja</h3>
-                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        @php
-                            $kinerjaOptions = ['Sangat Baik', 'Baik', 'Cukup', 'Kurang', 'Sangat Kurang'];
-                        @endphp
-                        <div>
-                            <label for="predikat_kinerja_tahun_pertama" class="block text-sm font-medium text-gray-700">Predikat Kinerja Tahun Pertama <span class="text-red-500">*</span></label>
-                            <select name="predikat_kinerja_tahun_pertama" id="predikat_kinerja_tahun_pertama" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                @foreach($kinerjaOptions as $option)
-                                    <option value="{{ $option }}" {{ old('predikat_kinerja_tahun_pertama', $pegawai->predikat_kinerja_tahun_pertama ?? '') == $option ? 'selected' : '' }}>{{ $option }}</option>
-                                @endforeach
-                            </select>
-                            @error('predikat_kinerja_tahun_pertama') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                        </div>
-                        <div>
-                            <label for="skp_tahun_pertama" class="block text-sm font-medium text-gray-700">SKP Tahun Pertama <span class="text-red-500">*</span></label>
-                            <input type="file" name="skp_tahun_pertama" id="skp_tahun_pertama" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                            {{-- TAUTAN FILE SAAT INI --}}
-                            @if(isset($pegawai) && $pegawai->skp_tahun_pertama)
-                               <div class="mt-2">
-                                   <a href="{{ Storage::url($pegawai->skp_tahun_pertama) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
-                                       Lihat File Saat Ini
-                                   </a>
-                               </div>
-                            @endif
-                            @error('skp_tahun_pertama') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                        </div>
-                         <div>
-                            <label for="predikat_kinerja_tahun_kedua" class="block text-sm font-medium text-gray-700">Predikat Kinerja Tahun Kedua <span class="text-red-500">*</span></label>
-                            <select name="predikat_kinerja_tahun_kedua" id="predikat_kinerja_tahun_kedua" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                @foreach($kinerjaOptions as $option)
-                                    <option value="{{ $option }}" {{ old('predikat_kinerja_tahun_kedua', $pegawai->predikat_kinerja_tahun_kedua ?? '') == $option ? 'selected' : '' }}>{{ $option }}</option>
-                                @endforeach
-                            </select>
-                            @error('predikat_kinerja_tahun_kedua') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                        </div>
-                        <div>
-                            <label for="skp_tahun_kedua" class="block text-sm font-medium text-gray-700">SKP Tahun Kedua <span class="text-red-500">*</span></label>
-                            <input type="file" name="skp_tahun_kedua" id="skp_tahun_kedua" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                            {{-- TAUTAN FILE SAAT INI --}}
-                            @if(isset($pegawai) && $pegawai->skp_tahun_kedua)
-                               <div class="mt-2">
-                                   <a href="{{ Storage::url($pegawai->skp_tahun_kedua) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
-                                       Lihat File Saat Ini
-                                   </a>
-                               </div>
-                            @endif
-                            @error('skp_tahun_kedua') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="md:col-span-2">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                                <div id="field_nilai_konversi" class="hidden">
-                                    <label for="nilai_konversi" class="block text-sm font-medium text-gray-700">Nilai Konversi <span class="text-red-500">*</span></label>
-                                    <input type="number" name="nilai_konversi" id="nilai_konversi" step="any" value="{{ old('nilai_konversi', $pegawai->nilai_konversi ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Contoh: 112.50">
-                                    @error('nilai_konversi') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                </div>
-                                <div id="field_pak_konversi" class="hidden">
-                                    <label for="pak_konversi" class="block text-sm font-medium text-gray-700">PAK Konversi</label>
-                                    <input type="file" name="pak_konversi" id="pak_konversi" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                                    {{-- TAUTAN FILE SAAT INI --}}
-                                    @if(isset($pegawai) && $pegawai->pak_konversi)
-                                       <div class="mt-2">
-                                           <a href="{{ Storage::url($pegawai->pak_konversi) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
-                                               Lihat File Saat Ini
-                                           </a>
-                                       </div>
-                                    @endif
-                                    @error('pak_konversi') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                </div>
+                 {{-- CARD: KINERJA & KONVERSI --}}
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                     <div class="bg-gray-50 -m-6 mb-6 p-4 rounded-t-xl border-b">
+                        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                            <i data-lucide="bar-chart-3" class="w-5 h-5 mr-2 text-indigo-500"></i>
+                            Kinerja & Konversi
+                        </h3>
+                    </div>
+                     <div class="grid grid-cols-1 gap-6">
+                        @php $kinerjaOptions = ['Sangat Baik', 'Baik', 'Cukup', 'Kurang', 'Sangat Kurang']; @endphp
+                        <div class="grid grid-cols-2 gap-6">
+                            <div>
+                                <label for="predikat_kinerja_tahun_pertama" class="block text-sm font-medium text-gray-700">Predikat Kinerja Thn. 1 <span class="text-red-500">*</span></label>
+                                <select name="predikat_kinerja_tahun_pertama" id="predikat_kinerja_tahun_pertama" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    @foreach($kinerjaOptions as $option)
+                                        <option value="{{ $option }}" {{ old('predikat_kinerja_tahun_pertama', $pegawai->predikat_kinerja_tahun_pertama ?? '') == $option ? 'selected' : '' }}>{{ $option }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                             <div>
+                                <label for="predikat_kinerja_tahun_kedua" class="block text-sm font-medium text-gray-700">Predikat Kinerja Thn. 2 <span class="text-red-500">*</span></label>
+                                <select name="predikat_kinerja_tahun_kedua" id="predikat_kinerja_tahun_kedua" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    @foreach($kinerjaOptions as $option)
+                                        <option value="{{ $option }}" {{ old('predikat_kinerja_tahun_kedua', $pegawai->predikat_kinerja_tahun_kedua ?? '') == $option ? 'selected' : '' }}>{{ $option }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
+                         <div class="grid grid-cols-2 gap-6">
+                             <div>
+                                <label for="skp_tahun_pertama" class="block text-sm font-medium text-gray-700 mb-1">SKP Tahun Pertama <span class="text-red-500">*</span></label>
+                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
+                                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                    </div>
+                                    <input id="skp_tahun_pertama" name="skp_tahun_pertama" type="file" class="hidden" />
+                                </label>
+                                 @if(isset($pegawai) && $pegawai->skp_tahun_pertama)
+                                <div class="mt-2 text-center"><a href="{{ route('backend.admin-univ-usulan.data-pegawai.show-document', ['pegawai' => $pegawai, 'field' => 'skp_tahun_pertama']) }}" target="_blank" class="text-xs text-blue-600 hover:underline">Lihat File Saat Ini</a></div>
+                                @endif
+                            </div>
+                            <div>
+                                <label for="skp_tahun_kedua" class="block text-sm font-medium text-gray-700 mb-1">SKP Tahun Kedua <span class="text-red-500">*</span></label>
+                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
+                                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                    </div>
+                                    <input id="skp_tahun_kedua" name="skp_tahun_kedua" type="file" class="hidden" />
+                                </label>
+                                 @if(isset($pegawai) && $pegawai->skp_tahun_kedua)
+                                <div class="mt-2 text-center"><a href="{{ route('backend.admin-univ-usulan.data-pegawai.show-document', ['pegawai' => $pegawai, 'field' => 'skp_tahun_kedua']) }}" target="_blank" class="text-xs text-blue-600 hover:underline">Lihat File Saat Ini</a></div>
+                                @endif
+                            </div>
+                         </div>
+                        <div id="field_nilai_konversi" class="hidden">
+                            <label for="nilai_konversi" class="block text-sm font-medium text-gray-700">Nilai Konversi <span class="text-red-500">*</span></label>
+                            <input type="number" name="nilai_konversi" id="nilai_konversi" step="any" value="{{ old('nilai_konversi', $pegawai->nilai_konversi ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Contoh: 112.50">
+                        </div>
+                        <div id="field_pak_konversi" class="hidden">
+                            <label for="pak_konversi" class="block text-sm font-medium text-gray-700 mb-1">PAK Konversi</label>
+                            <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
+                                    <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                </div>
+                                <input id="pak_konversi" name="pak_konversi" type="file" class="hidden" />
+                            </label>
+                             @if(isset($pegawai) && $pegawai->pak_konversi)
+                            <div class="mt-2 text-center"><a href="{{ route('backend.admin-univ-usulan.data-pegawai.show-document', ['pegawai' => $pegawai, 'field' => 'pak_konversi']) }}" target="_blank" class="text-xs text-blue-600 hover:underline">Lihat File Saat Ini</a></div>
+                            @endif
+                        </div>
                      </div>
                 </div>
 
+
                  {{-- KATEGORI: SPESIFIK DOSEN --}}
-                <div id="dosen_fields_wrapper" class="hidden">
-                     <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Informasi Spesifik Dosen</h3>
-                     <div class="grid grid-cols-1 gap-6">
+                <div id="dosen_fields_wrapper" class="hidden bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                     <div class="bg-gray-50 -m-6 mb-6 p-4 rounded-t-xl border-b">
+                        <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                            <i data-lucide="book-marked" class="w-5 h-5 mr-2 text-indigo-500"></i>
+                            Informasi Spesifik Dosen
+                        </h3>
+                    </div>
+                     <div class="space-y-6">
                         <div>
                             <label for="mata_kuliah_diampu" class="block text-sm font-medium text-gray-700">Mata Kuliah yang diampu <span class="text-red-500">*</span></label>
                             <textarea name="mata_kuliah_diampu" id="mata_kuliah_diampu" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">{{ old('mata_kuliah_diampu', $pegawai->mata_kuliah_diampu ?? '') }}</textarea>
-                            @error('mata_kuliah_diampu') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                         <div>
                             <label for="ranting_ilmu_kepakaran" class="block text-sm font-medium text-gray-700">Ranting Ilmu / Kepakaran <span class="text-red-500">*</span></label>
                             <textarea name="ranting_ilmu_kepakaran" id="ranting_ilmu_kepakaran" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">{{ old('ranting_ilmu_kepakaran', $pegawai->ranting_ilmu_kepakaran ?? '') }}</textarea>
-                            @error('ranting_ilmu_kepakaran') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                         <div>
                             <label for="url_profil_sinta" class="block text-sm font-medium text-gray-700">URL Profil Akun Sinta <span class="text-red-500">*</span></label>
                             <input type="url" name="url_profil_sinta" id="url_profil_sinta" value="{{ old('url_profil_sinta', $pegawai->url_profil_sinta ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="https://sinta.kemdikbud.go.id/...">
-                            @error('url_profil_sinta') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                      </div>
                 </div>
             </div>
         </div>
 
-        <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end">
-            <a href="{{ route('backend.admin-univ-usulan.data-pegawai.index') }}" class="bg-gray-200 hover:bg-gray-300 text-black font-bold py-2 px-4 rounded mr-2">
+        {{-- PERUBAHAN TAMPILAN TOMBOL AKSI --}}
+        <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end items-center gap-4">
+            <a href="{{ route('backend.admin-univ-usulan.data-pegawai.index') }}" class="text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2">
                 Batal
             </a>
-            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            <button type="submit" class="inline-flex items-center justify-center px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105">
+                 <i data-lucide="save" class="w-4 h-4 mr-2"></i>
                 {{ isset($pegawai) ? 'Simpan Perubahan' : 'Simpan Data' }}
             </button>
         </div>
     </form>
 </div>
 
+{{-- SCRIPT TIDAK BERUBAH --}}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // --- Selektor Elemen ---
@@ -457,7 +554,7 @@
 
             // --- KONDISI UNTUK FIELD SPESIFIK DOSEN LAINNYA ---
             // Field dosen lainnya (mata kuliah, ranting ilmu, sinta) tetap tampil untuk semua jenis dosen
-            const isDosen = selectedJenisPegawai === 'Dosen';
+            const isDosen = jenisPegawaiSelect.value === 'Dosen';
             dosenFieldsWrapper.classList.toggle('hidden', !isDosen);
         }
 

@@ -10,6 +10,8 @@ use App\Models\SubSubUnitKerja;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
+// PERUBAHAN 1: Tambahkan use statement untuk File facade dengan alias FileFacade
+use Illuminate\Support\Facades\File as FileFacade;
 
 class DataPegawaiController extends Controller
 {
@@ -20,8 +22,7 @@ class DataPegawaiController extends Controller
     {
         // Eager load relasi untuk optimasi query
         $pegawais = Pegawai::with(['pangkat', 'jabatan', 'unitKerja'])
-            ->orderBy('gelar_depan')
-            ->orderBy('gelar_belakang')
+            ->orderBy('nama_lengkap')
             ->paginate(10);
 
         return view('backend.layouts.admin-univ-usulan.data-pegawai.master-datapegawai', compact('pegawais'));
@@ -84,11 +85,11 @@ class DataPegawaiController extends Controller
      */
     public function destroy(Pegawai $pegawai)
     {
-        // Hapus semua file terkait sebelum menghapus data dari database
         $fileColumns = [
             'sk_pangkat_terakhir', 'sk_jabatan_terakhir',
             'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir',
-            'pak_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua'
+            'pak_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua',
+            'sk_cpns', 'sk_pns', 'foto'
         ];
 
         foreach ($fileColumns as $column) {
@@ -105,14 +106,13 @@ class DataPegawaiController extends Controller
 
     public function show(Pegawai $pegawai)
     {
-        // Eager load relasi untuk data yang akan ditampilkan
         $pegawai->load(['pangkat', 'jabatan', 'unitKerja.subUnitKerja.unitKerja']);
 
         return view('backend.layouts.admin-univ-usulan.data-pegawai.show-datapegawai', compact('pegawai'));
     }
 
     /**
-     *Reusable validation logic.
+     * Reusable validation logic.
      */
     private function validateRequest(Request $request, $pegawaiId = null)
     {
@@ -121,6 +121,7 @@ class DataPegawaiController extends Controller
             'nip' => 'required|numeric|digits:18|unique:pegawais,nip,' . $pegawaiId,
             'gelar_depan' => 'nullable|string|max:255',
             'nama_lengkap' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:pegawais,email,' . $pegawaiId,
             'gelar_belakang' => 'nullable|string|max:255',
             'nomor_kartu_pegawai' => 'nullable|string|max:255',
             'tempat_lahir' => 'required|string|max:255',
@@ -135,18 +136,20 @@ class DataPegawaiController extends Controller
             'predikat_kinerja_tahun_kedua' => 'required|string',
             'unit_kerja_terakhir_id' => 'required|exists:sub_sub_unit_kerjas,id',
             'nomor_handphone' => 'required|string',
-            // --- Conditional & Optional Rules ---
+            'tmt_cpns' => 'nullable|date',
+            'tmt_pns' => 'nullable|date',
             'nuptk' => 'nullable|numeric|digits:16',
             'mata_kuliah_diampu' => 'nullable|required_if:jenis_pegawai,Dosen|string',
             'ranting_ilmu_kepakaran' => 'nullable|required_if:jenis_pegawai,Dosen|string',
             'url_profil_sinta' => 'nullable|required_if:jenis_pegawai,Dosen|url',
             'nilai_konversi' => 'nullable|numeric',
-            // --- File Upload Rules ---
+            'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
             'sk_penyetaraan_ijazah' => ['nullable', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
             'disertasi_thesis_terakhir' => ['nullable', File::types(['pdf'])->max(10 * 1024)],
+            'sk_cpns' => ['nullable', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
+            'sk_pns' => ['nullable', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
         ];
 
-        // Aturan file yang wajib saat create, tapi opsional saat update
         $fileRules = [
             'sk_pangkat_terakhir' => ['required', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
             'sk_jabatan_terakhir' => ['required', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
@@ -157,11 +160,11 @@ class DataPegawaiController extends Controller
             'pak_konversi' => ['nullable', File::types(['pdf'])->max(2 * 1024)],
         ];
 
-        if ($pegawaiId) { // Jika ini adalah update, file tidak wajib diisi ulang
+        if ($pegawaiId) {
             foreach ($fileRules as $key => $value) {
                 $rules[$key] = ['nullable', ...array_slice($value, 1)];
             }
-        } else { // Jika ini adalah create, semua file wajib
+        } else {
              $rules = array_merge($rules, $fileRules);
         }
 
@@ -176,19 +179,55 @@ class DataPegawaiController extends Controller
         $fileColumns = [
             'sk_pangkat_terakhir', 'sk_jabatan_terakhir',
             'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir',
-            'pak_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua'
+            'pak_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua',
+            'sk_cpns', 'sk_pns', 'foto'
         ];
 
         foreach ($fileColumns as $column) {
             if ($request->hasFile($column)) {
-                // Hapus file lama jika ada (saat update)
                 if ($pegawai && $pegawai->$column) {
                     Storage::disk('public')->delete($pegawai->$column);
                 }
-                // Simpan file baru dan update path di data yang akan divalidasi
                 $path = $request->file($column)->store('pegawai-files/' . $column, 'public');
                 $validatedData[$column] = $path;
             }
         }
+    }
+
+    /**
+     * PERUBAHAN 2: Ganti seluruh isi method showDocument ini
+     */
+    public function showDocument(Pegawai $pegawai, $field)
+    {
+        $allowedFields = [
+            'sk_pangkat_terakhir', 'sk_jabatan_terakhir',
+            'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir',
+            'pak_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua',
+            'sk_cpns', 'sk_pns', 'foto'
+        ];
+
+        if (!in_array($field, $allowedFields)) {
+            abort(404, 'Jenis dokumen tidak valid.');
+        }
+
+        $filePath = $pegawai->$field;
+        if (!$filePath || !Storage::disk('public')->exists($filePath)) {
+            abort(404, 'File tidak ditemukan.');
+        }
+
+        // Ambil path lengkap ke file
+        $path = Storage::disk('public')->path($filePath);
+
+        // Ambil tipe MIME menggunakan File Facade yang sudah diberi alias
+        $mimeType = FileFacade::mimeType($path);
+
+        // Siapkan header untuk menampilkan file secara inline
+        $headers = [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . basename($path) . '"',
+        ];
+
+        // Gunakan response()->file() untuk mengirim file ke browser
+        return response()->file($path, $headers);
     }
 }
