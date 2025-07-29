@@ -44,12 +44,14 @@ class Pegawai extends Model
         'disertasi_thesis_terakhir',
         'mata_kuliah_diampu',
         'ranting_ilmu_kepakaran',
-        'sk_konversi',
         'url_profil_sinta',
         'predikat_kinerja_tahun_pertama',
         'skp_tahun_pertama',
         'predikat_kinerja_tahun_kedua',
         'skp_tahun_kedua',
+        'nilai_konversi',
+        'pak_konversi',
+
     ];
 
     /**

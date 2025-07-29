@@ -34,7 +34,7 @@ class DataPegawaiController extends Controller
     {
         $pangkats = Pangkat::orderBy('pangkat')->get();
         $jabatans = Jabatan::orderBy('jabatan')->get();
-        $unitKerjas = SubSubUnitKerja::orderBy('nama')->get();
+        $unitKerjas = SubSubUnitKerja::with('subUnitKerja.unitKerja')->orderBy('nama')->get();
 
         return view('backend.layouts.admin-univ-usulan.data-pegawai.form-datapegawai', compact('pangkats', 'jabatans', 'unitKerjas'));
     }
@@ -60,7 +60,7 @@ class DataPegawaiController extends Controller
     {
         $pangkats = Pangkat::orderBy('pangkat')->get();
         $jabatans = Jabatan::orderBy('jabatan')->get();
-        $unitKerjas = SubSubUnitKerja::orderBy('nama')->get();
+        $unitKerjas = SubSubUnitKerja::with('subUnitKerja.unitKerja')->orderBy('nama')->get();
 
         return view('backend.layouts.admin-univ-usulan.data-pegawai.form-datapegawai', compact('pegawai', 'pangkats', 'jabatans', 'unitKerjas'));
     }
@@ -88,7 +88,7 @@ class DataPegawaiController extends Controller
         $fileColumns = [
             'sk_cpns_terakhir', 'sk_pns_terakhir', 'sk_pangkat_terakhir', 'sk_jabatan_terakhir',
             'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir',
-            'sk_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua'
+            'pak_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua'
         ];
 
         foreach ($fileColumns as $column) {
@@ -134,7 +134,7 @@ class DataPegawaiController extends Controller
             'mata_kuliah_diampu' => 'nullable|required_if:jenis_pegawai,Dosen|string',
             'ranting_ilmu_kepakaran' => 'nullable|required_if:jenis_pegawai,Dosen|string',
             'url_profil_sinta' => 'nullable|required_if:jenis_pegawai,Dosen|url',
-            'sk_konversi' => 'nullable', // Logika required_if bisa lebih kompleks jika perlu
+            'angka_konversi' => 'nullable', // Logika required_if bisa lebih kompleks jika perlu
             // --- File Upload Rules ---
             'sk_penyetaraan_ijazah' => ['nullable', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
             'disertasi_thesis_terakhir' => ['nullable', File::types(['pdf'])->max(10 * 1024)],
@@ -150,6 +150,7 @@ class DataPegawaiController extends Controller
             'transkrip_nilai_terakhir' => ['required', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
             'skp_tahun_pertama' => ['required', File::types(['pdf'])->max(2 * 1024)],
             'skp_tahun_kedua' => ['required', File::types(['pdf'])->max(2 * 1024)],
+            'pak_konversi' => ['nullable', File::types(['pdf'])->max(2 * 1024)],
         ];
 
         if ($pegawaiId) { // Jika ini adalah update, file tidak wajib diisi ulang
@@ -171,7 +172,7 @@ class DataPegawaiController extends Controller
         $fileColumns = [
             'sk_cpns_terakhir', 'sk_pns_terakhir', 'sk_pangkat_terakhir', 'sk_jabatan_terakhir',
             'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir',
-            'sk_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua'
+            'pak_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua'
         ];
 
         foreach ($fileColumns as $column) {

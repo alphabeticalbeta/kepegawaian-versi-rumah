@@ -54,7 +54,6 @@ return new class extends Migration
             // Data Fungsional (jika dosen, dll)
             $table->text('mata_kuliah_diampu')->nullable();
             $table->text('ranting_ilmu_kepakaran')->nullable();
-            $table->string('sk_konversi')->nullable(); // Path ke file
             $table->string('url_profil_sinta')->nullable();
 
             // Data Kinerja
@@ -62,7 +61,8 @@ return new class extends Migration
             $table->string('skp_tahun_pertama'); // Path ke file
             $table->enum('predikat_kinerja_tahun_kedua', ['Sangat Baik', 'Baik', 'Cukup', 'Kurang', 'Sangat Kurang', 'Perlu Perbaikan']);
             $table->string('skp_tahun_kedua'); // Path ke file
-
+            $table->float('nilai_konversi')->nullable();
+            $table->string('pak_konversi')->nullable(); // Path ke file
             $table->timestamps();
         });
     }

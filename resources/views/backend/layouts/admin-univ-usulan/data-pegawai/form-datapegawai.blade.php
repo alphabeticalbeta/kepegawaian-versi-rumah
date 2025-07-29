@@ -107,6 +107,30 @@
             </div>
 
             <div>
+                <label for="unit_kerja_terakhir_id" class="block text-sm font-medium text-gray-700">Unit Kerja Terakhir <span class="text-red-500">*</span></label>
+                 <select name="unit_kerja_terakhir_id" id="unit_kerja_terakhir_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <option value="">Pilih Unit Kerja</option>
+                    @foreach($unitKerjas as $unit)
+                        <option
+                            value="{{ $unit->id }}"
+                            data-path="{{ $unit->subUnitKerja->unitKerja->nama }} &gt; {{ $unit->subUnitKerja->nama }} &gt; {{ $unit->nama }}"
+                            {{ old('unit_kerja_terakhir_id', $pegawai->unit_kerja_terakhir_id ?? '') == $unit->id ? 'selected' : '' }}>
+                            {{ $unit->nama }}
+                        </option>
+                    @endforeach
+                </select>
+                <div id="unit_kerja_path_display" class="text-sm text-gray-500 mt-1 font-medium"></div>
+                @error('unit_kerja_terakhir_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+            </div>
+
+            <div>
+                <input type="hidden" name="role[]" value="Pegawai">
+            </div>
+
+            <div class="md:col-span-2">
+                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Pendidikan Pegawai</h3>
+            </div>
+            <div>
                 <label for="pendidikan_terakhir" class="block text-sm font-medium text-gray-700">Pendidikan Terakhir <span class="text-red-500">*</span></label>
                 @php
                     $pendidikanOptions = ['SD', 'SLTP/Sederajat', 'SLTA/Sederajat', 'Diploma Satu (D1)', 'Diploma Dua (D2)', 'Diploma Tiga (D3)', 'Diploma Empat (D4)/ Sarjana (S1)', 'Magister (S2)', 'Doktor (S3)'];
@@ -117,149 +141,6 @@
                     @endforeach
                 </select>
                  @error('pendidikan_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-            </div>
-
-            {{-- KATEGORI: JABATAN & UNIT KERJA --}}
-            <div class="md:col-span-2">
-                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4 mt-6">Informasi Jabatan & Unit Kerja</h3>
-            </div>
-
-            <div>
-                <label for="jabatan_terakhir_id" class="block text-sm font-medium text-gray-700">Jabatan Terakhir <span class="text-red-500">*</span></label>
-                 <select name="jabatan_terakhir_id" id="jabatan_terakhir_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                    <option value="">Pilih Jabatan</option>
-                    @foreach($jabatans as $jabatan)
-                        <option value="{{ $jabatan->id }}" {{ old('jabatan_terakhir_id', $pegawai->jabatan_terakhir_id ?? '') == $jabatan->id ? 'selected' : '' }}>
-                            {{ $jabatan->jabatan }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('jabatan_terakhir_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-            </div>
-
-            <div>
-                <label for="pangkat_terakhir_id" class="block text-sm font-medium text-gray-700">Pangkat Terakhir <span class="text-red-500">*</span></label>
-                 <select name="pangkat_terakhir_id" id="pangkat_terakhir_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                    <option value="">Pilih Pangkat</option>
-                    @foreach($pangkats as $pangkat)
-                        <option value="{{ $pangkat->id }}" {{ old('pangkat_terakhir_id', $pegawai->pangkat_terakhir_id ?? '') == $pangkat->id ? 'selected' : '' }}>
-                            {{ $pangkat->pangkat }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('pangkat_terakhir_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-            </div>
-
-            <div>
-                <label for="unit_kerja_terakhir_id" class="block text-sm font-medium text-gray-700">Unit Kerja Terakhir <span class="text-red-500">*</span></label>
-                 <select name="unit_kerja_terakhir_id" id="unit_kerja_terakhir_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                    <option value="">Pilih Unit Kerja</option>
-                    @foreach($unitKerjas as $unit)
-                        <option value="{{ $unit->id }}" {{ old('unit_kerja_terakhir_id', $pegawai->unit_kerja_terakhir_id ?? '') == $unit->id ? 'selected' : '' }}>
-                            {{ $unit->nama }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('unit_kerja_terakhir_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-            </div>
-
-            <div>
-                <label for="role" class="block text-sm font-medium text-gray-700">Role <span class="text-red-500">*</span></label>
-                <select name="role[]" id="role" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                    @php
-                        $roles = ['Pegawai', 'Admin Fakultas', 'Admin Universitas', 'Admin Universitas Usulan', 'Penilai'];
-                        $selectedRoles = old('role', $pegawai->role ?? []);
-                    @endphp
-                    @foreach($roles as $role)
-                        <option value="{{ $role }}" {{ in_array($role, $selectedRoles) ? 'selected' : '' }}>
-                            {{ $role }}
-                        </option>
-                    @endforeach
-                </select>
-                <p class="text-xs text-gray-500 mt-1">Tahan Ctrl (atau Cmd di Mac) untuk memilih lebih dari satu.</p>
-                @error('role') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-            </div>
-
-            {{-- KATEGORI: SPESIFIK DOSEN --}}
-            <div class="md:col-span-2" id="dosen_fields_wrapper" style="display: none;">
-                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4 mt-6">Informasi Spesifik Dosen</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                     <div>
-                        <label for="mata_kuliah_diampu" class="block text-sm font-medium text-gray-700">Mata Kuliah yang diampu <span class="text-red-500">*</span></label>
-                        <textarea name="mata_kuliah_diampu" id="mata_kuliah_diampu" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">{{ old('mata_kuliah_diampu', $pegawai->mata_kuliah_diampu ?? '') }}</textarea>
-                        @error('mata_kuliah_diampu') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <label for="ranting_ilmu_kepakaran" class="block text-sm font-medium text-gray-700">Ranting Ilmu / Kepakaran <span class="text-red-500">*</span></label>
-                        <textarea name="ranting_ilmu_kepakaran" id="ranting_ilmu_kepakaran" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">{{ old('ranting_ilmu_kepakaran', $pegawai->ranting_ilmu_kepakaran ?? '') }}</textarea>
-                        @error('ranting_ilmu_kepakaran') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <label for="url_profil_sinta" class="block text-sm font-medium text-gray-700">URL Profil Akun Sinta <span class="text-red-500">*</span></label>
-                        <input type="url" name="url_profil_sinta" id="url_profil_sinta" value="{{ old('url_profil_sinta', $pegawai->url_profil_sinta ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="https://sinta.kemdikbud.go.id/...">
-                        @error('url_profil_sinta') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                    </div>
-                </div>
-            </div>
-
-
-            {{-- ======================================================================= --}}
-            {{-- ============================ KOLOM KANAN ============================== --}}
-            {{-- ======================================================================= --}}
-
-
-            {{-- KATEGORI: TMT & SK --}}
-            <div class="md:col-span-2">
-                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Informasi TMT & SK</h3>
-            </div>
-
-            <div>
-                <label for="tmt_cpns" class="block text-sm font-medium text-gray-700">TMT CPNS <span class="text-red-500">*</span></label>
-                <input type="date" name="tmt_cpns" id="tmt_cpns" value="{{ old('tmt_cpns', isset($pegawai) ? $pegawai->tmt_cpns->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                @error('tmt_cpns') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-            </div>
-            <div>
-                <label for="sk_cpns_terakhir" class="block text-sm font-medium text-gray-700">SK CPNS Terakhir <span class="text-red-500">*</span></label>
-                <input type="file" name="sk_cpns_terakhir" id="sk_cpns_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                @error('sk_cpns_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-            </div>
-
-            <div>
-                <label for="tmt_pns" class="block text-sm font-medium text-gray-700">TMT PNS <span class="text-red-500">*</span></label>
-                <input type="date" name="tmt_pns" id="tmt_pns" value="{{ old('tmt_pns', isset($pegawai) ? $pegawai->tmt_pns->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                @error('tmt_pns') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-            </div>
-            <div>
-                <label for="sk_pns_terakhir" class="block text-sm font-medium text-gray-700">SK PNS Terakhir <span class="text-red-500">*</span></label>
-                <input type="file" name="sk_pns_terakhir" id="sk_pns_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                @error('sk_pns_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-            </div>
-
-            <div>
-                <label for="tmt_pangkat" class="block text-sm font-medium text-gray-700">TMT Pangkat <span class="text-red-500">*</span></label>
-                <input type="date" name="tmt_pangkat" id="tmt_pangkat" value="{{ old('tmt_pangkat', isset($pegawai) ? $pegawai->tmt_pangkat->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                @error('tmt_pangkat') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-            </div>
-            <div>
-                <label for="sk_pangkat_terakhir" class="block text-sm font-medium text-gray-700">SK Pangkat Terakhir <span class="text-red-500">*</span></label>
-                <input type="file" name="sk_pangkat_terakhir" id="sk_pangkat_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                @error('sk_pangkat_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-            </div>
-
-            <div>
-                <label for="tmt_jabatan" class="block text-sm font-medium text-gray-700">TMT Jabatan <span class="text-red-500">*</span></label>
-                <input type="date" name="tmt_jabatan" id="tmt_jabatan" value="{{ old('tmt_jabatan', isset($pegawai) ? $pegawai->tmt_jabatan->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                @error('tmt_jabatan') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-            </div>
-            <div>
-                <label for="sk_jabatan_terakhir" class="block text-sm font-medium text-gray-700">SK Jabatan Terakhir <span class="text-red-500">*</span></label>
-                <input type="file" name="sk_jabatan_terakhir" id="sk_jabatan_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                @error('sk_jabatan_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-            </div>
-
-             {{-- KATEGORI: BERKAS PENDIDIKAN & KINERJA --}}
-            <div class="md:col-span-2">
-                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4 mt-6">Informasi Berkas & Kinerja</h3>
             </div>
 
             <div>
@@ -284,6 +165,106 @@
                 <label for="disertasi_thesis_terakhir" class="block text-sm font-medium text-gray-700">Disertasi/Thesis Terakhir (Cover s/d Latar Belakang)</label>
                 <input type="file" name="disertasi_thesis_terakhir" id="disertasi_thesis_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                 @error('disertasi_thesis_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+            </div>
+
+            {{-- KATEGORI: SPESIFIK DOSEN --}}
+            <div class="md:col-span-2" id="dosen_fields_wrapper" style="display: none;">
+                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4 mt-6">Informasi Spesifik Dosen</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                     <div>
+                        <label for="mata_kuliah_diampu" class="block text-sm font-medium text-gray-700">Mata Kuliah yang diampu <span class="text-red-500">*</span></label>
+                        <textarea name="mata_kuliah_diampu" id="mata_kuliah_diampu" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">{{ old('mata_kuliah_diampu', $pegawai->mata_kuliah_diampu ?? '') }}</textarea>
+                        @error('mata_kuliah_diampu') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    </div>
+                    <div>
+                        <label for="ranting_ilmu_kepakaran" class="block text-sm font-medium text-gray-700">Ranting Ilmu / Kepakaran <span class="text-red-500">*</span></label>
+                        <textarea name="ranting_ilmu_kepakaran" id="ranting_ilmu_kepakaran" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">{{ old('ranting_ilmu_kepakaran', $pegawai->ranting_ilmu_kepakaran ?? '') }}</textarea>
+                        @error('ranting_ilmu_kepakaran') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    </div>
+                    <div>
+                        <label for="url_profil_sinta" class="block text-sm font-medium text-gray-700">URL Profil Akun Sinta <span class="text-red-500">*</span></label>
+                        <input type="url" name="url_profil_sinta" id="url_profil_sinta" value="{{ old('url_profil_sinta', $pegawai->url_profil_sinta ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="https://sinta.kemdikbud.go.id/...">
+                        @error('url_profil_sinta') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                    </div>
+                </div>
+            </div>
+
+            {{-- ======================================================================= --}}
+            {{-- ============================ KOLOM KANAN ============================== --}}
+            {{-- ======================================================================= --}}
+
+
+            {{-- KATEGORI: TMT & SK --}}
+            <div class="col-span-full">
+                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-6">Informasi Pangkat & Jabatan</h3>
+            </div>
+
+            {{-- Baris untuk Pangkat (3 kolom) --}}
+            <div class="col-span-full grid grid-cols-1 md:grid-cols-3 gap-6">
+                {{-- Kolom 1: Pangkat Terakhir --}}
+                <div>
+                    <label for="pangkat_terakhir_id" class="block text-sm font-medium text-gray-700">Pangkat Terakhir <span class="text-red-500">*</span></label>
+                    <select name="pangkat_terakhir_id" id="pangkat_terakhir_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <option value="">Pilih Pangkat</option>
+                        @foreach($pangkats as $pangkat)
+                            <option value="{{ $pangkat->id }}" {{ old('pangkat_terakhir_id', $pegawai->pangkat_terakhir_id ?? '') == $pangkat->id ? 'selected' : '' }}>
+                                {{ $pangkat->pangkat }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('pangkat_terakhir_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                </div>
+
+                {{-- Kolom 2: TMT Pangkat --}}
+                <div>
+                    <label for="tmt_pangkat" class="block text-sm font-medium text-gray-700">TMT Pangkat <span class="text-red-500">*</span></label>
+                    <input type="date" name="tmt_pangkat" id="tmt_pangkat" value="{{ old('tmt_pangkat', isset($pegawai) ? $pegawai->tmt_pangkat->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    @error('tmt_pangkat') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                </div>
+
+                {{-- Kolom 3: SK Pangkat Terakhir --}}
+                <div>
+                    <label for="sk_pangkat_terakhir" class="block text-sm font-medium text-gray-700">SK Pangkat Terakhir <span class="text-red-500">*</span></label>
+                    <input type="file" name="sk_pangkat_terakhir" id="sk_pangkat_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    @error('sk_pangkat_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                </div>
+            </div>
+
+            {{-- Baris untuk Jabatan (3 kolom) --}}
+            <div class="col-span-full grid grid-cols-1 md:grid-cols-3 gap-6">
+                {{-- Kolom 1: Jabatan Terakhir --}}
+                <div>
+                    <label for="jabatan_terakhir_id" class="block text-sm font-medium text-gray-700">Jabatan Terakhir <span class="text-red-500">*</span></label>
+                    <select name="jabatan_terakhir_id" id="jabatan_terakhir_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        <option value="">Pilih Jabatan</option>
+                        @foreach($jabatans as $jabatan)
+                            <option value="{{ $jabatan->id }}" {{ old('jabatan_terakhir_id', $pegawai->jabatan_terakhir_id ?? '') == $jabatan->id ? 'selected' : '' }}>
+                                {{ $jabatan->jabatan }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('jabatan_terakhir_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                </div>
+
+                {{-- Kolom 2: TMT Jabatan --}}
+                <div>
+                    <label for="tmt_jabatan" class="block text-sm font-medium text-gray-700">TMT Jabatan <span class="text-red-500">*</span></label>
+                    <input type="date" name="tmt_jabatan" id="tmt_jabatan" value="{{ old('tmt_jabatan', isset($pegawai) ? $pegawai->tmt_jabatan->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    @error('tmt_jabatan') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                </div>
+
+                {{-- Kolom 3: SK Jabatan Terakhir --}}
+                <div>
+                    <label for="sk_jabatan_terakhir" class="block text-sm font-medium text-gray-700">SK Jabatan Terakhir <span class="text-red-500">*</span></label>
+                    <input type="file" name="sk_jabatan_terakhir" id="sk_jabatan_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    @error('sk_jabatan_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                </div>
+            </div>
+
+
+             {{-- KATEGORI: BERKAS PENDIDIKAN & KINERJA --}}
+            <div class="md:col-span-2">
+                <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4 mt-6">Informasi Berkas & Kinerja</h3>
             </div>
 
              <div id="field_sk_konversi" style="display: none;">
@@ -325,6 +306,28 @@
                 <label for="skp_tahun_kedua" class="block text-sm font-medium text-gray-700">SKP Tahun Kedua <span class="text-red-500">*</span></label>
                 <input type="file" name="skp_tahun_kedua" id="skp_tahun_kedua" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                 @error('skp_tahun_kedua') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+            </div>
+
+            <div>
+                <label for="nilai_konversi" class="block text-sm font-medium text-gray-700">Nilai Konversi <span class="text-red-500">*</span></label>
+                <input
+                    type="number"
+                    name="nilai_konversi"
+                    id="nilai_konversi"
+                    step="any" {{-- Mengizinkan angka desimal (float) --}}
+                    value="{{ old('nilai_konversi', $pegawai->nilai_konversi ?? '') }}"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    placeholder="Contoh: 112.50"
+                >
+                @error('nilai_konversi')
+                    <span class="text-red-500 text-xs">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div>
+                <label for="pak_konversi" class="block text-sm font-medium text-gray-700">PAK Konversi <span class="text-red-500">*</span></label>
+                <input type="file" name="pak_konversi" id="pak_konversi" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                @error('pak_konversi') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
             </div>
 
         </div>
@@ -378,6 +381,24 @@
 
         // Jalankan saat pilihan berubah
         jenisPegawaiSelect.addEventListener('change', toggleFields);
+
+        const unitKerjaSelect = document.getElementById('unit_kerja_terakhir_id');
+        const pathDisplay = document.getElementById('unit_kerja_path_display');
+
+        function showPath() {
+            const selectedOption = unitKerjaSelect.options[unitKerjaSelect.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                pathDisplay.innerHTML = selectedOption.dataset.path;
+            } else {
+                pathDisplay.innerHTML = '';
+            }
+        }
+
+        // Panggil saat halaman dimuat untuk menampilkan path jika sudah ada pilihan (mode edit)
+        showPath();
+
+        // Panggil saat dropdown berubah
+        unitKerjaSelect.addEventListener('change', showPath);
     });
 </script>
 
