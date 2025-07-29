@@ -14,9 +14,7 @@
             </a>
         </div>
 
-        {{-- ========================================================================= --}}
-        {{-- ===================== INFORMASI DASAR PEGAWAI ========================= --}}
-        {{-- ========================================================================= --}}
+        {{-- ... (Bagian Informasi Dasar tidak berubah) ... --}}
         <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Informasi Dasar</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
             {{-- Kolom 1 --}}
@@ -78,13 +76,9 @@
             </div>
         </div>
 
-        {{-- ========================================================================= --}}
-        {{-- =================== BAGIAN BARU: BERKAS DOKUMEN ======================= --}}
-        {{-- ========================================================================= --}}
         <div class="mt-8 pt-5 border-t border-gray-200">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Berkas Dokumen Terlampir</h3>
             @php
-                // Mapping kolom database ke label yang mudah dibaca
                 $dokumenList = [
                     'sk_pangkat_terakhir' => 'SK Pangkat Terakhir',
                     'sk_jabatan_terakhir' => 'SK Jabatan Terakhir',
@@ -103,7 +97,8 @@
                     @if($pegawai->$field)
                         <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border">
                             <span class="text-sm font-medium text-gray-700">{{ $label }}</span>
-                            <a href="{{ Storage::url($pegawai->$field) }}" target="_blank"
+                            {{-- UBAH TAUTAN DI SINI --}}
+                            <a href="{{ route('backend.admin-univ-usulan.data-pegawai.show-document', ['pegawai' => $pegawai, 'field' => $field]) }}" target="_blank"
                                class="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white rounded-md text-sm transition">
                                 <i data-lucide="file-text" class="w-4 h-4 mr-1"></i>
                                 Lihat

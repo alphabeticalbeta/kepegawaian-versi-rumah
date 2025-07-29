@@ -32,6 +32,7 @@
                 <div>
                     <h3 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-4">Informasi Dasar Pegawai</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        {{-- ... (bagian informasi dasar tidak berubah) ... --}}
                         <div>
                             <label for="jenis_pegawai" class="block text-sm font-medium text-gray-700">Jenis Pegawai <span class="text-red-500">*</span></label>
                             <select id="jenis_pegawai" name="jenis_pegawai" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
@@ -132,21 +133,53 @@
                          <div>
                              <label for="ijazah_terakhir" class="block text-sm font-medium text-gray-700">Ijazah Terakhir <span class="text-red-500">*</span></label>
                              <input type="file" name="ijazah_terakhir" id="ijazah_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                             {{-- TAUTAN FILE SAAT INI --}}
+                             @if(isset($pegawai) && $pegawai->ijazah_terakhir)
+                                <div class="mt-2">
+                                    <a href="{{ Storage::url($pegawai->ijazah_terakhir) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
+                                        Lihat File Saat Ini
+                                    </a>
+                                </div>
+                             @endif
                              @error('ijazah_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                          </div>
                          <div>
                              <label for="transkrip_nilai_terakhir" class="block text-sm font-medium text-gray-700">Transkrip Nilai Terakhir <span class="text-red-500">*</span></label>
                              <input type="file" name="transkrip_nilai_terakhir" id="transkrip_nilai_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                             {{-- TAUTAN FILE SAAT INI --}}
+                             @if(isset($pegawai) && $pegawai->transkrip_nilai_terakhir)
+                                <div class="mt-2">
+                                    <a href="{{ Storage::url($pegawai->transkrip_nilai_terakhir) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
+                                        Lihat File Saat Ini
+                                    </a>
+                                </div>
+                             @endif
                              @error('transkrip_nilai_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                          </div>
                           <div>
                              <label for="sk_penyetaraan_ijazah" class="block text-sm font-medium text-gray-700">SK Penyetaraan Ijazah (Luar Negeri)</label>
                              <input type="file" name="sk_penyetaraan_ijazah" id="sk_penyetaraan_ijazah" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                             {{-- TAUTAN FILE SAAT INI --}}
+                             @if(isset($pegawai) && $pegawai->sk_penyetaraan_ijazah)
+                                <div class="mt-2">
+                                    <a href="{{ Storage::url($pegawai->sk_penyetaraan_ijazah) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
+                                        Lihat File Saat Ini
+                                    </a>
+                                </div>
+                             @endif
                              @error('sk_penyetaraan_ijazah') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                          </div>
                          <div class="sm:col-span-2">
                              <label for="disertasi_thesis_terakhir" class="block text-sm font-medium text-gray-700">Disertasi/Thesis Terakhir (Cover s/d Latar Belakang)</label>
                              <input type="file" name="disertasi_thesis_terakhir" id="disertasi_thesis_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                             {{-- TAUTAN FILE SAAT INI --}}
+                             @if(isset($pegawai) && $pegawai->disertasi_thesis_terakhir)
+                                <div class="mt-2">
+                                    <a href="{{ Storage::url($pegawai->disertasi_thesis_terakhir) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
+                                        Lihat File Saat Ini
+                                    </a>
+                                </div>
+                             @endif
                              @error('disertasi_thesis_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                          </div>
                      </div>
@@ -163,7 +196,7 @@
                      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                         <div class="sm:col-span-3">
                             <label for="pangkat_terakhir_id" class="block text-sm font-medium text-gray-700">Pangkat Terakhir <span class="text-red-500">*</span></label>
-                            <select name="pangkat_terakhir_id" id="pangkat_terakhir_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <select name="pangkat_terakhir_id" id="pangkat_terakhir_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                                 <option value="">Pilih Pangkat</option>
                                 @foreach($pangkats as $pangkat)
                                     <option value="{{ $pangkat->id }}" {{ old('pangkat_terakhir_id', $pegawai->pangkat_terakhir_id ?? '') == $pangkat->id ? 'selected' : '' }}>
@@ -175,12 +208,20 @@
                         </div>
                         <div>
                             <label for="tmt_pangkat" class="block text-sm font-medium text-gray-700">TMT Pangkat <span class="text-red-500">*</span></label>
-                            <input type="date" name="tmt_pangkat" id="tmt_pangkat" value="{{ old('tmt_pangkat', isset($pegawai) ? $pegawai->tmt_pangkat->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <input type="date" name="tmt_pangkat" id="tmt_pangkat" value="{{ old('tmt_pangkat', isset($pegawai) ? $pegawai->tmt_pangkat->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                             @error('tmt_pangkat') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                         <div class="sm:col-span-2">
                             <label for="sk_pangkat_terakhir" class="block text-sm font-medium text-gray-700">SK Pangkat Terakhir <span class="text-red-500">*</span></label>
                             <input type="file" name="sk_pangkat_terakhir" id="sk_pangkat_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            {{-- TAUTAN FILE SAAT INI --}}
+                            @if(isset($pegawai) && $pegawai->sk_pangkat_terakhir)
+                               <div class="mt-2">
+                                   <a href="{{ Storage::url($pegawai->sk_pangkat_terakhir) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
+                                       Lihat File Saat Ini
+                                   </a>
+                               </div>
+                            @endif
                             @error('sk_pangkat_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                         <div class="sm:col-span-3">
@@ -188,9 +229,8 @@
                                 Jabatan Terakhir <span id="jenis_jabatan_display" class="text-indigo-600 font-normal"></span>
                                 <span class="text-red-500">*</span>
                             </label>
-                            <select name="jabatan_terakhir_id" id="jabatan_terakhir_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <select name="jabatan_terakhir_id" id="jabatan_terakhir_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                                 <option value="">Pilih Jabatan</option>
-                                {{-- Menambahkan data-attributes untuk diakses oleh JavaScript --}}
                                 @foreach($jabatans as $jabatan)
                                     <option value="{{ $jabatan->id }}"
                                             data-jenis-pegawai="{{ $jabatan->jenis_pegawai }}"
@@ -204,12 +244,20 @@
                         </div>
                         <div>
                             <label for="tmt_jabatan" class="block text-sm font-medium text-gray-700">TMT Jabatan <span class="text-red-500">*</span></label>
-                            <input type="date" name="tmt_jabatan" id="tmt_jabatan" value="{{ old('tmt_jabatan', isset($pegawai) ? $pegawai->tmt_jabatan->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <input type="date" name="tmt_jabatan" id="tmt_jabatan" value="{{ old('tmt_jabatan', isset($pegawai) ? $pegawai->tmt_jabatan->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                             @error('tmt_jabatan') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                         <div class="sm:col-span-2">
                             <label for="sk_jabatan_terakhir" class="block text-sm font-medium text-gray-700">SK Jabatan Terakhir <span class="text-red-500">*</span></label>
                             <input type="file" name="sk_jabatan_terakhir" id="sk_jabatan_terakhir" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            {{-- TAUTAN FILE SAAT INI --}}
+                            @if(isset($pegawai) && $pegawai->sk_jabatan_terakhir)
+                               <div class="mt-2">
+                                   <a href="{{ Storage::url($pegawai->sk_jabatan_terakhir) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
+                                       Lihat File Saat Ini
+                                   </a>
+                               </div>
+                            @endif
                             @error('sk_jabatan_terakhir') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                      </div>
@@ -234,6 +282,14 @@
                         <div>
                             <label for="skp_tahun_pertama" class="block text-sm font-medium text-gray-700">SKP Tahun Pertama <span class="text-red-500">*</span></label>
                             <input type="file" name="skp_tahun_pertama" id="skp_tahun_pertama" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            {{-- TAUTAN FILE SAAT INI --}}
+                            @if(isset($pegawai) && $pegawai->skp_tahun_pertama)
+                               <div class="mt-2">
+                                   <a href="{{ Storage::url($pegawai->skp_tahun_pertama) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
+                                       Lihat File Saat Ini
+                                   </a>
+                               </div>
+                            @endif
                             @error('skp_tahun_pertama') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                          <div>
@@ -248,18 +304,34 @@
                         <div>
                             <label for="skp_tahun_kedua" class="block text-sm font-medium text-gray-700">SKP Tahun Kedua <span class="text-red-500">*</span></label>
                             <input type="file" name="skp_tahun_kedua" id="skp_tahun_kedua" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            {{-- TAUTAN FILE SAAT INI --}}
+                            @if(isset($pegawai) && $pegawai->skp_tahun_kedua)
+                               <div class="mt-2">
+                                   <a href="{{ Storage::url($pegawai->skp_tahun_kedua) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
+                                       Lihat File Saat Ini
+                                   </a>
+                               </div>
+                            @endif
                             @error('skp_tahun_kedua') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                         </div>
                         <div class="md:col-span-2">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                                 <div id="field_nilai_konversi" class="hidden">
                                     <label for="nilai_konversi" class="block text-sm font-medium text-gray-700">Nilai Konversi <span class="text-red-500">*</span></label>
-                                    <input type="number" name="nilai_konversi" id="nilai_konversi" step="any" value="{{ old('nilai_konversi', $pegawai->nilai_konversi ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Contoh: 112.50">
+                                    <input type="number" name="nilai_konversi" id="nilai_konversi" step="any" value="{{ old('nilai_konversi', $pegawai->nilai_konversi ?? '') }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Contoh: 112.50">
                                     @error('nilai_konversi') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
                                 <div id="field_pak_konversi" class="hidden">
                                     <label for="pak_konversi" class="block text-sm font-medium text-gray-700">PAK Konversi</label>
                                     <input type="file" name="pak_konversi" id="pak_konversi" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                    {{-- TAUTAN FILE SAAT INI --}}
+                                    @if(isset($pegawai) && $pegawai->pak_konversi)
+                                       <div class="mt-2">
+                                           <a href="{{ Storage::url($pegawai->pak_konversi) }}" target="_blank" class="text-sm text-blue-600 hover:underline">
+                                               Lihat File Saat Ini
+                                           </a>
+                                       </div>
+                                    @endif
                                     @error('pak_konversi') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
                             </div>
