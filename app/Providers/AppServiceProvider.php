@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+// use Illuminate\Support\Facades\Gate; // <-- Dihapus
+// use App\Models\User; // <-- Dihapus
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,5 +31,9 @@ class AppServiceProvider extends ServiceProvider
                 require base_path('routes/frontend.php');
                 require base_path('routes/backend.php');
             });
+
+        // BAGIAN DI BAWAH INI TELAH DIHAPUS KARENA SALAH TEMPAT
+        // $this->registerPolicies();
+        // Gate::define('manage-roles', function (User $user) { ... });
     }
 }

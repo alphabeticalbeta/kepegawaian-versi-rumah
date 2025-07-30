@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Hash;
 
 class Pegawai extends Model
 {
@@ -16,6 +17,8 @@ class Pegawai extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'email',
+        'password',
         'pangkat_terakhir_id',
         'jabatan_terakhir_id',
         'unit_kerja_terakhir_id',
@@ -51,7 +54,6 @@ class Pegawai extends Model
         'sk_cpns',
         'sk_pns',
         'role',
-        'email',
         'foto',
     ];
 
@@ -100,4 +102,26 @@ class Pegawai extends Model
         return $this->belongsToMany(Role::class, 'pegawai_role');
     }
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($pegawai) {
+            // Jika password tidak diisi secara manual dari form (karena formnya disembunyikan),
+            // atur nilainya menjadi NIP pegawai.
+            if (empty($pegawai->password)) {
+                $pegawai->password = $pegawai->nip;
+            }
+        });
+
+        // Event yang berjalan otomatis SETELAH pegawai baru dibuat
+        static::created(function ($pegawai) {
+            // Cari role dengan nama 'Pegawai'
+            $defaultRole = Role::where('name', 'Pegawai')->first();
+            if ($defaultRole) {
+                // Lampirkan role tersebut ke pegawai yang baru dibuat
+                $pegawai->roles()->attach($defaultRole->id);
+            }
+        });
+    }
 }

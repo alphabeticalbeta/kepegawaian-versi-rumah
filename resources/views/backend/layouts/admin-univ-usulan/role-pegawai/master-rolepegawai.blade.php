@@ -48,12 +48,13 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 text-center">
-                            <button type="button"
-                                    class="font-medium text-indigo-600 hover:text-indigo-900 hover:underline open-modal-btn"
-                                    data-pegawai-id="{{ $pegawai->id }}"
-                                    data-pegawai-name="{{ $pegawai->nama_lengkap }}">
-                                Kelola Role
-                            </button>
+                            @can('manage-roles')
+                                {{-- Tombol "Kelola Role" akan muncul di sini --}}
+                                <button>Kelola Role</button>
+                            @else
+                                {{-- Jika tidak punya hak akses, hanya tanda strip (-) yang muncul --}}
+                                <span>-</span>
+                            @endcan
                         </td>
                     </tr>
                 @empty
