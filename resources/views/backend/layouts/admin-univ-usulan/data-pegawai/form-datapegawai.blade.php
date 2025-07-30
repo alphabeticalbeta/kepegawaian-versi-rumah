@@ -170,10 +170,12 @@
                             {{-- TAMPILAN INPUT FILE --}}
                             <div>
                                 <label for="ijazah_terakhir" class="block text-sm font-medium text-gray-700 mb-1">Ijazah Terakhir <span class="text-red-500">*</span></label>
-                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 {{ isset($pegawai) && $pegawai->ijazah_terakhir ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-gray-50' }} border-dashed rounded-lg cursor-pointer hover:bg-gray-100">
                                     <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                        <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
-                                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                        <i data-lucide="{{ isset($pegawai) && $pegawai->ijazah_terakhir ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->ijazah_terakhir ? 'text-green-600' : 'text-gray-500' }}"></i>
+                                        <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->ijazah_terakhir ? 'text-green-700' : 'text-gray-500' }}">
+                                            <span class="font-semibold">{{ isset($pegawai) && $pegawai->ijazah_terakhir ? 'File sudah diunggah' : 'Klik untuk unggah' }}</span>
+                                        </p>
                                     </div>
                                     <input id="ijazah_terakhir" name="ijazah_terakhir" type="file" class="hidden" />
                                 </label>
@@ -183,10 +185,12 @@
                             </div>
                             <div>
                                 <label for="transkrip_nilai_terakhir" class="block text-sm font-medium text-gray-700 mb-1">Transkrip Nilai <span class="text-red-500">*</span></label>
-                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 {{ isset($pegawai) && $pegawai->transkrip_nilai_terakhir ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-gray-50' }} border-dashed rounded-lg cursor-pointer hover:bg-gray-100">
                                     <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                        <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
-                                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                        <i data-lucide="{{ isset($pegawai) && $pegawai->transkrip_nilai_terakhir ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->transkrip_nilai_terakhir ? 'text-green-600' : 'text-gray-500' }}"></i>
+                                        <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->transkrip_nilai_terakhir ? 'text-green-700' : 'text-gray-500' }}">
+                                            <span class="font-semibold">{{ isset($pegawai) && $pegawai->transkrip_nilai_terakhir ? 'File sudah diunggah' : 'Klik untuk unggah' }}</span>
+                                        </p>
                                     </div>
                                     <input id="transkrip_nilai_terakhir" name="transkrip_nilai_terakhir" type="file" class="hidden" />
                                 </label>
@@ -199,10 +203,12 @@
                          <div class="sm:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label for="sk_penyetaraan_ijazah" class="block text-sm font-medium text-gray-700 mb-1">SK Penyetaraan Ijazah</label>
-                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 {{ isset($pegawai) && $pegawai->sk_penyetaraan_ijazah ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-gray-50' }} border-dashed rounded-lg cursor-pointer hover:bg-gray-100">
                                     <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                        <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
-                                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                        <i data-lucide="{{ isset($pegawai) && $pegawai->sk_penyetaraan_ijazah ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->sk_penyetaraan_ijazah ? 'text-green-600' : 'text-gray-500' }}"></i>
+                                        <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->sk_penyetaraan_ijazah ? 'text-green-700' : 'text-gray-500' }}">
+                                            <span class="font-semibold">{{ isset($pegawai) && $pegawai->sk_penyetaraan_ijazah ? 'File sudah diunggah' : 'Klik untuk unggah' }}</span>
+                                        </p>
                                     </div>
                                     <input id="sk_penyetaraan_ijazah" name="sk_penyetaraan_ijazah" type="file" class="hidden" />
                                 </label>
@@ -212,10 +218,12 @@
                             </div>
                             <div>
                                 <label for="disertasi_thesis_terakhir" class="block text-sm font-medium text-gray-700 mb-1">Disertasi/Thesis</label>
-                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 {{ isset($pegawai) && $pegawai->disertasi_thesis_terakhir ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-gray-50' }} border-dashed rounded-lg cursor-pointer hover:bg-gray-100">
                                     <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                        <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
-                                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                        <i data-lucide="{{ isset($pegawai) && $pegawai->disertasi_thesis_terakhir ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->disertasi_thesis_terakhir ? 'text-green-600' : 'text-gray-500' }}"></i>
+                                        <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->disertasi_thesis_terakhir ? 'text-green-700' : 'text-gray-500' }}">
+                                            <span class="font-semibold">{{ isset($pegawai) && $pegawai->disertasi_thesis_terakhir ? 'File sudah diunggah' : 'Klik untuk unggah' }}</span>
+                                        </p>
                                     </div>
                                     <input id="disertasi_thesis_terakhir" name="disertasi_thesis_terakhir" type="file" class="hidden" />
                                 </label>
@@ -243,10 +251,12 @@
                             </div>
                             <div>
                                 <label for="sk_cpns" class="block text-sm font-medium text-gray-700 mb-1">SK CPNS</label>
-                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 {{ isset($pegawai) && $pegawai->sk_cpns ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-gray-50' }} border-dashed rounded-lg cursor-pointer hover:bg-gray-100">
                                     <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                        <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
-                                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                        <i data-lucide="{{ isset($pegawai) && $pegawai->sk_cpns ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->sk_cpns ? 'text-green-600' : 'text-gray-500' }}"></i>
+                                        <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->sk_cpns ? 'text-green-700' : 'text-gray-500' }}">
+                                            <span class="font-semibold">{{ isset($pegawai) && $pegawai->sk_cpns ? 'File sudah diunggah' : 'Klik untuk unggah' }}</span>
+                                        </p>
                                     </div>
                                     <input id="sk_cpns" name="sk_cpns" type="file" class="hidden" />
                                 </label>
@@ -262,10 +272,12 @@
                             </div>
                             <div>
                                 <label for="sk_pns" class="block text-sm font-medium text-gray-700 mb-1">SK PNS</label>
-                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 {{ isset($pegawai) && $pegawai->sk_pns ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-gray-50' }} border-dashed rounded-lg cursor-pointer hover:bg-gray-100">
                                     <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                        <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
-                                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                        <i data-lucide="{{ isset($pegawai) && $pegawai->sk_pns ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->sk_pns ? 'text-green-600' : 'text-gray-500' }}"></i>
+                                        <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->sk_pns ? 'text-green-700' : 'text-gray-500' }}">
+                                            <span class="font-semibold">{{ isset($pegawai) && $pegawai->sk_pns ? 'File sudah diunggah' : 'Klik untuk unggah' }}</span>
+                                        </p>
                                     </div>
                                     <input id="sk_pns" name="sk_pns" type="file" class="hidden" />
                                 </label>
@@ -306,10 +318,12 @@
                         </div>
                         <div>
                             <label for="sk_pangkat_terakhir" class="block text-sm font-medium text-gray-700 mb-1">SK Pangkat Terakhir <span class="text-red-500">*</span></label>
-                            <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                            <label class="flex flex-col items-center justify-center w-full h-24 border-2 {{ isset($pegawai) && $pegawai->sk_pangkat_terakhir ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-gray-50' }} border-dashed rounded-lg cursor-pointer hover:bg-gray-100">
                                 <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
-                                    <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                    <i data-lucide="{{ isset($pegawai) && $pegawai->sk_pangkat_terakhir ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->sk_pangkat_terakhir ? 'text-green-600' : 'text-gray-500' }}"></i>
+                                    <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->sk_pangkat_terakhir ? 'text-green-700' : 'text-gray-500' }}">
+                                        <span class="font-semibold">{{ isset($pegawai) && $pegawai->sk_pangkat_terakhir ? 'File sudah diunggah' : 'Klik untuk unggah' }}</span>
+                                    </p>
                                 </div>
                                 <input id="sk_pangkat_terakhir" name="sk_pangkat_terakhir" type="file" class="hidden" />
                             </label>
@@ -340,10 +354,12 @@
                         </div>
                         <div>
                             <label for="sk_jabatan_terakhir" class="block text-sm font-medium text-gray-700 mb-1">SK Jabatan Terakhir <span class="text-red-500">*</span></label>
-                             <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                             <label class="flex flex-col items-center justify-center w-full h-24 border-2 {{ isset($pegawai) && $pegawai->sk_jabatan_terakhir ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-gray-50' }} border-dashed rounded-lg cursor-pointer hover:bg-gray-100">
                                 <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
-                                    <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                    <i data-lucide="{{ isset($pegawai) && $pegawai->sk_jabatan_terakhir ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->sk_jabatan_terakhir ? 'text-green-600' : 'text-gray-500' }}"></i>
+                                    <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->sk_jabatan_terakhir ? 'text-green-700' : 'text-gray-500' }}">
+                                        <span class="font-semibold">{{ isset($pegawai) && $pegawai->sk_jabatan_terakhir ? 'File sudah diunggah' : 'Klik untuk unggah' }}</span>
+                                    </p>
                                 </div>
                                 <input id="sk_jabatan_terakhir" name="sk_jabatan_terakhir" type="file" class="hidden" />
                             </label>
@@ -385,10 +401,12 @@
                          <div class="grid grid-cols-2 gap-6">
                              <div>
                                 <label for="skp_tahun_pertama" class="block text-sm font-medium text-gray-700 mb-1">SKP Tahun Pertama <span class="text-red-500">*</span></label>
-                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 {{ isset($pegawai) && $pegawai->skp_tahun_pertama ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-gray-50' }} border-dashed rounded-lg cursor-pointer hover:bg-gray-100">
                                     <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                        <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
-                                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                        <i data-lucide="{{ isset($pegawai) && $pegawai->skp_tahun_pertama ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->skp_tahun_pertama ? 'text-green-600' : 'text-gray-500' }}"></i>
+                                        <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->skp_tahun_pertama ? 'text-green-700' : 'text-gray-500' }}">
+                                            <span class="font-semibold">{{ isset($pegawai) && $pegawai->skp_tahun_pertama ? 'File sudah diunggah' : 'Klik untuk unggah' }}</span>
+                                        </p>
                                     </div>
                                     <input id="skp_tahun_pertama" name="skp_tahun_pertama" type="file" class="hidden" />
                                 </label>
@@ -398,10 +416,12 @@
                             </div>
                             <div>
                                 <label for="skp_tahun_kedua" class="block text-sm font-medium text-gray-700 mb-1">SKP Tahun Kedua <span class="text-red-500">*</span></label>
-                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <label class="flex flex-col items-center justify-center w-full h-24 border-2 {{ isset($pegawai) && $pegawai->skp_tahun_kedua ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-gray-50' }} border-dashed rounded-lg cursor-pointer hover:bg-gray-100">
                                     <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                        <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
-                                        <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                        <i data-lucide="{{ isset($pegawai) && $pegawai->skp_tahun_kedua ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->skp_tahun_kedua ? 'text-green-600' : 'text-gray-500' }}"></i>
+                                        <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->skp_tahun_kedua ? 'text-green-700' : 'text-gray-500' }}">
+                                            <span class="font-semibold">{{ isset($pegawai) && $pegawai->skp_tahun_kedua ? 'File sudah diunggah' : 'Klik untuk unggah' }}</span>
+                                        </p>
                                     </div>
                                     <input id="skp_tahun_kedua" name="skp_tahun_kedua" type="file" class="hidden" />
                                 </label>
@@ -416,10 +436,12 @@
                         </div>
                         <div id="field_pak_konversi" class="hidden">
                             <label for="pak_konversi" class="block text-sm font-medium text-gray-700 mb-1">PAK Konversi</label>
-                            <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                            <label class="flex flex-col items-center justify-center w-full h-24 border-2 {{ isset($pegawai) && $pegawai->pak_konversi ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-gray-50' }} border-dashed rounded-lg cursor-pointer hover:bg-gray-100">
                                 <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-gray-500"></i>
-                                    <p class="mb-1 text-sm text-gray-500"><span class="font-semibold">Klik untuk unggah</span></p>
+                                    <i data-lucide="{{ isset($pegawai) && $pegawai->pak_konversi ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->pak_konversi ? 'text-green-600' : 'text-gray-500' }}"></i>
+                                    <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->pak_konversi ? 'text-green-700' : 'text-gray-500' }}">
+                                        <span class="font-semibold">{{ isset($pegawai) && $pegawai->pak_konversi ? 'File sudah diunggah' : 'Klik untuk unggah' }}</span>
+                                    </p>
                                 </div>
                                 <input id="pak_konversi" name="pak_konversi" type="file" class="hidden" />
                             </label>
@@ -530,6 +552,45 @@
             }
         }
 
+        // =====> 1. SALIN FUNGSI BARU (setupFileUploadFeedback) DI SINI <=====
+    /**
+     * Handles visual feedback for file inputs.
+     * When a file is selected, it displays the file name and a success icon.
+     */
+        function setupFileUploadFeedback() {
+            // Select all file inputs that are part of the styled upload component
+            const fileInputs = document.querySelectorAll('input[type="file"].hidden');
+
+            fileInputs.forEach(input => {
+                input.addEventListener('change', function(event) {
+                    const file = event.target.files[0];
+                    const label = this.parentElement; // The <label> is the parent
+                    const displayDiv = label.querySelector('.flex-col'); // The container for the icon and text
+                    const icon = displayDiv.querySelector('i');
+                    const textElement = displayDiv.querySelector('p');
+
+                    if (file) {
+                        // A file has been selected
+                        textElement.innerHTML = `<span class="font-semibold text-green-700 truncate px-2">${file.name}</span>`;
+                        icon.setAttribute('data-lucide', 'file-check-2');
+                        icon.classList.remove('text-gray-500');
+                        icon.classList.add('text-green-600');
+                    } else {
+                        // No file selected (e.g., user canceled), reset to default
+                        textElement.innerHTML = '<span class="font-semibold">Klik untuk unggah</span>';
+                        icon.setAttribute('data-lucide', 'upload-cloud');
+                        icon.classList.remove('text-green-600');
+                        icon.classList.add('text-gray-500');
+                    }
+
+                    // The 'lucide' library needs to be re-initialized to render the new icon
+                    if (window.lucide) {
+                        lucide.createIcons();
+                    }
+                });
+            });
+        }
+
         /**
          * Menampilkan/menyembunyikan field spesifik berdasarkan jenis pegawai dan jenis jabatan.
          */
@@ -572,6 +633,7 @@
         displayUnitKerjaPath();
         filterJabatan();
         updateJenisJabatanLabel();
+        setupFileUploadFeedback(); // Initialize file upload feedback
 
 
         // --- Event Listeners ---
@@ -587,6 +649,38 @@
         });
 
         unitKerjaSelect.addEventListener('change', displayUnitKerjaPath);
+    });
+
+    // Function for photo preview
+    function previewImage(event) {
+        const file = event.target.files[0];
+        const preview = document.getElementById('foto-preview');
+
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Add form submission validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const submitButton = this.querySelector('button[type="submit"]');
+
+        // Disable submit button to prevent double submission
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 mr-2 animate-spin"></i>Menyimpan...';
+
+        // Re-enable button after 3 seconds in case of error
+        setTimeout(() => {
+            submitButton.disabled = false;
+            submitButton.innerHTML = '{{ isset($pegawai) ? "Simpan Perubahan" : "Simpan Data" }}';
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }, 3000);
     });
 </script>
 

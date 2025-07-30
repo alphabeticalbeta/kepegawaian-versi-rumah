@@ -19,9 +19,9 @@ return new class extends Migration
             $table->dropColumn([
                 'role',
                 'tmt_cpns',
-                'sk_cpns_terakhir',
+                'sk_cpns',
                 'tmt_pns',
-                'sk_pns_terakhir'
+                'sk_pns'
             ]);
 
             // Make some columns nullable to match the form
@@ -40,9 +40,9 @@ return new class extends Migration
             // Add back the removed columns
             $table->json('role');
             $table->date('tmt_cpns');
-            $table->string('sk_cpns_terakhir');
+            $table->string('sk_cpns');
             $table->date('tmt_pns');
-            $table->string('sk_pns_terakhir');
+            $table->string('sk_pns');
 
             // Remove the added column
             $table->dropColumn('nama_lengkap');

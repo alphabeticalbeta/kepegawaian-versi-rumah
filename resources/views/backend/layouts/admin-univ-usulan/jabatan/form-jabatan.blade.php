@@ -40,29 +40,18 @@
 
             <div class="mb-4">
                 <label for="jenis_jabatan" class="block mb-1 font-medium">Jenis Jabatan <span class="text-red-500">*</span></label>
-                <select name="jenis_jabatan" id="jenis_jabatan" class="w-full border px-3 py-2 rounded @error('jenis_jabatan') border-red-500 @enderror" required>
+                <select name="jenis_jabatan" id="jenis_jabatan"
+                        class="w-full border px-3 py-2 rounded @error('jenis_jabatan') border-red-500 @enderror"
+                        data-old-value="{{ old('jenis_jabatan', $jabatan->jenis_jabatan ?? '') }}"
+                        required>
                     <option value="">-- Pilih Jenis Jabatan --</option>
-                    @php
-                        // Daftar lengkap semua kemungkinan jenis jabatan
-                        $allJenisJabatan = [
-                            'Dosen Fungsional',
-                            'Dosen Fungsi Tambahan',
-                            'Tenaga Kependidikan Struktural',
-                            'Tenaga Kependidikan Fungsional Umum',
-                            'Tenaga Kependidikan Fungsional Tertentu',
-                            'Tenaga Kependidikan Tugas Tambahan',
-                        ];
-                    @endphp
-                    @foreach($allJenisJabatan as $option)
-                        <option value="{{ $option }}" {{ old('jenis_jabatan', $jabatan->jenis_jabatan ?? '') == $option ? 'selected' : '' }}>
-                            {{ $option }}
-                        </option>
-                    @endforeach
                 </select>
                 @error('jenis_jabatan')
                     <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
+
+            {{-- DROPDOWN BARU: JABATAN --}}
 
             <div class="mb-4">
                 <label class="block mb-1 font-medium">Nama Jabatan</label>
@@ -91,110 +80,66 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // --- Selektor Elemen ---
+        // 1. Definisikan elemen select yang akan kita gunakan
         const jenisPegawaiSelect = document.getElementById('jenis_pegawai');
-        const jabatanSelect = document.getElementById('jabatan_terakhir_id');
-        const jenisJabatanDisplay = document.getElementById('jenis_jabatan_display');
+        const jenisJabatanSelect = document.getElementById('jenis_jabatan');
 
-        // Field yang visibilitasnya akan diubah
-        const nuptkField = document.getElementById('field_nuptk');
-        const nilaiKonversiField = document.getElementById('field_nilai_konversi');
-        const pakKonversiField = document.getElementById('field_pak_konversi');
-        const dosenFieldsWrapper = document.getElementById('dosen_fields_wrapper');
+        // 2. Buat pemetaan (mapping) antara Jenis Pegawai dan Jenis Jabatan
+        const jabatanMapping = {
+            'Dosen': [
+                'Dosen Fungsional',
+                'Dosen Fungsi Tambahan'
+            ],
+            'Tenaga Kependidikan': [
+                'Tenaga Kependidikan Struktural',
+                'Tenaga Kependidikan Fungsional Umum',
+                'Tenaga Kependidikan Fungsional Tertentu',
+                'Tenaga Kependidikan Tugas Tambahan'
+            ]
+        };
 
-        // Elemen lainnya
-        const unitKerjaSelect = document.getElementById('unit_kerja_terakhir_id');
-        const pathDisplay = document.getElementById('unit_kerja_path_display');
+        // 3. Buat fungsi untuk memperbarui opsi Jenis Jabatan
+        function updateJenisJabatanOptions() {
+            // Ambil nilai jenis pegawai yang sedang dipilih
+            const selectedPegawai = jenisPegawaiSelect.value;
+            // Ambil nilai lama (jika ada, untuk form edit)
+            const oldValue = jenisJabatanSelect.dataset.oldValue;
 
-        // --- Fungsi Inti ---
+            // Kosongkan opsi jenis jabatan yang ada saat ini
+            jenisJabatanSelect.innerHTML = '<option value="">-- Pilih Jenis Jabatan --</option>';
 
-        function filterJabatan() {
-            const selectedJenisPegawai = jenisPegawaiSelect.value;
-            for (const option of jabatanSelect.options) {
-                if (option.value === "") {
-                    option.style.display = "block";
-                    continue;
-                }
-                const optionJenisPegawai = option.dataset.jenisPegawai;
-                if (!selectedJenisPegawai || optionJenisPegawai === selectedJenisPegawai) {
-                    option.style.display = "block";
-                } else {
-                    option.style.display = "none";
-                }
+            // Jika jenis pegawai telah dipilih
+            if (selectedPegawai && jabatanMapping[selectedPegawai]) {
+                // Ambil daftar opsi yang sesuai dari mapping
+                const options = jabatanMapping[selectedPegawai];
+
+                // Tambahkan setiap opsi ke dalam select
+                options.forEach(function(optionText) {
+                    const option = document.createElement('option');
+                    option.value = optionText;
+                    option.textContent = optionText;
+
+                    // Jika nilai ini adalah nilai lama, buat opsi ini terpilih
+                    if (optionText === oldValue) {
+                        option.selected = true;
+                    }
+
+                    jenisJabatanSelect.appendChild(option);
+                });
             }
-            if (jabatanSelect.options[jabatanSelect.selectedIndex]?.style.display === 'none') {
-                jabatanSelect.value = "";
-            }
         }
 
-        function updateJenisJabatanLabel() {
-            const selectedOption = jabatanSelect.options[jabatanSelect.selectedIndex];
-            if (selectedOption && selectedOption.value) {
-                const jenisJabatan = selectedOption.dataset.jenisJabatan;
-                jenisJabatanDisplay.textContent = `(${jenisJabatan})`;
-            } else {
-                jenisJabatanDisplay.textContent = '';
-            }
-        }
-
-        /**
-         * =========================================================================
-         * FUNGSI YANG DIPERBARUI DENGAN DEBUGGING
-         * =========================================================================
-         */
-        function toggleConditionalFields() {
-            const selectedJenisPegawai = jenisPegawaiSelect.value;
-            const selectedJabatanOption = jabatanSelect.options[jabatanSelect.selectedIndex];
-            const selectedJenisJabatan = selectedJabatanOption ? selectedJabatanOption.dataset.jenisJabatan : '';
-
-            // --- DEBUGGING: Cetak nilai ke console browser ---
-            console.log("--- Memeriksa Kondisi Visibilitas ---");
-            console.log("Jenis Pegawai Dipilih:", `'${selectedJenisPegawai}'`);
-            console.log("Jenis Jabatan Dipilih:", `'${selectedJenisJabatan}'`);
-            // -------------------------------------------
-
-            // --- KONDISI 1: Untuk field NUPTK, Nilai Konversi, PAK Konversi ---
-            const showSharedFields = (
-                (selectedJenisPegawai === 'Dosen' && ['Dosen Fungsional', 'Dosen Fungsi Tambahan'].includes(selectedJenisJabatan)) ||
-                (selectedJenisPegawai === 'Tenaga Kependidikan' && selectedJenisJabatan === 'Tenaga Kependidikan Fungsional Tertentu')
-            );
-
-            console.log("Tampilkan NUPTK, Konversi, PAK?", showSharedFields);
-
-            nuptkField.classList.toggle('hidden', !showSharedFields);
-            nilaiKonversiField.classList.toggle('hidden', !showSharedFields);
-            pakKonversiField.classList.toggle('hidden', !showSharedFields);
-
-            // --- KONDISI 2: Untuk field spesifik Dosen lainnya (URL Sinta, dll) ---
-            const showDosenSpecificFields = selectedJenisPegawai === 'Dosen';
-            dosenFieldsWrapper.classList.toggle('hidden', !showDosenSpecificFields);
-        }
-
-        function displayUnitKerjaPath() {
-            const selectedOption = unitKerjaSelect.options[unitKerjaSelect.selectedIndex];
-            pathDisplay.innerHTML = (selectedOption && selectedOption.value) ? selectedOption.dataset.path : '';
-        }
-
-        // --- Panggilan Awal saat Halaman Dimuat ---
-        displayUnitKerjaPath();
-        filterJabatan();
-        updateJenisJabatanLabel();
-        toggleConditionalFields();
-
-        // --- Event Listeners ---
+        // 4. Tambahkan event listener ke dropdown Jenis Pegawai
         jenisPegawaiSelect.addEventListener('change', function() {
-            filterJabatan();
-            jabatanSelect.value = '';
-            updateJenisJabatanLabel();
-            toggleConditionalFields();
+            // Hapus data-old-value agar tidak mengganggu pilihan baru
+            jenisJabatanSelect.dataset.oldValue = '';
+            // Panggil fungsi untuk memperbarui dropdown
+            updateJenisJabatanOptions();
         });
 
-        jabatanSelect.addEventListener('change', function() {
-            updateJenisJabatanLabel();
-            toggleConditionalFields();
-        });
-
-        unitKerjaSelect.addEventListener('change', displayUnitKerjaPath);
+        // 5. Panggil fungsi sekali saat halaman dimuat (penting untuk form edit)
+        // Ini akan mengisi dropdown 'Jenis Jabatan' berdasarkan nilai 'Jenis Pegawai' yang sudah ada
+        updateJenisJabatanOptions();
     });
 </script>
 
