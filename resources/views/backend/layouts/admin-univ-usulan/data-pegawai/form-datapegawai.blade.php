@@ -119,6 +119,20 @@
                             </select>
                         </div>
                         <div>
+                            <label for="status_kepegawaian" class="block text-sm font-semibold text-slate-600">Status Kepegawaian <span class="text-red-500 ml-0.5">*</span></label>
+                            <select id="status_kepegawaian" name="status_kepegawaian" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors sm:text-sm" {{ old('jenis_pegawai', $pegawai->jenis_pegawai ?? '') ? '' : 'disabled' }}>
+                                <option value="">Pilih Status</option>
+                                {{-- Opsi untuk Dosen --}}
+                                <option value="Dosen PNS" data-jenis="Dosen" {{ old('status_kepegawaian', $pegawai->status_kepegawaian ?? '') == 'Dosen PNS' ? 'selected' : '' }}>Dosen PNS</option>
+                                <option value="Dosen PPPK" data-jenis="Dosen" {{ old('status_kepegawaian', $pegawai->status_kepegawaian ?? '') == 'Dosen PPPK' ? 'selected' : '' }}>Dosen PPPK</option>
+                                <option value="Dosen Non ASN" data-jenis="Dosen" {{ old('status_kepegawaian', $pegawai->status_kepegawaian ?? '') == 'Dosen Non ASN' ? 'selected' : '' }}>Dosen Non ASN</option>
+                                {{-- Opsi untuk Tenaga Kependidikan --}}
+                                <option value="Tenaga Kependidikan PNS" data-jenis="Tenaga Kependidikan" {{ old('status_kepegawaian', $pegawai->status_kepegawaian ?? '') == 'Tenaga Kependidikan PNS' ? 'selected' : '' }}>Tenaga Kependidikan PNS</option>
+                                <option value="Tenaga Kependidikan PPPK" data-jenis="Tenaga Kependidikan" {{ old('status_kepegawaian', $pegawai->status_kepegawaian ?? '') == 'Tenaga Kependidikan PPPK' ? 'selected' : '' }}>Tenaga Kependidikan PPPK</option>
+                                <option value="Tenaga Kependidikan Non ASN" data-jenis="Tenaga Kependidikan" {{ old('status_kepegawaian', $pegawai->status_kepegawaian ?? '') == 'Tenaga Kependidikan Non ASN' ? 'selected' : '' }}>Tenaga Kependidikan Non ASN</option>
+                            </select>
+                        </div>
+                        <div>
                             <label for="nip" class="block text-sm font-semibold text-slate-600">NIP <span class="text-red-500 ml-0.5">*</span></label>
                             <input type="text" name="nip" id="nip" value="{{ old('nip', $pegawai->nip ?? '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400" placeholder="18 Karakter Numerik" maxlength="18">
                         </div>
@@ -521,6 +535,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         // --- Selektor Elemen ---
         const jenisPegawaiSelect = document.getElementById('jenis_pegawai');
+        const statusKepegawaianSelect = document.getElementById('status_kepegawaian');
         const jabatanSelect = document.getElementById('jabatan_terakhir_id');
         const jenisJabatanDisplay = document.getElementById('jenis_jabatan_display');
         const nuptkField = document.getElementById('field_nuptk');
@@ -531,6 +546,37 @@
         const pathDisplay = document.getElementById('unit_kerja_path_display');
 
         // --- Fungsi Inti ---
+
+         function filterStatusKepegawaian() {
+            const selectedJenis = jenisPegawaiSelect.value;
+            const currentStatus = statusKepegawaianSelect.value;
+
+            // Aktifkan atau nonaktifkan dropdown status
+            if (selectedJenis) {
+                statusKepegawaianSelect.disabled = false;
+            } else {
+                statusKepegawaianSelect.disabled = true;
+                statusKepegawaianSelect.value = "";
+                return;
+            }
+
+            // Saring opsi yang ditampilkan
+            for (const option of statusKepegawaianSelect.options) {
+                if (option.value === "") {
+                    option.style.display = "block";
+                    continue;
+                }
+                option.style.display = (option.dataset.jenis === selectedJenis) ? "block" : "none";
+            }
+
+            // Reset pilihan jika opsi yang dipilih tidak lagi valid
+        const selectedOption = statusKepegawaianSelect.querySelector(`option[value="${currentStatus}"]`);
+            if (currentStatus && (!selectedOption || selectedOption.style.display === 'none')) {
+                statusKepegawaianSelect.value = "";
+            }
+        }
+
+        filterStatusKepegawaian();
 
         function filterJabatan() {
             const selectedJenisPegawai = jenisPegawaiSelect.value;
@@ -629,6 +675,7 @@
 
         // --- Event Listeners ---
         jenisPegawaiSelect.addEventListener('change', function() {
+            filterStatusKepegawaian();
             toggleConditionalFields();
             filterJabatan();
             jabatanSelect.value = ""; // Reset jabatan saat jenis pegawai berubah

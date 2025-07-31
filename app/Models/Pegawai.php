@@ -24,6 +24,7 @@ class Pegawai extends Authenticatable
         'jabatan_terakhir_id',
         'unit_kerja_terakhir_id',
         'jenis_pegawai',
+        'status_kepegawaian',
         'nip',
         'nuptk',
         'gelar_depan',

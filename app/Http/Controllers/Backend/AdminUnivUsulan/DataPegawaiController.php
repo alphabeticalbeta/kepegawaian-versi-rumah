@@ -10,6 +10,7 @@ use App\Models\SubSubUnitKerja;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\File as FileFacade;
 
 class DataPegawaiController extends Controller
@@ -136,8 +137,8 @@ class DataPegawaiController extends Controller
             'gelar_depan' => 'nullable|string|max:255',
             'nama_lengkap' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:pegawais,email,' . $pegawaiId,
-            'gelar_belakang' => 'nullable|string|max:255',
-            'nomor_kartu_pegawai' => 'nullable|string|max:255',
+            'gelar_belakang' => 'required|string|max:255',
+            'nomor_kartu_pegawai' => 'required|string|max:255',
             'tempat_lahir' => 'required|string|max:255',
             'tanggal_lahir' => 'required|date',
             'jenis_kelamin' => 'required|in:Laki-Laki,Perempuan',
@@ -150,28 +151,33 @@ class DataPegawaiController extends Controller
             'predikat_kinerja_tahun_kedua' => 'required|string',
             'unit_kerja_terakhir_id' => 'required|exists:sub_sub_unit_kerjas,id',
             'nomor_handphone' => 'required|string',
-            'tmt_cpns' => 'nullable|date',
-            'tmt_pns' => 'nullable|date',
+            'tmt_cpns' => 'required|date',
+            'tmt_pns' => 'required|date',
             'nuptk' => 'nullable|numeric|digits:16',
             'mata_kuliah_diampu' => 'nullable|required_if:jenis_pegawai,Dosen|string',
             'ranting_ilmu_kepakaran' => 'nullable|required_if:jenis_pegawai,Dosen|string',
             'url_profil_sinta' => 'nullable|required_if:jenis_pegawai,Dosen|url',
             'nilai_konversi' => 'nullable|numeric',
-            'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
-            'sk_penyetaraan_ijazah' => ['nullable', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
-            'disertasi_thesis_terakhir' => ['nullable', File::types(['pdf'])->max(10 * 1024)],
-            'sk_cpns' => ['nullable', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
-            'sk_pns' => ['nullable', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
+            'status_kepegawaian' => ['required','string',Rule::in([
+                'Dosen PNS', 'Dosen PPPK', 'Dosen Non ASN',
+                'Tenaga Kependidikan PNS', 'Tenaga Kependidikan PPPK', 'Tenaga Kependidikan Non ASN'
+                ])
+            ],
         ];
 
         $fileRules = [
-            'sk_pangkat_terakhir' => ['required', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
-            'sk_jabatan_terakhir' => ['required', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
-            'ijazah_terakhir' => ['required', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
-            'transkrip_nilai_terakhir' => ['required', File::types(['pdf', 'jpg', 'png'])->max(2 * 1024)],
+            'sk_pangkat_terakhir' => ['required', File::types(['pdf'])->max(2 * 1024)],
+            'sk_jabatan_terakhir' => ['required', File::types(['pdf'])->max(2 * 1024)],
+            'ijazah_terakhir' => ['required', File::types(['pdf'])->max(2 * 1024)],
+            'transkrip_nilai_terakhir' => ['required', File::types(['pdf'])->max(2 * 1024)],
             'skp_tahun_pertama' => ['required', File::types(['pdf'])->max(2 * 1024)],
             'skp_tahun_kedua' => ['required', File::types(['pdf'])->max(2 * 1024)],
             'pak_konversi' => ['nullable', File::types(['pdf'])->max(2 * 1024)],
+            'foto' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'sk_penyetaraan_ijazah' => ['nullable', File::types(['pdf'])->max(2 * 1024)],
+            'disertasi_thesis_terakhir' => ['nullable', File::types(['pdf'])->max(10 * 1024)],
+            'sk_cpns' => ['required', File::types(['pdf'])->max(2 * 1024)],
+            'sk_pns' => ['required', File::types(['pdf'])->max(2 * 1024)],
         ];
 
         if ($pegawaiId) {
