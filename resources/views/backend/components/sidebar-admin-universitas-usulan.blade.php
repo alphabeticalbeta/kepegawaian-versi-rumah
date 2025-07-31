@@ -75,79 +75,79 @@
                 <div class="relative">
                     <a href="#" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i data-lucide="file-bar-chart-2" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-                        <span class="font-medium sidebar-text">Usul Laporan LKD</span>
+                        <span class="font-medium sidebar-text">Usulan Laporan LKD</span>
                     </a>
                 </div>
                 <div class="relative">
                     <a href="#" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i data-lucide="clipboard-check" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-                        <span class="font-medium sidebar-text">Usul Presensi</span>
+                        <span class="font-medium sidebar-text">Usulan Presensi</span>
                     </a>
                 </div>
                 <div class="relative">
                     <a href="#" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i data-lucide="clock" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-                        <span class="font-medium sidebar-text">Usul Penyesuaian Masa Kerja</span>
+                        <span class="font-medium sidebar-text">Usulan Penyesuaian Masa Kerja</span>
                     </a>
                 </div>
                 <div class="relative">
                     <a href="#" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i data-lucide="book-marked" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-                        <span class="font-medium sidebar-text">Usul Ujian Dinas & Ijazah</span>
+                        <span class="font-medium sidebar-text">Usulan Ujian Dinas & Ijazah</span>
                     </a>
                 </div>
                 <div class="relative">
                     <a href="#" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i data-lucide="file-user" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-                        <span class="font-medium sidebar-text">Usul Jabatan</span>
+                        <span class="font-medium sidebar-text">Usulan Jabatan</span>
                     </a>
                 </div>
                 <div class="relative">
                     <a href="#" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i data-lucide="file-check-2" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-                        <span class="font-medium sidebar-text">Usul Laporan Serdos</span>
+                        <span class="font-medium sidebar-text">Usulan Laporan Serdos</span>
                     </a>
                 </div>
                 <div class="relative">
                     <a href="#" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i data-lucide="user-minus" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-                        <span class="font-medium sidebar-text">Usul Pensiun</span>
+                        <span class="font-medium sidebar-text">Usulan Pensiun</span>
                     </a>
                 </div>
                 <div class="relative">
                     <a href="#" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i data-lucide="trending-up" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-                        <span class="font-medium sidebar-text">Usul Kepangkatan</span>
+                        <span class="font-medium sidebar-text">Usulan Kepangkatan</span>
                     </a>
                 </div>
                 <div class="relative">
                     <a href="#" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i data-lucide="graduation-cap" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-                        <span class="font-medium sidebar-text">Usul Pencantuman Gelar</span>
+                        <span class="font-medium sidebar-text">Usulan Pencantuman Gelar</span>
                     </a>
                 </div>
                 <div class="relative">
                     <a href="#" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i data-lucide="link" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-                        <span class="font-medium sidebar-text">Usul ID SINTA ke SISTER</span>
+                        <span class="font-medium sidebar-text">Usulan ID SINTA ke SISTER</span>
                     </a>
                 </div>
                 <div class="relative">
                     <a href="#" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i data-lucide="medal" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-                        <span class="font-medium sidebar-text">Usul Satyalancana</span>
+                        <span class="font-medium sidebar-text">Usulan Satyalancana</span>
                     </a>
                 </div>
                 <div class="relative">
                     <a href="#" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i data-lucide="book-open" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-                        <span class="font-medium sidebar-text">Usul Tugas Belajar</span>
+                        <span class="font-medium sidebar-text">Usulan Tugas Belajar</span>
                     </a>
                 </div>
                 <div class="relative">
                     <a href="#" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                         <i data-lucide="user-plus" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-                        <span class="font-medium sidebar-text">Usul Pengaktifan Kembali</span>
+                        <span class="font-medium sidebar-text">Usulan Pengaktifan Kembali</span>
                     </a>
                 </div>
             </div>

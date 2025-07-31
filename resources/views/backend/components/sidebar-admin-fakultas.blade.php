@@ -11,6 +11,14 @@
     <nav class="py-4 overflow-y-auto h-[calc(100vh-128px)]"> {{-- Dibuat bisa di-scroll jika menu terlalu panjang --}}
         <div class="space-y-1">
 
+            <div class="px-4 mb-4">
+                <a href="#" {{-- Ganti # dengan route dashboard pegawai --}}
+                class="flex items-center px-3 py-2.5 rounded-lg font-semibold {{ request()->routeIs('backend.pegawai-unmul.dashboard-pegawai-unmul') ? 'bg-indigo-50 text-indigo-600' : 'text-slate-600 hover:bg-slate-100' }}">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3 flex-shrink-0"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+            </div>
+
             <div class="px-4 relative">
                 <a href="#" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                     <i data-lucide="file-user" class="w-5 h-5 mr-3 flex-shrink-0"></i>

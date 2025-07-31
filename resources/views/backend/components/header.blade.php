@@ -1,7 +1,7 @@
 <header class="bg-white shadow-sm border-b border-gray-200 px-4 sm:px-6 py-3 h-16 flex items-center justify-between flex-shrink-0 z-20">
+    {{-- Bagian kiri header tidak berubah --}}
     <div class="flex items-center gap-4">
-        {{-- Tombol toggle sidebar memanggil fungsi global window.toggleSidebar() --}}
-        <button onclick="toggleSidebar()" class="p-1.5 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400">
+        <button onclick="toggleSidebar()" class="p-1.5 rounded-lg hover:bg-gray-100">
             <i data-lucide="menu" class="w-6 h-6 text-gray-700"></i>
         </button>
     </div>
@@ -13,7 +13,10 @@
                 $roles = $user->roles->pluck('name');
                 $availableDashboards = [];
 
-                // Logika ini sudah benar, memeriksa role dan menambahkan rute ke array
+                // ==========================================================
+                // ===== PERBAIKAN LOGIKA DIMULAI DI SINI ===================
+                // ==========================================================
+                // Periksa setiap role yang mungkin dimiliki pengguna
                 if ($roles->contains('Admin Universitas')) {
                     $availableDashboards['Admin Universitas'] = route('admin-universitas.dashboard-universitas');
                 }
@@ -26,18 +29,22 @@
                 if ($roles->contains('Penilai')) {
                     $availableDashboards['Penilai'] = route('penilai-universitas.dashboard-penilai-universitas');
                 }
+
                 // Selalu tambahkan dashboard default Pegawai
                 $availableDashboards['Pegawai'] = route('pegawai-unmul.dashboard-pegawai-unmul');
+                // ==========================================================
+                // ======================= AKHIR PERBAIKAN ====================
+                // ==========================================================
             @endphp
 
-            {{-- Tombol notifikasi --}}
+            {{-- Tombol notifikasi (contoh) --}}
             <button class="p-2 hover:bg-gray-100 rounded-full relative">
                 <i data-lucide="bell" class="w-5 h-5 text-gray-600"></i>
             </button>
 
             <div class="w-px h-6 bg-gray-200"></div>
 
-            {{-- Menu Pindah Halaman --}}
+            {{-- MENU PINDAH HALAMAN (TERPISAH) --}}
             @if(count($availableDashboards) > 1)
             <div class="relative">
                 <button onclick="toggleRoleDropdown()" class="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100">
@@ -73,11 +80,10 @@
                             <i data-lucide="user" class="w-4 h-4"></i> Profil Saya
                         </a>
                     </div>
-                    <div class="border-t border-gray-100"></div>
-                    <div class="py-1">
+                    <div class="border-t border-gray-100">
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <button type="submit" class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                            <button type="submit" class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
                             </button>
                         </form>
@@ -92,4 +98,34 @@
     </div>
 </header>
 
-{{-- BLOK SCRIPT DIHAPUS DARI SINI --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
+        window.toggleProfileDropdown = function() {
+            document.getElementById('role-dropdown-menu')?.classList.add('hidden');
+            document.getElementById('profile-dropdown-menu')?.classList.toggle('hidden');
+        };
+
+        window.toggleRoleDropdown = function() {
+            document.getElementById('profile-dropdown-menu')?.classList.add('hidden');
+            document.getElementById('role-dropdown-menu')?.classList.toggle('hidden');
+        };
+
+        window.addEventListener('click', function(e) {
+            const profileDropdown = document.getElementById('profile-dropdown-menu');
+            const profileButton = document.querySelector('button[onclick="toggleProfileDropdown()"]');
+            const roleDropdown = document.getElementById('role-dropdown-menu');
+            const roleButton = document.querySelector('button[onclick="toggleRoleDropdown()"]');
+
+            if (profileDropdown && profileButton && !profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
+                profileDropdown.classList.add('hidden');
+            }
+            if (roleDropdown && roleButton && !roleButton.contains(e.target) && !roleDropdown.contains(e.target)) {
+                roleDropdown.classList.add('hidden');
+            }
+        });
+    });
+</script>
