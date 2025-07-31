@@ -35,9 +35,7 @@
                             <img class="h-10 w-10 rounded-full object-cover mr-4 border" src="{{ $pegawai->foto ? Storage::url($pegawai->foto) : 'https://ui-avatars.com/api/?name=' . urlencode($pegawai->nama_lengkap) }}" alt="Foto">
                             {{ $pegawai->nama_lengkap }}
                         </th>
-                        <td class="px-6 py-4">
-                            {{ $pegawai->nip }}
-                        </td>
+                        <td class="px-6 py-4">{{ $pegawai->nip }}</td>
                         <td class="px-6 py-4">
                             <div class="flex flex-wrap gap-1">
                                 @forelse($pegawai->roles as $role)
@@ -48,18 +46,14 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 text-center">
-                            {{-- PERUBAHAN: Tombol diubah menjadi link ke halaman edit --}}
+                            {{-- PERUBAHAN: Tombol diubah menjadi link biasa --}}
                             <a href="{{ route('backend.admin-univ-usulan.role-pegawai.edit', $pegawai) }}" class="font-medium text-indigo-600 hover:text-indigo-900 hover:underline">
                                 Kelola Role
                             </a>
                         </td>
                     </tr>
                 @empty
-                    <tr>
-                        <td colspan="4" class="text-center py-8 text-gray-500">
-                            Tidak ada data pegawai.
-                        </td>
-                    </tr>
+                    <tr><td colspan="4" class="text-center py-8 text-gray-500">Tidak ada data pegawai.</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -69,78 +63,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const modal = document.getElementById('role-modal');
-    const openModalButtons = document.querySelectorAll('.open-modal-btn');
-    const cancelModalButton = document.getElementById('cancel-modal-btn');
-    const modalPegawaiName = document.getElementById('modal-pegawai-name');
-    const roleForm = document.getElementById('role-form');
-    const rolesCheckboxContainer = document.getElementById('roles-checkbox-container');
-
-    // Fungsi untuk membuka modal
-    const openModal = (e) => {
-        const pegawaiId = e.target.dataset.pegawaiId;
-        const pegawaiName = e.target.dataset.pegawaiName;
-
-        // Set nama pegawai di judul modal
-        modalPegawaiName.textContent = pegawaiName;
-
-        // Set action form
-        const updateUrl = `{{ url('admin-univ-usulan/role-pegawai') }}/${pegawaiId}`;
-        roleForm.setAttribute('action', updateUrl);
-
-        // Tampilkan loading
-        rolesCheckboxContainer.innerHTML = '<p class="text-gray-400 text-center">Memuat role...</p>';
-        modal.classList.remove('hidden');
-
-        // Ambil data role via Fetch API
-        fetch(`{{ url('admin-univ-usulan/role-pegawai') }}/${pegawaiId}/edit`)
-            .then(response => response.json())
-            .then(data => {
-                populateCheckboxes(data.allRoles, data.pegawaiRoleIds);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                rolesCheckboxContainer.innerHTML = '<p class="text-red-500 text-center">Gagal memuat role.</p>';
-            });
-    };
-
-    // Fungsi untuk mengisi checkbox
-    const populateCheckboxes = (allRoles, pegawaiRoleIds) => {
-        rolesCheckboxContainer.innerHTML = ''; // Kosongkan container
-        allRoles.forEach(role => {
-            const isChecked = pegawaiRoleIds.includes(role.id) ? 'checked' : '';
-            const checkboxHtml = `
-                <label for="role-${role.id}" class="flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-md cursor-pointer">
-                    <input id="role-${role.id}" name="roles[]" type="checkbox" value="${role.id}" ${isChecked}
-                           class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                    <span class="text-gray-700 text-sm font-medium">${role.name}</span>
-                </label>
-            `;
-            rolesCheckboxContainer.insertAdjacentHTML('beforeend', checkboxHtml);
-        });
-    };
-
-    // Fungsi untuk menutup modal
-    const closeModal = () => {
-        modal.classList.add('hidden');
-    };
-
-    // Tambahkan event listener ke setiap tombol "Kelola Role"
-    openModalButtons.forEach(button => {
-        button.addEventListener('click', openModal);
-    });
-
-    // Event listener untuk tombol batal dan klik di luar area modal
-    cancelModalButton.addEventListener('click', closeModal);
-    modal.addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeModal();
-        }
-    });
-});
-</script>
-@endpush

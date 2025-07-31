@@ -8,13 +8,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 
-
 class PegawaiController extends Controller
 {
     public function __construct()
     {
-        // Lindungi semua method di controller ini dengan Gate 'manage-pegawai'
-        $this->authorizeResource(Pegawai::class, 'pegawai');
+        // Terapkan Gate: hanya yang lolos 'manage-pegawai' bisa akses
+        $this->middleware('can:manage-pegawai');
     }
 
     /**
@@ -48,7 +47,6 @@ class PegawaiController extends Controller
         $pegawai->nama_lengkap = $request->nama_lengkap;
         $pegawai->email = $request->email;
 
-        // Hanya update password jika diisi
         if ($request->filled('password')) {
             $pegawai->password = Hash::make($request->password);
         }

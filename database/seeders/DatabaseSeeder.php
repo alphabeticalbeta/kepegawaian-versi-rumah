@@ -17,8 +17,11 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PangkatSeeder::class,
             JabatanSeeder::class,
-            UnitKerjaSeeder::class,
-            // Tambahkan seeder lain jika ada, misalnya RoleSeeder
+            UnitKerjaSeeder::class, // Pastikan unit kerja juga di-seed
+            RoleSeeder::class,
+
+            // Baru setelah itu panggil PegawaiSeeder
+            PegawaiSeeder::class,
         ]);
 
         User::factory()->create([
