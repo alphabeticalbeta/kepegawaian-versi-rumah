@@ -9,6 +9,13 @@ use Illuminate\Http\Request;
 
 class RolePegawaiController extends Controller
 {
+    public function __construct()
+    {
+        // Lindungi semua method di controller ini dengan Gate 'manage-role-pegawai'
+        $this->middleware('can:manage-pegawai');
+    }
+
+
     /**
      * Menampilkan halaman utama manajemen role.
      */

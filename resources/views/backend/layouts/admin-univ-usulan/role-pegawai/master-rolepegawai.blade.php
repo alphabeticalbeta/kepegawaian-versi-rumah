@@ -48,13 +48,10 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 text-center">
-                            @can('manage-roles')
-                                {{-- Tombol "Kelola Role" akan muncul di sini --}}
-                                <button>Kelola Role</button>
-                            @else
-                                {{-- Jika tidak punya hak akses, hanya tanda strip (-) yang muncul --}}
-                                <span>-</span>
-                            @endcan
+                            {{-- PERUBAHAN: Tombol diubah menjadi link ke halaman edit --}}
+                            <a href="{{ route('backend.admin-univ-usulan.role-pegawai.edit', $pegawai) }}" class="font-medium text-indigo-600 hover:text-indigo-900 hover:underline">
+                                Kelola Role
+                            </a>
                         </td>
                     </tr>
                 @empty
@@ -69,38 +66,6 @@
     </div>
     <div class="mt-6">
         {{ $pegawais->links() }}
-    </div>
-</div>
-
-{{-- MODAL POPUP UNTUK EDIT ROLE --}}
-<div id="role-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
-        <div class="mt-3 text-center">
-            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 mb-4">
-                <i data-lucide="user-cog" class="w-6 h-6 text-indigo-600"></i>
-            </div>
-            <h3 class="text-lg leading-6 font-medium text-gray-900">Edit Role untuk:</h3>
-            <p id="modal-pegawai-name" class="text-sm text-gray-500 font-bold mt-1"></p>
-
-            <form id="role-form" method="POST" class="mt-6">
-                @csrf
-                @method('PUT')
-
-                <div id="roles-checkbox-container" class="space-y-4 text-left p-4 border rounded-md bg-gray-50 max-h-64 overflow-y-auto">
-                    {{-- Checkbox akan di-generate oleh JavaScript di sini --}}
-                    <p class="text-gray-400 text-center">Memuat role...</p>
-                </div>
-
-                <div class="items-center px-4 py-3 mt-6">
-                    <button id="cancel-modal-btn" type="button" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md mr-2 hover:bg-gray-300">
-                        Batal
-                    </button>
-                    <button id="submit-role-btn" type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-                        Simpan Perubahan
-                    </button>
-                </div>
-            </form>
-        </div>
     </div>
 </div>
 @endsection

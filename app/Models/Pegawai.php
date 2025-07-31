@@ -6,8 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Pegawai extends Model
+class Pegawai extends Authenticatable
 {
     use HasFactory;
 
@@ -106,11 +107,12 @@ class Pegawai extends Model
     {
         parent::boot();
 
+        // Event yang berjalan otomatis SEBELUM pegawai baru disimpan
         static::creating(function ($pegawai) {
-            // Jika password tidak diisi secara manual dari form (karena formnya disembunyikan),
-            // atur nilainya menjadi NIP pegawai.
+            // Jika password tidak diisi secara manual dari form,
+            // atur nilainya menjadi NIP pegawai DAN LANGSUNG DI-HASH.
             if (empty($pegawai->password)) {
-                $pegawai->password = $pegawai->nip;
+                $pegawai->password = Hash::make($pegawai->nip);
             }
         });
 

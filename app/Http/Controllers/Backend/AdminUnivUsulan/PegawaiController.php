@@ -1,0 +1,60 @@
+<?php
+
+namespace App\Http\Controllers\Backend\AdminUnivUsulan;
+
+use App\Http\Controllers\Controller;
+use App\Models\Pegawai;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules;
+
+
+class PegawaiController extends Controller
+{
+    public function __construct()
+    {
+        // Lindungi semua method di controller ini dengan Gate 'manage-pegawai'
+        $this->authorizeResource(Pegawai::class, 'pegawai');
+    }
+
+    /**
+     * Menampilkan daftar akun pegawai untuk manajemen.
+     */
+    public function index()
+    {
+        $pegawais = Pegawai::orderBy('nama_lengkap')->paginate(15);
+        return view('backend.layouts.admin-univ-usulan.pegawai.index', compact('pegawais'));
+    }
+
+    /**
+     * Menampilkan form untuk mengedit akun pegawai.
+     */
+    public function edit(Pegawai $pegawai)
+    {
+        return view('backend.layouts.admin-univ-usulan.pegawai.edit', compact('pegawai'));
+    }
+
+    /**
+     * Memperbarui data akun pegawai.
+     */
+    public function update(Request $request, Pegawai $pegawai)
+    {
+        $request->validate([
+            'nama_lengkap' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:pegawais,email,' . $pegawai->id],
+            'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
+        ]);
+
+        $pegawai->nama_lengkap = $request->nama_lengkap;
+        $pegawai->email = $request->email;
+
+        // Hanya update password jika diisi
+        if ($request->filled('password')) {
+            $pegawai->password = Hash::make($request->password);
+        }
+
+        $pegawai->save();
+
+        return redirect()->route('backend.admin-univ-usulan.pegawai.index')->with('success', 'Akun pegawai berhasil diperbarui.');
+    }
+}

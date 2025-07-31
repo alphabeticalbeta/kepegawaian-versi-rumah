@@ -36,9 +36,22 @@ return [
     */
 
     'guards' => [
+        // 'web' => [
+        //     'driver' => 'session',
+        //     'provider' => 'pegawais', // <-- Ganti baris ini
+        // ],
+
+        // Kita ubah konfigurasi guard 'web' untuk menggunakan provider 'pegawais'
+
         'web' => [
             'driver' => 'session',
-            'provider' => 'users',
+            'provider' => 'pegawais',
+        ],
+
+        // Kita juga tambahkan guard 'pegawai' secara eksplisit
+        'pegawai' => [
+            'driver' => 'session',
+            'provider' => 'pegawais',
         ],
     ],
 
@@ -62,13 +75,14 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
+            'model' => App\Models\User::class,
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        // ▼▼▼ TAMBAHKAN BLOK BARU INI DI BAWAHNYA ▼▼▼
+        'pegawais' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Pegawai::class,
+        ],
     ],
 
     /*
