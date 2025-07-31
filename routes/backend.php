@@ -37,7 +37,8 @@ Route::middleware(['auth:pegawai'])->group(function () {
         Route::get('/dashboard', [AdminUnivUsulanDashboardController::class, 'index'])->name('dashboard');
 
         // Resource Routes untuk Master Data
-        Route::resource('/data-pegawai', DataPegawaiController::class);
+        Route::resource('/data-pegawai', DataPegawaiController::class)
+            ->parameters(['data-pegawai' => 'pegawai']);
         Route::resource('/unitkerja', UnitKerjaController::class);
         Route::resource('/sub-unitkerja', SubUnitKerjaController::class);
         Route::resource('/sub-sub-unitkerja', SubSubUnitKerjaController::class);

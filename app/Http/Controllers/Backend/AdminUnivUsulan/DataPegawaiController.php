@@ -10,7 +10,6 @@ use App\Models\SubSubUnitKerja;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
-// PERUBAHAN 1: Tambahkan use statement untuk File facade dengan alias FileFacade
 use Illuminate\Support\Facades\File as FileFacade;
 
 class DataPegawaiController extends Controller
@@ -18,15 +17,30 @@ class DataPegawaiController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request) // PERUBAHAN 1: Tambahkan Request $request
     {
-        // Eager load relasi untuk optimasi query
-        $pegawais = Pegawai::with(['pangkat', 'jabatan', 'unitKerja'])
-            ->orderBy('nama_lengkap')
-            ->paginate(10);
+        // PERUBAHAN 2: Ganti logika pengambilan data dengan query builder
+        $query = Pegawai::with(['pangkat', 'jabatan', 'unitKerja'])->latest();
+
+        // Terapkan filter berdasarkan jenis pegawai jika ada
+        $query->when($request->filter_jenis_pegawai, function ($q, $jenis_pegawai) {
+            return $q->where('jenis_pegawai', $jenis_pegawai);
+        });
+
+        // Terapkan filter pencarian berdasarkan nama atau NIP jika ada
+        $query->when($request->search, function ($q, $search) {
+            return $q->where(function ($subQuery) use ($search) {
+                $subQuery->where('nama_lengkap', 'like', "%{$search}%")
+                         ->orWhere('nip', 'like', "%{$search}%");
+            });
+        });
+
+        // Ambil data dengan paginasi
+        $pegawais = $query->paginate(10)->withQueryString();
 
         return view('backend.layouts.admin-univ-usulan.data-pegawai.master-datapegawai', compact('pegawais'));
     }
+
 
     /**
      * Show the form for creating a new resource.
@@ -195,7 +209,7 @@ class DataPegawaiController extends Controller
     }
 
     /**
-     * PERUBAHAN 2: Ganti seluruh isi method showDocument ini
+     * Display a document.
      */
     public function showDocument(Pegawai $pegawai, $field)
     {
@@ -215,19 +229,13 @@ class DataPegawaiController extends Controller
             abort(404, 'File tidak ditemukan.');
         }
 
-        // Ambil path lengkap ke file
         $path = Storage::disk('public')->path($filePath);
-
-        // Ambil tipe MIME menggunakan File Facade yang sudah diberi alias
         $mimeType = FileFacade::mimeType($path);
-
-        // Siapkan header untuk menampilkan file secara inline
         $headers = [
             'Content-Type' => $mimeType,
             'Content-Disposition' => 'inline; filename="' . basename($path) . '"',
         ];
 
-        // Gunakan response()->file() untuk mengirim file ke browser
         return response()->file($path, $headers);
     }
 }

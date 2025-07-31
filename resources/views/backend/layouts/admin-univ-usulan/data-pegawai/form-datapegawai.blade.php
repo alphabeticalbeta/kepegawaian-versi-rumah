@@ -6,20 +6,25 @@
 {{-- Desain Latar Belakang --}}
 <div class="bg-slate-50/50 min-h-screen">
 <div class="container mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-8">
-        <div>
-            <h2 class="text-3xl font-extrabold leading-tight text-slate-900">
-                {{ isset($pegawai) ? 'Edit Data Pegawai' : 'Tambah Data Pegawai' }}
-            </h2>
-            <p class="text-sm text-slate-500 mt-1">
-                Harap isi semua kolom yang ditandai dengan <span class="text-red-500 font-semibold">*</span>.
-            </p>
+    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100 mb-5">
+
+        <div class="flex justify-between items-center">
+            <div>
+                <h2 class="text-3xl font-extrabold leading-tight text-slate-900">
+                    {{ isset($pegawai) ? 'Edit Data Pegawai' : 'Tambah Data Pegawai' }}
+                </h2>
+                <p class="text-sm text-slate-500 mt-1">
+                    Harap isi semua kolom yang ditandai dengan <span class="text-red-500 font-semibold">*</span>.
+                </p>
+            </div>
+
+            {{-- Tombol Kembali --}}
+            <a href="{{ route('backend.admin-univ-usulan.data-pegawai.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-white bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm hover:bg-gray-500 transition-all">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Kembali ke Daftar
+            </a>
         </div>
-        {{-- Tombol Kembali --}}
-        <a href="{{ route('backend.admin-univ-usulan.data-pegawai.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-indigo-600 bg-white px-4 py-2 rounded-lg border border-slate-200 shadow-sm hover:bg-slate-50 transition-all">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i>
-            Kembali ke Daftar
-        </a>
+
     </div>
 
 
@@ -77,26 +82,27 @@
 
                         {{-- KOLOM UNTUK INFO DASAR --}}
                         <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            {{-- PERBAIKAN: Menambahkan padding px-4 py-2 pada input --}}
                             <div class="sm:col-span-2">
                                 <label for="nama_lengkap" class="block text-sm font-semibold text-slate-600">Nama Lengkap (Tanpa Gelar) <span class="text-red-500 ml-0.5">*</span></label>
-                                <input type="text" name="nama_lengkap" id="nama_lengkap" value="{{ old('nama_lengkap', $pegawai->nama_lengkap ?? '') }}" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400">
+                                <input type="text" name="nama_lengkap" id="nama_lengkap" value="{{ old('nama_lengkap', $pegawai->nama_lengkap ?? '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400">
                             </div>
                             <div>
                                 <label for="gelar_depan" class="block text-sm font-semibold text-slate-600">Gelar Depan</label>
-                                <input type="text" name="gelar_depan" id="gelar_depan" value="{{ old('gelar_depan', $pegawai->gelar_depan ?? '') }}" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400">
+                                <input type="text" name="gelar_depan" id="gelar_depan" value="{{ old('gelar_depan', $pegawai->gelar_depan ?? '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400">
                             </div>
                             <div>
                                 <label for="gelar_belakang" class="block text-sm font-semibold text-slate-600">Gelar Belakang</label>
-                                <input type="text" name="gelar_belakang" id="gelar_belakang" value="{{ old('gelar_belakang', $pegawai->gelar_belakang ?? '') }}" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400">
+                                <input type="text" name="gelar_belakang" id="gelar_belakang" value="{{ old('gelar_belakang', $pegawai->gelar_belakang ?? '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400">
                             </div>
                             <div class="sm:col-span-2">
                                 <label for="email" class="block text-sm font-semibold text-slate-600">Alamat Email <span class="text-red-500 ml-0.5">*</span></label>
-                                <input type="email" name="email" id="email" value="{{ old('email', $pegawai->email ?? '') }}" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors" placeholder="contoh@email.com">
+                                <input type="email" name="email" id="email" value="{{ old('email', $pegawai->email ?? '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors" placeholder="contoh@email.com">
                             </div>
                             @if(isset($pegawai))
                             <div class="sm:col-span-2">
                                 <label for="password" class="block text-sm font-semibold text-slate-600">Ubah Password</label>
-                                <input type="password" name="password" id="password" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
+                                <input type="password" name="password" id="password" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
                                 <p class="text-xs text-slate-500 mt-1">Kosongkan jika tidak ingin mengubah password.</p>
                             </div>
                             @endif
@@ -106,7 +112,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6 border-t border-slate-200/80 pt-6">
                         <div>
                             <label for="jenis_pegawai" class="block text-sm font-semibold text-slate-600">Jenis Pegawai <span class="text-red-500 ml-0.5">*</span></label>
-                            <select id="jenis_pegawai" name="jenis_pegawai" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors sm:text-sm">
+                            <select id="jenis_pegawai" name="jenis_pegawai" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors sm:text-sm">
                                 <option value="">Pilih Jenis Pegawai</option>
                                 <option value="Dosen" {{ old('jenis_pegawai', $pegawai->jenis_pegawai ?? '') == 'Dosen' ? 'selected' : '' }}>Dosen</option>
                                 <option value="Tenaga Kependidikan" {{ old('jenis_pegawai', $pegawai->jenis_pegawai ?? '') == 'Tenaga Kependidikan' ? 'selected' : '' }}>Tenaga Kependidikan</option>
@@ -114,38 +120,34 @@
                         </div>
                         <div>
                             <label for="nip" class="block text-sm font-semibold text-slate-600">NIP <span class="text-red-500 ml-0.5">*</span></label>
-                            <input type="text" name="nip" id="nip" value="{{ old('nip', $pegawai->nip ?? '') }}" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400" placeholder="18 Karakter Numerik" maxlength="18">
-                        </div>
-                        <div id="field_nuptk" class="hidden">
-                            <label for="nuptk" class="block text-sm font-semibold text-slate-600">NUPTK <span class="text-red-500 ml-0.5">*</span></label>
-                            <input type="text" name="nuptk" id="nuptk" value="{{ old('nuptk', $pegawai->nuptk ?? '') }}" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400" placeholder="16 Karakter Numerik" maxlength="16">
+                            <input type="text" name="nip" id="nip" value="{{ old('nip', $pegawai->nip ?? '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400" placeholder="18 Karakter Numerik" maxlength="18">
                         </div>
                          <div>
                             <label for="nomor_kartu_pegawai" class="block text-sm font-semibold text-slate-600">Nomor Kartu Pegawai</label>
-                            <input type="text" name="nomor_kartu_pegawai" id="nomor_kartu_pegawai" value="{{ old('nomor_kartu_pegawai', $pegawai->nomor_kartu_pegawai ?? '') }}" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400">
+                            <input type="text" name="nomor_kartu_pegawai" id="nomor_kartu_pegawai" value="{{ old('nomor_kartu_pegawai', $pegawai->nomor_kartu_pegawai ?? '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400">
                         </div>
                         <div>
                             <label for="tempat_lahir" class="block text-sm font-semibold text-slate-600">Tempat Lahir <span class="text-red-500 ml-0.5">*</span></label>
-                            <input type="text" name="tempat_lahir" id="tempat_lahir" value="{{ old('tempat_lahir', $pegawai->tempat_lahir ?? '') }}" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400">
+                            <input type="text" name="tempat_lahir" id="tempat_lahir" value="{{ old('tempat_lahir', $pegawai->tempat_lahir ?? '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400">
                         </div>
                         <div>
                             <label for="tanggal_lahir" class="block text-sm font-semibold text-slate-600">Tanggal Lahir <span class="text-red-500 ml-0.5">*</span></label>
-                            <input type="date" name="tanggal_lahir" id="tanggal_lahir" value="{{ old('tanggal_lahir', isset($pegawai) ? $pegawai->tanggal_lahir->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
+                            <input type="date" name="tanggal_lahir" id="tanggal_lahir" value="{{ old('tanggal_lahir', isset($pegawai) ? $pegawai->tanggal_lahir->format('Y-m-d') : '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
                         </div>
                         <div>
                             <label for="jenis_kelamin" class="block text-sm font-semibold text-slate-600">Jenis Kelamin <span class="text-red-500 ml-0.5">*</span></label>
-                            <select name="jenis_kelamin" id="jenis_kelamin" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
+                            <select name="jenis_kelamin" id="jenis_kelamin" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
                                 <option value="Laki-Laki" {{ old('jenis_kelamin', $pegawai->jenis_kelamin ?? '') == 'Laki-Laki' ? 'selected' : '' }}>Laki-Laki</option>
                                 <option value="Perempuan" {{ old('jenis_kelamin', $pegawai->jenis_kelamin ?? '') == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
                             </select>
                         </div>
                         <div>
                             <label for="nomor_handphone" class="block text-sm font-semibold text-slate-600">Nomor Handphone <span class="text-red-500 ml-0.5">*</span></label>
-                            <input type="text" name="nomor_handphone" id="nomor_handphone" value="{{ old('nomor_handphone', $pegawai->nomor_handphone ?? '') }}" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400">
+                            <input type="text" name="nomor_handphone" id="nomor_handphone" value="{{ old('nomor_handphone', $pegawai->nomor_handphone ?? '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400">
                         </div>
                          <div class="sm:col-span-2">
                             <label for="unit_kerja_terakhir_id" class="block text-sm font-semibold text-slate-600">Unit Kerja Terakhir <span class="text-red-500 ml-0.5">*</span></label>
-                             <select name="unit_kerja_terakhir_id" id="unit_kerja_terakhir_id" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
+                             <select name="unit_kerja_terakhir_id" id="unit_kerja_terakhir_id" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
                                  <option value="">Pilih Unit Kerja</option>
                                  @foreach($unitKerjas as $unit)
                                      <option
@@ -175,7 +177,7 @@
                              @php
                                  $pendidikanOptions = ['SD', 'SLTP/Sederajat', 'SLTA/Sederajat', 'Diploma Satu (D1)', 'Diploma Dua (D2)', 'Diploma Tiga (D3)', 'Diploma Empat (D4)/ Sarjana (S1)', 'Magister (S2)', 'Doktor (S3)'];
                              @endphp
-                             <select name="pendidikan_terakhir" id="pendidikan_terakhir" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
+                             <select name="pendidikan_terakhir" id="pendidikan_terakhir" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
                                  @foreach($pendidikanOptions as $option)
                                      <option value="{{ $option }}" {{ old('pendidikan_terakhir', $pegawai->pendidikan_terakhir ?? '') == $option ? 'selected' : '' }}>{{ $option }}</option>
                                  @endforeach
@@ -186,10 +188,10 @@
                             <div>
                                 <label for="ijazah_terakhir" class="block text-sm font-semibold text-slate-600 mb-1">Ijazah Terakhir <span class="text-red-500 ml-0.5">*</span></label>
                                 <label class="flex flex-col items-center justify-center w-full h-28 border-2 {{ isset($pegawai) && $pegawai->ijazah_terakhir ? 'border-green-400 bg-green-50' : 'border-slate-300 bg-slate-50' }} border-dashed rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2 overflow-hidden">
                                         <i data-lucide="{{ isset($pegawai) && $pegawai->ijazah_terakhir ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->ijazah_terakhir ? 'text-green-600' : 'text-slate-500' }}"></i>
                                         <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->ijazah_terakhir ? 'text-green-800' : 'text-slate-500' }} w-full">
-                                            <span class="font-semibold file-name-display">{{ isset($pegawai) && $pegawai->ijazah_terakhir ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
+                                            <span class="font-semibold file-name-display block truncate">{{ isset($pegawai) && $pegawai->ijazah_terakhir ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
                                         </p>
                                     </div>
                                     <input id="ijazah_terakhir" name="ijazah_terakhir" type="file" class="hidden" />
@@ -201,10 +203,10 @@
                             <div>
                                 <label for="transkrip_nilai_terakhir" class="block text-sm font-semibold text-slate-600 mb-1">Transkrip Nilai <span class="text-red-500 ml-0.5">*</span></label>
                                 <label class="flex flex-col items-center justify-center w-full h-28 border-2 {{ isset($pegawai) && $pegawai->transkrip_nilai_terakhir ? 'border-green-400 bg-green-50' : 'border-slate-300 bg-slate-50' }} border-dashed rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2 overflow-hidden">
                                         <i data-lucide="{{ isset($pegawai) && $pegawai->transkrip_nilai_terakhir ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->transkrip_nilai_terakhir ? 'text-green-600' : 'text-slate-500' }}"></i>
                                         <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->transkrip_nilai_terakhir ? 'text-green-800' : 'text-slate-500' }} w-full">
-                                            <span class="font-semibold file-name-display">{{ isset($pegawai) && $pegawai->transkrip_nilai_terakhir ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
+                                            <span class="font-semibold file-name-display block truncate">{{ isset($pegawai) && $pegawai->transkrip_nilai_terakhir ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
                                         </p>
                                     </div>
                                     <input id="transkrip_nilai_terakhir" name="transkrip_nilai_terakhir" type="file" class="hidden" />
@@ -219,10 +221,10 @@
                             <div>
                                 <label for="sk_penyetaraan_ijazah" class="block text-sm font-semibold text-slate-600 mb-1">SK Penyetaraan Ijazah</label>
                                 <label class="flex flex-col items-center justify-center w-full h-28 border-2 {{ isset($pegawai) && $pegawai->sk_penyetaraan_ijazah ? 'border-green-400 bg-green-50' : 'border-slate-300 bg-slate-50' }} border-dashed rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2 overflow-hidden">
                                         <i data-lucide="{{ isset($pegawai) && $pegawai->sk_penyetaraan_ijazah ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->sk_penyetaraan_ijazah ? 'text-green-600' : 'text-slate-500' }}"></i>
                                         <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->sk_penyetaraan_ijazah ? 'text-green-800' : 'text-slate-500' }} w-full">
-                                            <span class="font-semibold file-name-display">{{ isset($pegawai) && $pegawai->sk_penyetaraan_ijazah ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
+                                            <span class="font-semibold file-name-display block truncate">{{ isset($pegawai) && $pegawai->sk_penyetaraan_ijazah ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
                                         </p>
                                     </div>
                                     <input id="sk_penyetaraan_ijazah" name="sk_penyetaraan_ijazah" type="file" class="hidden" />
@@ -234,10 +236,10 @@
                             <div>
                                 <label for="disertasi_thesis_terakhir" class="block text-sm font-semibold text-slate-600 mb-1">Disertasi/Thesis</label>
                                 <label class="flex flex-col items-center justify-center w-full h-28 border-2 {{ isset($pegawai) && $pegawai->disertasi_thesis_terakhir ? 'border-green-400 bg-green-50' : 'border-slate-300 bg-slate-50' }} border-dashed rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2 overflow-hidden">
                                         <i data-lucide="{{ isset($pegawai) && $pegawai->disertasi_thesis_terakhir ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->disertasi_thesis_terakhir ? 'text-green-600' : 'text-slate-500' }}"></i>
                                         <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->disertasi_thesis_terakhir ? 'text-green-800' : 'text-slate-500' }} w-full">
-                                            <span class="font-semibold file-name-display">{{ isset($pegawai) && $pegawai->disertasi_thesis_terakhir ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
+                                            <span class="font-semibold file-name-display block truncate">{{ isset($pegawai) && $pegawai->disertasi_thesis_terakhir ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
                                         </p>
                                     </div>
                                     <input id="disertasi_thesis_terakhir" name="disertasi_thesis_terakhir" type="file" class="hidden" />
@@ -262,15 +264,15 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
                                 <label for="tmt_cpns" class="block text-sm font-semibold text-slate-600">TMT CPNS</label>
-                                <input type="date" name="tmt_cpns" id="tmt_cpns" value="{{ old('tmt_cpns', isset($pegawai) && $pegawai->tmt_cpns ? $pegawai->tmt_cpns->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
+                                <input type="date" name="tmt_cpns" id="tmt_cpns" value="{{ old('tmt_cpns', isset($pegawai) && $pegawai->tmt_cpns ? $pegawai->tmt_cpns->format('Y-m-d') : '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
                             </div>
                             <div>
                                 <label for="sk_cpns" class="block text-sm font-semibold text-slate-600 mb-1">SK CPNS</label>
                                 <label class="flex flex-col items-center justify-center w-full h-28 border-2 {{ isset($pegawai) && $pegawai->sk_cpns ? 'border-green-400 bg-green-50' : 'border-slate-300 bg-slate-50' }} border-dashed rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2 overflow-hidden">
                                         <i data-lucide="{{ isset($pegawai) && $pegawai->sk_cpns ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->sk_cpns ? 'text-green-600' : 'text-slate-500' }}"></i>
                                         <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->sk_cpns ? 'text-green-800' : 'text-slate-500' }} w-full">
-                                            <span class="font-semibold file-name-display">{{ isset($pegawai) && $pegawai->sk_cpns ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
+                                            <span class="font-semibold file-name-display block truncate">{{ isset($pegawai) && $pegawai->sk_cpns ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
                                         </p>
                                     </div>
                                     <input id="sk_cpns" name="sk_cpns" type="file" class="hidden" />
@@ -283,15 +285,15 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
                                 <label for="tmt_pns" class="block text-sm font-semibold text-slate-600">TMT PNS</label>
-                                <input type="date" name="tmt_pns" id="tmt_pns" value="{{ old('tmt_pns', isset($pegawai) && $pegawai->tmt_pns ? $pegawai->tmt_pns->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
+                                <input type="date" name="tmt_pns" id="tmt_pns" value="{{ old('tmt_pns', isset($pegawai) && $pegawai->tmt_pns ? $pegawai->tmt_pns->format('Y-m-d') : '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
                             </div>
                             <div>
                                 <label for="sk_pns" class="block text-sm font-semibold text-slate-600 mb-1">SK PNS</label>
                                 <label class="flex flex-col items-center justify-center w-full h-28 border-2 {{ isset($pegawai) && $pegawai->sk_pns ? 'border-green-400 bg-green-50' : 'border-slate-300 bg-slate-50' }} border-dashed rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2 overflow-hidden">
                                         <i data-lucide="{{ isset($pegawai) && $pegawai->sk_pns ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->sk_pns ? 'text-green-600' : 'text-slate-500' }}"></i>
                                         <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->sk_pns ? 'text-green-800' : 'text-slate-500' }} w-full">
-                                            <span class="font-semibold file-name-display">{{ isset($pegawai) && $pegawai->sk_pns ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
+                                            <span class="font-semibold file-name-display block truncate">{{ isset($pegawai) && $pegawai->sk_pns ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
                                         </p>
                                     </div>
                                     <input id="sk_pns" name="sk_pns" type="file" class="hidden" />
@@ -318,7 +320,7 @@
                      <div class="space-y-6">
                         <div>
                             <label for="pangkat_terakhir_id" class="block text-sm font-semibold text-slate-600">Pangkat Terakhir <span class="text-red-500 ml-0.5">*</span></label>
-                            <select name="pangkat_terakhir_id" id="pangkat_terakhir_id" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
+                            <select name="pangkat_terakhir_id" id="pangkat_terakhir_id" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
                                 <option value="">Pilih Pangkat</option>
                                 @foreach($pangkats as $pangkat)
                                     <option value="{{ $pangkat->id }}" {{ old('pangkat_terakhir_id', $pegawai->pangkat_terakhir_id ?? '') == $pangkat->id ? 'selected' : '' }}>
@@ -329,15 +331,15 @@
                         </div>
                         <div>
                             <label for="tmt_pangkat" class="block text-sm font-semibold text-slate-600">TMT Pangkat <span class="text-red-500 ml-0.5">*</span></label>
-                            <input type="date" name="tmt_pangkat" id="tmt_pangkat" value="{{ old('tmt_pangkat', isset($pegawai) ? $pegawai->tmt_pangkat->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
+                            <input type="date" name="tmt_pangkat" id="tmt_pangkat" value="{{ old('tmt_pangkat', isset($pegawai) ? $pegawai->tmt_pangkat->format('Y-m-d') : '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
                         </div>
                         <div>
                             <label for="sk_pangkat_terakhir" class="block text-sm font-semibold text-slate-600 mb-1">SK Pangkat Terakhir <span class="text-red-500 ml-0.5">*</span></label>
                             <label class="flex flex-col items-center justify-center w-full h-28 border-2 {{ isset($pegawai) && $pegawai->sk_pangkat_terakhir ? 'border-green-400 bg-green-50' : 'border-slate-300 bg-slate-50' }} border-dashed rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                                <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2 overflow-hidden">
                                     <i data-lucide="{{ isset($pegawai) && $pegawai->sk_pangkat_terakhir ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->sk_pangkat_terakhir ? 'text-green-600' : 'text-slate-500' }}"></i>
                                     <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->sk_pangkat_terakhir ? 'text-green-800' : 'text-slate-500' }} w-full">
-                                        <span class="font-semibold file-name-display">{{ isset($pegawai) && $pegawai->sk_pangkat_terakhir ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
+                                        <span class="font-semibold file-name-display block truncate">{{ isset($pegawai) && $pegawai->sk_pangkat_terakhir ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
                                     </p>
                                 </div>
                                 <input id="sk_pangkat_terakhir" name="sk_pangkat_terakhir" type="file" class="hidden" />
@@ -351,7 +353,7 @@
                                 Jabatan Terakhir <span id="jenis_jabatan_display" class="text-indigo-600 font-normal"></span>
                                 <span class="text-red-500 ml-0.5">*</span>
                             </label>
-                            <select name="jabatan_terakhir_id" id="jabatan_terakhir_id" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
+                            <select name="jabatan_terakhir_id" id="jabatan_terakhir_id" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
                                 <option value="">Pilih Jabatan</option>
                                 @foreach($jabatans as $jabatan)
                                     <option value="{{ $jabatan->id }}"
@@ -363,17 +365,21 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div id="field_nuptk" class="hidden">
+                            <label for="nuptk" class="block text-sm font-semibold text-slate-600">NUPTK <span class="text-red-500 ml-0.5">*</span></label>
+                            <input type="text" name="nuptk" id="nuptk" value="{{ old('nuptk', $pegawai->nuptk ?? '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400" placeholder="16 Karakter Numerik" maxlength="16">
+                        </div>
                         <div>
                             <label for="tmt_jabatan" class="block text-sm font-semibold text-slate-600">TMT Jabatan <span class="text-red-500 ml-0.5">*</span></label>
-                            <input type="date" name="tmt_jabatan" id="tmt_jabatan" value="{{ old('tmt_jabatan', isset($pegawai) ? $pegawai->tmt_jabatan->format('Y-m-d') : '') }}" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
+                            <input type="date" name="tmt_jabatan" id="tmt_jabatan" value="{{ old('tmt_jabatan', isset($pegawai) ? $pegawai->tmt_jabatan->format('Y-m-d') : '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
                         </div>
                         <div>
                             <label for="sk_jabatan_terakhir" class="block text-sm font-semibold text-slate-600 mb-1">SK Jabatan Terakhir <span class="text-red-500 ml-0.5">*</span></label>
                              <label class="flex flex-col items-center justify-center w-full h-28 border-2 {{ isset($pegawai) && $pegawai->sk_jabatan_terakhir ? 'border-green-400 bg-green-50' : 'border-slate-300 bg-slate-50' }} border-dashed rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                                <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2 overflow-hidden">
                                     <i data-lucide="{{ isset($pegawai) && $pegawai->sk_jabatan_terakhir ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->sk_jabatan_terakhir ? 'text-green-600' : 'text-slate-500' }}"></i>
                                     <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->sk_jabatan_terakhir ? 'text-green-800' : 'text-slate-500' }} w-full">
-                                        <span class="font-semibold file-name-display">{{ isset($pegawai) && $pegawai->sk_jabatan_terakhir ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
+                                        <span class="font-semibold file-name-display block truncate">{{ isset($pegawai) && $pegawai->sk_jabatan_terakhir ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
                                     </p>
                                 </div>
                                 <input id="sk_jabatan_terakhir" name="sk_jabatan_terakhir" type="file" class="hidden" />
@@ -398,7 +404,7 @@
                         <div class="grid grid-cols-2 gap-6">
                             <div>
                                 <label for="predikat_kinerja_tahun_pertama" class="block text-sm font-semibold text-slate-600">Predikat Kinerja Thn. 1 <span class="text-red-500 ml-0.5">*</span></label>
-                                <select name="predikat_kinerja_tahun_pertama" id="predikat_kinerja_tahun_pertama" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
+                                <select name="predikat_kinerja_tahun_pertama" id="predikat_kinerja_tahun_pertama" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
                                     @foreach($kinerjaOptions as $option)
                                         <option value="{{ $option }}" {{ old('predikat_kinerja_tahun_pertama', $pegawai->predikat_kinerja_tahun_pertama ?? '') == $option ? 'selected' : '' }}>{{ $option }}</option>
                                     @endforeach
@@ -406,7 +412,7 @@
                             </div>
                              <div>
                                 <label for="predikat_kinerja_tahun_kedua" class="block text-sm font-semibold text-slate-600">Predikat Kinerja Thn. 2 <span class="text-red-500 ml-0.5">*</span></label>
-                                <select name="predikat_kinerja_tahun_kedua" id="predikat_kinerja_tahun_kedua" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
+                                <select name="predikat_kinerja_tahun_kedua" id="predikat_kinerja_tahun_kedua" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors">
                                     @foreach($kinerjaOptions as $option)
                                         <option value="{{ $option }}" {{ old('predikat_kinerja_tahun_kedua', $pegawai->predikat_kinerja_tahun_kedua ?? '') == $option ? 'selected' : '' }}>{{ $option }}</option>
                                     @endforeach
@@ -417,10 +423,10 @@
                              <div>
                                 <label for="skp_tahun_pertama" class="block text-sm font-semibold text-slate-600 mb-1">SKP Tahun Pertama <span class="text-red-500 ml-0.5">*</span></label>
                                 <label class="flex flex-col items-center justify-center w-full h-28 border-2 {{ isset($pegawai) && $pegawai->skp_tahun_pertama ? 'border-green-400 bg-green-50' : 'border-slate-300 bg-slate-50' }} border-dashed rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2 overflow-hidden">
                                         <i data-lucide="{{ isset($pegawai) && $pegawai->skp_tahun_pertama ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->skp_tahun_pertama ? 'text-green-600' : 'text-slate-500' }}"></i>
                                         <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->skp_tahun_pertama ? 'text-green-800' : 'text-slate-500' }} w-full">
-                                            <span class="font-semibold file-name-display">{{ isset($pegawai) && $pegawai->skp_tahun_pertama ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
+                                            <span class="font-semibold file-name-display block truncate">{{ isset($pegawai) && $pegawai->skp_tahun_pertama ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
                                         </p>
                                     </div>
                                     <input id="skp_tahun_pertama" name="skp_tahun_pertama" type="file" class="hidden" />
@@ -432,10 +438,10 @@
                             <div>
                                 <label for="skp_tahun_kedua" class="block text-sm font-semibold text-slate-600 mb-1">SKP Tahun Kedua <span class="text-red-500 ml-0.5">*</span></label>
                                 <label class="flex flex-col items-center justify-center w-full h-28 border-2 {{ isset($pegawai) && $pegawai->skp_tahun_kedua ? 'border-green-400 bg-green-50' : 'border-slate-300 bg-slate-50' }} border-dashed rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2">
+                                    <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2 overflow-hidden">
                                         <i data-lucide="{{ isset($pegawai) && $pegawai->skp_tahun_kedua ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->skp_tahun_kedua ? 'text-green-600' : 'text-slate-500' }}"></i>
                                         <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->skp_tahun_kedua ? 'text-green-800' : 'text-slate-500' }} w-full">
-                                            <span class="font-semibold file-name-display">{{ isset($pegawai) && $pegawai->skp_tahun_kedua ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
+                                            <span class="font-semibold file-name-display block truncate">{{ isset($pegawai) && $pegawai->skp_tahun_kedua ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
                                         </p>
                                     </div>
                                     <input id="skp_tahun_kedua" name="skp_tahun_kedua" type="file" class="hidden" />
@@ -447,15 +453,15 @@
                          </div>
                         <div id="field_nilai_konversi" class="hidden">
                             <label for="nilai_konversi" class="block text-sm font-semibold text-slate-600">Nilai Konversi <span class="text-red-500 ml-0.5">*</span></label>
-                            <input type="number" name="nilai_konversi" id="nilai_konversi" step="any" value="{{ old('nilai_konversi', $pegawai->nilai_konversi ?? '') }}" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400" placeholder="Contoh: 112.50">
+                            <input type="number" name="nilai_konversi" id="nilai_konversi" step="any" value="{{ old('nilai_konversi', $pegawai->nilai_konversi ?? '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400" placeholder="Contoh: 112.50">
                         </div>
                         <div id="field_pak_konversi" class="hidden">
                             <label for="pak_konversi" class="block text-sm font-semibold text-slate-600 mb-1">PAK Konversi</label>
                             <label class="flex flex-col items-center justify-center w-full h-28 border-2 {{ isset($pegawai) && $pegawai->pak_konversi ? 'border-green-400 bg-green-50' : 'border-slate-300 bg-slate-50' }} border-dashed rounded-xl cursor-pointer hover:bg-slate-100 transition-colors">
-                                <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center w-full px-2 overflow-hidden">
                                     <i data-lucide="{{ isset($pegawai) && $pegawai->pak_konversi ? 'file-check-2' : 'upload-cloud' }}" class="w-8 h-8 mb-2 {{ isset($pegawai) && $pegawai->pak_konversi ? 'text-green-600' : 'text-slate-500' }}"></i>
                                     <p class="mb-1 text-sm {{ isset($pegawai) && $pegawai->pak_konversi ? 'text-green-800' : 'text-slate-500' }} w-full">
-                                        <span class="font-semibold file-name-display">{{ isset($pegawai) && $pegawai->pak_konversi ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
+                                        <span class="font-semibold file-name-display block truncate">{{ isset($pegawai) && $pegawai->pak_konversi ? 'File sudah ada' : 'Klik untuk unggah' }}</span>
                                     </p>
                                 </div>
                                 <input id="pak_konversi" name="pak_konversi" type="file" class="hidden" />
@@ -479,15 +485,15 @@
                      <div class="space-y-6">
                         <div>
                             <label for="mata_kuliah_diampu" class="block text-sm font-semibold text-slate-600">Mata Kuliah yang diampu <span class="text-red-500 ml-0.5">*</span></label>
-                            <textarea name="mata_kuliah_diampu" id="mata_kuliah_diampu" rows="3" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400">{{ old('mata_kuliah_diampu', $pegawai->mata_kuliah_diampu ?? '') }}</textarea>
+                            <textarea name="mata_kuliah_diampu" id="mata_kuliah_diampu" rows="3" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400">{{ old('mata_kuliah_diampu', $pegawai->mata_kuliah_diampu ?? '') }}</textarea>
                         </div>
                         <div>
                             <label for="ranting_ilmu_kepakaran" class="block text-sm font-semibold text-slate-600">Ranting Ilmu / Kepakaran <span class="text-red-500 ml-0.5">*</span></label>
-                            <textarea name="ranting_ilmu_kepakaran" id="ranting_ilmu_kepakaran" rows="3" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400">{{ old('ranting_ilmu_kepakaran', $pegawai->ranting_ilmu_kepakaran ?? '') }}</textarea>
+                            <textarea name="ranting_ilmu_kepakaran" id="ranting_ilmu_kepakaran" rows="3" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400">{{ old('ranting_ilmu_kepakaran', $pegawai->ranting_ilmu_kepakaran ?? '') }}</textarea>
                         </div>
                         <div>
                             <label for="url_profil_sinta" class="block text-sm font-semibold text-slate-600">URL Profil Akun Sinta <span class="text-red-500 ml-0.5">*</span></label>
-                            <input type="url" name="url_profil_sinta" id="url_profil_sinta" value="{{ old('url_profil_sinta', $pegawai->url_profil_sinta ?? '') }}" class="mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400" placeholder="https://sinta.kemdikbud.go.id/...">
+                            <input type="url" name="url_profil_sinta" id="url_profil_sinta" value="{{ old('url_profil_sinta', $pegawai->url_profil_sinta ?? '') }}" class="mt-1 block w-full px-4 py-2 rounded-lg border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-colors placeholder-slate-400" placeholder="https://sinta.kemdikbud.go.id/...">
                         </div>
                      </div>
                 </div>
@@ -567,14 +573,13 @@
                     const file = event.target.files[0];
                     const label = this.parentElement;
                     const icon = label.querySelector('i');
-                    // PERBAIKAN: Target elemen span spesifik untuk nama file
                     const fileNameDisplay = label.querySelector('.file-name-display');
                     const linkElement = label.nextElementSibling?.querySelector('a');
 
                     if (file && fileNameDisplay) {
-                        // PERBAIKAN: Tambahkan kelas truncate agar teks terpotong
                         fileNameDisplay.textContent = file.name;
-                        fileNameDisplay.classList.add('truncate');
+                        // Kelas truncate sudah ada di HTML, tidak perlu ditambah via JS
+                        // fileNameDisplay.classList.add('truncate');
 
                         icon.setAttribute('data-lucide', 'file-check-2');
                         icon.classList.remove('text-slate-500');
