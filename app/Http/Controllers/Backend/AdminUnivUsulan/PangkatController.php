@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Backend\AdminUnivUsulan;
 
 use App\Http\Controllers\Controller;
-use App\Models\Pangkat;
+use App\Models\BackendUnivUsulan\Pangkat;
 use Illuminate\Http\Request;
 
 class PangkatController extends Controller

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Backend\AdminUnivUsulan;
 
 use App\Http\Controllers\Controller;
-use App\Models\SubSubUnitKerja;
-use App\Models\SubUnitKerja;
-use App\Models\UnitKerja;
+use App\Models\BackendUnivUsulan\SubSubUnitKerja;
+use App\Models\BackendUnivUsulan\SubUnitKerja;
+use App\Models\BackendUnivUsulan\UnitKerja;
 use Illuminate\Http\Request;
 
 class SubSubUnitKerjaController extends Controller

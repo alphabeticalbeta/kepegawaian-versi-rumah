@@ -20,7 +20,7 @@
     <div class="flex h-screen">
 
         {{-- Sidebar dipanggil di sini --}}
-        @include('backend.components.sidebar-pegawai-unmul')
+        @include('backend.components.sidebar-admin-universitas')
 
         {{-- Kontainer untuk Header dan Konten Utama --}}
         <div id="main-content" class="flex-1 flex flex-col transition-all duration-300 ml-64">

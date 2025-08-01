@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Backend\AdminUnivUsulan;
 
 use App\Http\Controllers\Controller;
-use App\Models\Jabatan;
+use App\Models\BackendUnivUsulan\Jabatan;
 use Illuminate\Http\Request;
 
 class JabatanController extends Controller

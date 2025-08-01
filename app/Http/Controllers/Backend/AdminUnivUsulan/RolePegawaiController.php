@@ -1,8 +1,8 @@
 <?php
 namespace App\Http\Controllers\Backend\AdminUnivUsulan;
 use App\Http\Controllers\Controller;
-use App\Models\Pegawai;
-use App\Models\Role;
+use App\Models\BackendUnivUsulan\Pegawai;
+use App\Models\BackendUnivUsulan\Role;
 use Illuminate\Http\Request;
 
 class RolePegawaiController extends Controller

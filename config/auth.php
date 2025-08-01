@@ -81,7 +81,7 @@ return [
         // ▼▼▼ TAMBAHKAN BLOK BARU INI DI BAWAHNYA ▼▼▼
         'pegawais' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Pegawai::class,
+            'model' => App\Models\BackendUnivUsulan\Pegawai::class,
         ],
     ],
 

@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Backend\AdminUnivUsulan;
 
 use App\Http\Controllers\Controller;
-use App\Models\Jabatan;
-use App\Models\Pangkat;
-use App\Models\Pegawai;
-use App\Models\SubSubUnitKerja;
+use App\Models\BackendUnivUsulan\Jabatan;
+use App\Models\BackendUnivUsulan\Pangkat;
+use App\Models\BackendUnivUsulan\Pegawai;
+use App\Models\BackendUnivUsulan\SubSubUnitKerja;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;

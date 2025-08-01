@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Backend\AdminUnivUsulan;
 
 use App\Http\Controllers\Controller;
-use App\Models\SubUnitKerja;
-use App\Models\UnitKerja;
+use App\Models\BackendUnivUsulan\SubUnitKerja;
+use App\Models\BackendUnivUsulan\UnitKerja;
 use Illuminate\Http\Request;
 
 class SubUnitKerjaController extends Controller
