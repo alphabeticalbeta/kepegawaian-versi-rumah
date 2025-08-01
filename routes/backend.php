@@ -15,6 +15,7 @@ use App\Http\Controllers\Backend\AdminUnivUsulan\UnitKerjaController;
 use App\Http\Controllers\Backend\AdminUnivUsulan\PegawaiController; // Digunakan untuk manajemen akun
 use App\Http\Controllers\Backend\PegawaiUnmul\DashboardController as PegawaiUnmulDashboardController;
 use App\Http\Controllers\Backend\PenilaiUniversitas\DashboardController as PenilaiUniversitasDashboardController;
+use App\Http\Controllers\Backend\PegawaiUnmul\ProfileController as ProfileController;
 
 // ------ RUTE HALAMAN LOGIN & LOGOUT ------//
 Route::get('/login', [LoginController::class, 'showLoginForm'])->middleware('guest:pegawai')->name('login');
@@ -63,6 +64,12 @@ Route::middleware(['auth:pegawai'])->group(function () {
     // ------ RUTE HALAMAN BACKEND USUL PEGAWAI UNMUL------//
     Route::prefix('pegawai-unmul')->name('pegawai-unmul.')->group(function () {
         Route::get('/dashboard', [PegawaiUnmulDashboardController::class, 'index'])->name('dashboard-pegawai-unmul');
+
+        Route::prefix('profil')->name('profile.')->group(function () {
+            Route::get('/', [ProfileController::class, 'show'])->name('show');
+            Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
+            Route::put('/', [ProfileController::class, 'update'])->name('update');
+    });
     });
 
     // ------ RUTE HALAMAN BACKEND ADMIN FAKULTAS ------//
