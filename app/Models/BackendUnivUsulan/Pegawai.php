@@ -55,6 +55,8 @@ class Pegawai extends Authenticatable
         'pak_konversi',
         'sk_cpns',
         'sk_pns',
+        'tmt_cpns',
+        'tmt_pns',
         'foto',
     ];
 
