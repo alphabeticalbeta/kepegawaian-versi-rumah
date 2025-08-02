@@ -3,13 +3,16 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Pegawai;
-use App\Models\Role;
+use App\Models\BackendUnivUsulan\Pegawai;
+use App\Models\BackendUnivUsulan\Role;
+use Illuminate\Support\Facades\Hash; // Import Hash untuk password
 
 class PegawaiSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     *
+     * @return void
      */
     public function run(): void
     {
@@ -61,6 +64,10 @@ class PegawaiSeeder extends Seeder
                     'skp_tahun_pertama' => 'path/to/dummy.pdf',
                     'predikat_kinerja_tahun_kedua' => 'Baik',
                     'skp_tahun_kedua' => 'path/to/dummy.pdf',
+
+                    // PENAMBAHAN UNTUK MEMPERBAIKI ERROR
+                    'status_kepegawaian' => 'PNS',
+
                 ]
             );
 

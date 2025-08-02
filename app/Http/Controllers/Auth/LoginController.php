@@ -3,73 +3,56 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
-    /**
-     * Menampilkan halaman form login.
-     */
-    public function showLoginForm()
-    {
-        return view('auth.login');
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | Login Controller
+    |--------------------------------------------------------------------------
+    |
+    | This controller handles authenticating users for the application and
+    | redirecting them to your home screen. The controller uses a trait
+    | to conveniently provide its functionality to your applications.
+    |
+    */
+
+    use AuthenticatesUsers;
 
     /**
-     * Menangani proses login.
+     * Create a new controller instance.
+     *
+     * @return void
      */
-    public function login(Request $request)
-    {
-        $credentials = $request->validate([
-            'nip'      => 'required|string',
-            'password' => 'required|string',
-        ]);
-
-        if (Auth::guard('pegawai')->attempt($credentials)) {
-            $request->session()->regenerate();
-
-            $pegawai = Auth::guard('pegawai')->user();
-
-            // === PERBAIKAN DI SINI: Gunakan 'contains' untuk memeriksa role ===
-            // Cek jika koleksi 'roles' milik pegawai mengandung role dengan nama tertentu.
-            if ($pegawai->roles->contains('name', 'Admin Universitas Usulan')) {
-                return redirect()->route('backend.admin-univ-usulan.dashboard');
-            }
-
-            if ($pegawai->roles->contains('name', 'Admin Fakultas')) {
-                return redirect()->route('admin-fakultas.dashboard-fakultas');
-            }
-            // =============================================================
-
-            // Redirect default jika tidak memiliki role admin di atas
-            return redirect()->route('pegawai-unmul.dashboard-pegawai-unmul');
-        }
-
-        return back()->withErrors([
-            'nip' => 'NIP atau Password yang Anda masukkan salah.',
-        ])->onlyInput('nip');
-    }
-
-
-
-
-    /**
-     * Menangani proses logout.
-     */
-    public function logout(Request $request)
-    {
-        Auth::guard('pegawai')->logout();
-
-        $request->session()->invalidate();
-
-        $request->session()->regenerateToken();
-
-        return redirect('/login');
-    }
-
     public function username()
     {
         return 'nip';
+    }
+
+
+    public function __construct()
+    {
+        $this->middleware('guest:pegawai')->except('logout');
+    }
+
+    /**
+     * Tentukan guard yang akan digunakan.
+     */
+    protected function guard()
+    {
+        return Auth::guard('pegawai');
+    }
+
+    /**
+     * PERBAIKAN: Mengarahkan SEMUA pegawai ke dasbor pegawai sebagai default.
+     *
+     * @return string
+     */
+    public function redirectTo()
+    {
+        // Langsung arahkan ke dasbor pegawai tanpa pengecekan peran
+        return route('pegawai-unmul.dashboard-pegawai-unmul');
     }
 }

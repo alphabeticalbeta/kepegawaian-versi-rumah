@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Pangkat;
+use App\Models\BackendUnivUsulan\Pangkat;
 
 class PangkatSeeder extends Seeder
 {

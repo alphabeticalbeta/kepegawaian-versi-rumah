@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Jabatan;
+use App\Models\BackendUnivUsulan\Jabatan;
 
 class JabatanSeeder extends Seeder
 {

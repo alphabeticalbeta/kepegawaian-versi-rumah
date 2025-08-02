@@ -1,6 +1,9 @@
 <?php
 namespace App\Policies;
-use App\Models\Pegawai;
+
+// PERBAIKAN: Ubah use statement ini untuk menunjuk ke model Pegawai yang benar
+use App\Models\BackendUnivUsulan\Pegawai;
+
 class PegawaiPolicy
 {
     /**
@@ -8,8 +11,10 @@ class PegawaiPolicy
      */
     public function viewAny(Pegawai $pegawai): bool
     {
+        // Kode ini sekarang akan berfungsi karena tipe $pegawai sudah benar
         return $pegawai->roles->contains('name', 'Admin Universitas Usulan');
     }
+
     /**
      * Tentukan apakah pegawai bisa memperbarui resource.
      */
