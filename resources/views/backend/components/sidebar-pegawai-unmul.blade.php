@@ -25,7 +25,7 @@
                 ['route' => '#', 'icon' => 'clipboard-check', 'label' => 'Usulan Presensi', 'pattern' => 'backend.pegawai-unmul.usulan-presensi.*'],
                 ['route' => '#', 'icon' => 'clock', 'label' => 'Usulan Penyesuaian Masa Kerja', 'pattern' => 'backend.pegawai-unmul.usulan-masa-kerja.*'],
                 ['route' => '#', 'icon' => 'book-marked', 'label' => 'Usulan Ujian Dinas & Ijazah', 'pattern' => 'backend.pegawai-unmul.usulan-ujian.*'],
-                ['route' => '#', 'icon' => 'file-user', 'label' => 'Usulan Jabatan', 'pattern' => 'backend.pegawai-unmul.usulan-jabatan.*'],
+                ['route' => route('pegawai-unmul.usulan-jabatan.create'), 'icon' => 'file-user', 'label' => 'Usulan Jabatan', 'pattern' => 'pegawai-unmul.usulan-jabatan.*'],
                 ['route' => '#', 'icon' => 'file-check-2', 'label' => 'Usulan Laporan Serdos', 'pattern' => 'backend.pegawai-unmul.usulan-serdos.*'],
                 ['route' => '#', 'icon' => 'user-minus', 'label' => 'Usulan Pensiun', 'pattern' => 'backend.pegawai-unmul.usulan-pensiun.*'],
                 ['route' => '#', 'icon' => 'trending-up', 'label' => 'Usulan Kepangkatan', 'pattern' => 'backend.pegawai-unmul.usulan-pangkat.*'],

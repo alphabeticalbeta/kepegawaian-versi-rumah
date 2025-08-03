@@ -18,6 +18,7 @@ use App\Http\Controllers\Backend\PenilaiUniversitas\DashboardController as Penil
 use App\Http\Controllers\Backend\PegawaiUnmul\ProfileController as ProfileController;
 use App\Http\Controllers\Backend\AdminUnivUsulan\PeriodeUsulanController;
 use App\Http\Controllers\Backend\AdminUnivUsulan\PusatUsulanController;
+use App\Http\Controllers\Backend\PegawaiUnmul\UsulanPegawaiController as UsulanPegawaiController;
 
 // ------ RUTE HALAMAN LOGIN & LOGOUT ------//
 Route::get('/login', [LoginController::class, 'showLoginForm'])->middleware('guest:pegawai')->name('login');
@@ -81,7 +82,12 @@ Route::middleware(['auth:pegawai'])->group(function () {
             Route::get('/', [ProfileController::class, 'show'])->name('show');
             Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
             Route::put('/', [ProfileController::class, 'update'])->name('update');
-    });
+        });
+
+        Route::get('/usulan-saya', [UsulanPegawaiController::class, 'index'])->name('usulan-pegawai.dashboard');
+
+        Route::get('/usulan-jabatan/create', [UsulanPegawaiController::class, 'createJabatan'])->name('usulan-jabatan.create');
+        Route::post('/usulan-jabatan', [UsulanPegawaiController::class, 'storeJabatan'])->name('usulan-jabatan.store');
     });
 
 
