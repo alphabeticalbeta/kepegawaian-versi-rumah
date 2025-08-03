@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Admin Dashboard') - Kepegawaian UNMUL</title>
-    @vite('resources/css/app.css')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script type="module" src="http://127.0.0.1:5173/resources/js/app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="http://127.0.0.1:5173/resources/css/app.css">
 
     {{-- CSS Kustom (jika ada) bisa ditambahkan di sini atau di file app.css --}}
     <style>
@@ -46,6 +49,7 @@
     {{-- ========================================================= --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            Alpine.start();
             // Inisialisasi semua ikon Lucide
             lucide.createIcons();
 

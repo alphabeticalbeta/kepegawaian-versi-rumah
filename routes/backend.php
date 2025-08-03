@@ -16,6 +16,8 @@ use App\Http\Controllers\Backend\AdminUnivUsulan\PegawaiController; // Digunakan
 use App\Http\Controllers\Backend\PegawaiUnmul\DashboardController as PegawaiUnmulDashboardController;
 use App\Http\Controllers\Backend\PenilaiUniversitas\DashboardController as PenilaiUniversitasDashboardController;
 use App\Http\Controllers\Backend\PegawaiUnmul\ProfileController as ProfileController;
+use App\Http\Controllers\Backend\AdminUnivUsulan\PeriodeUsulanController;
+use App\Http\Controllers\Backend\AdminUnivUsulan\PusatUsulanController;
 
 // ------ RUTE HALAMAN LOGIN & LOGOUT ------//
 Route::get('/login', [LoginController::class, 'showLoginForm'])->middleware('guest:pegawai')->name('login');
@@ -33,6 +35,7 @@ Route::middleware(['auth:pegawai'])->group(function () {
         Route::get('/dashboard', [AdminUniversitasDashboardController::class, 'index'])->name('dashboard-universitas');
     });
 
+
     // ------ RUTE HALAMAN BACKEND ADMIN UNIVERSITAS USULAN------//
     Route::prefix('admin-univ-usulan')->name('backend.admin-univ-usulan.')->group(function () {
         Route::get('/dashboard', [AdminUnivUsulanDashboardController::class, 'index'])->name('dashboard');
@@ -45,6 +48,14 @@ Route::middleware(['auth:pegawai'])->group(function () {
         Route::resource('/sub-sub-unitkerja', SubSubUnitKerjaController::class);
         Route::resource('/pangkat', PangkatController::class);
         Route::resource('/jabatan', JabatanController::class);
+
+        // --- TAMBAHKAN BARIS DI BAWAH INI ---
+        Route::get('/pusat-usulan', [PusatUsulanController::class, 'index'])->name('pusat-usulan.index');
+
+         Route::get('/periode-usulan/{periodeUsulan}/pendaftar', [PusatUsulanController::class, 'showPendaftar'])->name('periode-usulan.pendaftar');
+
+        // Route untuk Manajemen Periode Usulan
+         Route::resource('/periode-usulan', PeriodeUsulanController::class);
 
         // Route untuk Manajemen Role Pegawai
         Route::get('/role-pegawai', [RolePegawaiController::class, 'index'])->name('role-pegawai.index');
@@ -61,6 +72,7 @@ Route::middleware(['auth:pegawai'])->group(function () {
         Route::get('/get-sub-unit-kerjas', [SubSubUnitKerjaController::class, 'getSubUnitKerjas'])->name('get-sub-unit-kerjas');
     });
 
+
     // ------ RUTE HALAMAN BACKEND USUL PEGAWAI UNMUL------//
     Route::prefix('pegawai-unmul')->name('pegawai-unmul.')->group(function () {
         Route::get('/dashboard', [PegawaiUnmulDashboardController::class, 'index'])->name('dashboard-pegawai-unmul');
@@ -72,10 +84,12 @@ Route::middleware(['auth:pegawai'])->group(function () {
     });
     });
 
+
     // ------ RUTE HALAMAN BACKEND ADMIN FAKULTAS ------//
     Route::prefix('admin-fakultas')->name('admin-fakultas.')->group(function () {
         Route::get('/dashboard', [AdminFakultasDashboardController::class, 'index'])->name('dashboard-fakultas');
     });
+
 
     // ------ RUTE HALAMAN BACKEND PENILAI UNIVERSITAS ------//
     Route::prefix('penilai-universitas')->name('penilai-universitas.')->group(function () {
