@@ -5,12 +5,28 @@
 @section('content')
 <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-     @if (session('success'))
+        {{-- [FIX] BLOK NOTIFIKASI LENGKAP --}}
+    @if (session('success'))
         <div class="bg-green-100 border-l-4 border-green-500 text-green-700 px-4 py-3 rounded-lg relative mb-6 shadow-md" role="alert">
             <strong class="font-bold">Sukses!</strong>
             <span class="block sm:inline">{{ session('success') }}</span>
         </div>
     @endif
+
+    @if (session('error'))
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg relative mb-6 shadow-md" role="alert">
+            <strong class="font-bold">Gagal!</strong>
+            <span class="block sm:inline">{{ session('error') }}</span>
+        </div>
+    @endif
+
+    @if (session('warning'))
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 px-4 py-3 rounded-lg relative mb-6 shadow-md" role="alert">
+            <strong class="font-bold">Perhatian!</strong>
+            <span class="block sm:inline">{{ session('warning') }}</span>
+        </div>
+    @endif
+    {{-- BATAS AKHIR BLOK NOTIFIKASI --}}
 
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-900">
@@ -57,7 +73,7 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-center">
-                                <a href="#" class="font-medium text-indigo-600 hover:text-indigo-900">Lihat Detail</a>
+                                <a href="{{ route('pegawai-unmul.usulan-jabatan.edit', $usulan) }}" class="font-medium text-indigo-600 hover:text-indigo-900">Lihat Detail</a>
                             </td>
                         </tr>
                     @empty

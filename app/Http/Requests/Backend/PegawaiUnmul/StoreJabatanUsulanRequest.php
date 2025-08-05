@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Backend\PegawaiUnmul;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreJabatanUsulanRequest extends FormRequest
 {
@@ -22,34 +23,77 @@ class StoreJabatanUsulanRequest extends FormRequest
      *
      * @return array<string, mixed>
      */
-    public function rules()
+    public function rules(): array
     {
-        return [
-            // Memastikan periode_usulan_id dikirim dan ada di tabel periode_usulans
+        // Cek aksi apa yang dilakukan pengguna dari tombol yang diklik.
+        $isSavingDraft = $this->input('action') === 'save_draft';
+
+        // Ambil data usulan dari route jika sedang dalam mode edit.
+        $usulan = $this->route('usulan');
+
+        // =====================================================================
+        // ATURAN VALIDASI FINAL
+        // =====================================================================
+
+        $rules = [
+            // Aturan dasar yang selalu berlaku
             'periode_usulan_id' => ['required', 'exists:periode_usulans,id'],
-
-            // field karya ilmiah / artikel (semua optional)
-            'karya_ilmiah'      => ['nullable', 'string', 'max:255'],
-            'nama_jurnal'       => ['nullable', 'string', 'max:255'],
-            'judul_artikel'     => ['nullable', 'string', 'max:255'],
-            'penerbit_artikel'  => ['nullable', 'string', 'max:255'],
-            'volume_artikel'    => ['nullable', 'string', 'max:100'],
-            'nomor_artikel'     => ['nullable', 'string', 'max:100'],
-            'edisi_artikel'     => ['nullable', 'string', 'max:100'],
-            'halaman_artikel'   => ['nullable', 'string', 'max:100'],
-            'issn_artikel'      => ['nullable', 'string', 'max:100'],
-            'link_artikel'      => ['nullable', 'string', 'max:255'],
-
-            // Catatan bersifat opsional (nullable)
-            'catatan' => ['nullable', 'string', 'max:2000'],
-
-            // Memastikan 'dokumen' adalah sebuah array (karena kita menggunakan name="dokumen[id]")
-            'dokumen' => ['required', 'array'],
-
-            // Validasi untuk setiap item di dalam array 'dokumen'
-            // 'dokumen.*' berarti aturan ini berlaku untuk semua file dalam array dokumen.
-            'dokumen.*' => ['required', 'file', 'mimes:pdf', 'max:1024'], // max:1024 = 1MB
+            'catatan'           => ['nullable', 'string', 'max:5000'],
+            'karya_ilmiah'      => ['nullable', 'string'],
+            'nama_jurnal'       => ['nullable', 'string'],
+            'judul_artikel'     => ['nullable', 'string'],
+            'penerbit_artikel'  => ['nullable', 'string'],
+            'volume_artikel'    => ['nullable', 'string'],
+            'nomor_artikel'     => ['nullable', 'string'],
+            'edisi_artikel'     => ['nullable', 'string'],
+            'halaman_artikel'   => ['nullable', 'string'],
+            'issn_artikel'      => ['nullable', 'string'],
+            'link_artikel'      => ['nullable', 'url'],
+            'link_sinta'        => ['nullable', 'url'],
+            'link_scopus'       => ['nullable', 'url'],
+            'link_scimago'      => ['nullable', 'url'],
+            'link_wos'          => ['nullable', 'url'],
+            'syarat_guru_besar' => ['nullable', 'string'],
         ];
+
+        // Daftar semua dokumen
+        $documentFields = [
+            'bukti_korespondensi',
+            'turnitin',
+            'upload_artikel',
+            'pakta_integritas',
+            'bukti_syarat_guru_besar',
+        ];
+
+        // Terapkan aturan file secara dinamis
+        foreach ($documentFields as $field) {
+            $rules[$field] = [
+                // File hanya WAJIB jika:
+                // 1. Ini BUKAN Simpan Draft, DAN
+                // 2. Ini adalah usulan BARU ATAU filenya memang belum ada
+                Rule::requiredIf(
+                    !$isSavingDraft &&
+                    (!$usulan || empty($usulan->data_usulan[$field]))
+                ),
+                'file',
+                'mimes:pdf',
+                'max:2048' // 2MB
+            ];
+        }
+
+        // Pengecualian: bukti_syarat_guru_besar hanya wajib jika syarat_guru_besar dipilih
+        $rules['bukti_syarat_guru_besar'] = [
+            Rule::requiredIf(
+                !$isSavingDraft && // dan bukan draft
+                !empty($this->input('syarat_guru_besar')) && // dan syarat gb dipilih
+                (!$usulan || empty($usulan->data_usulan['bukti_syarat_guru_besar'])) // dan filenya belum ada
+            ),
+            'file',
+            'mimes:pdf',
+            'max:2048'
+        ];
+
+        return $rules;
     }
 
     /**

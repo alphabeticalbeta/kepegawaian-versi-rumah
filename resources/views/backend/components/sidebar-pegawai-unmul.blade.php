@@ -10,10 +10,10 @@
     {{-- Navigasi Menu --}}
     <nav class="flex-1 overflow-y-auto py-4">
         <div class="px-4 mb-4">
-            <a href="#" {{-- Ganti # dengan route dashboard pegawai --}}
-               class="flex items-center px-3 py-2.5 rounded-lg font-semibold {{ request()->routeIs('backend.pegawai-unmul.dashboard-pegawai-unmul') ? 'bg-indigo-50 text-indigo-600' : 'text-slate-600 hover:bg-slate-100' }}">
-                <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-                <span class="sidebar-text">Dashboard</span>
+            <a href="{{ route('pegawai-unmul.usulan-pegawai.dashboard') }}"
+            class="flex items-center px-3 py-2.5 rounded-lg font-semibold {{ request()->routeIs('pegawai-unmul.usulan-pegawai.dashboard') ? 'bg-indigo-50 text-indigo-600' : 'text-slate-600 hover:bg-slate-100' }}">
+                <i data-lucide="file-text" class="w-5 h-5 mr-3 flex-shrink-0"></i>
+                <span class="sidebar-text">Usulan Saya</span>
             </a>
         </div>
 

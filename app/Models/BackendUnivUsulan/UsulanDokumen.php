@@ -24,9 +24,9 @@ class UsulanDokumen extends Model
      */
     protected $fillable = [
         'usulan_id',
+        'pegawai_id',
         'nama_dokumen',
-        'path_file',
-        'diupload_oleh_id',
+        'path',
     ];
 
     /**

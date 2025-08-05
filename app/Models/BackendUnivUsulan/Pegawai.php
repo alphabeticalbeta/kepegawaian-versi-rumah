@@ -58,6 +58,7 @@ class Pegawai extends Authenticatable
         'tmt_cpns',
         'tmt_pns',
         'foto',
+        'status_kepegawaian'
     ];
 
     /**
@@ -86,7 +87,7 @@ class Pegawai extends Authenticatable
      */
     public function jabatan()
     {
-        return $this->belongsTo(Jabatan::class, 'jabatan_terakhir_id');
+         return $this->belongsTo(Jabatan::class, 'jabatan_terakhir_id');
     }
 
     /**
@@ -103,6 +104,11 @@ class Pegawai extends Authenticatable
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'pegawai_role');
+    }
+
+    public function usulans()
+    {
+        return $this->hasMany(\App\Models\BackendUnivUsulan\Usulan::class, 'pegawai_id');
     }
 
     protected static function boot()

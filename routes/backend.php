@@ -86,8 +86,17 @@ Route::middleware(['auth:pegawai'])->group(function () {
 
         Route::get('/usulan-saya', [UsulanPegawaiController::class, 'index'])->name('usulan-pegawai.dashboard');
 
-        Route::get('/usulan-jabatan/create', [UsulanPegawaiController::class, 'createJabatan'])->name('usulan-jabatan.create');
-        Route::post('/usulan-jabatan', [UsulanPegawaiController::class, 'storeJabatan'])->name('usulan-jabatan.store');
+         Route::prefix('usulan-jabatan')->name('usulan-jabatan.')->group(function () {
+            // Rute untuk MEMBUAT usulan baru
+            Route::get('/create', [UsulanPegawaiController::class, 'createJabatan'])->name('create');
+            Route::post('/', [UsulanPegawaiController::class, 'storeJabatan'])->name('store');
+
+            // Rute untuk MENGEDIT usulan yang ada
+            Route::get('/{usulan}/edit', [UsulanPegawaiController::class, 'editJabatan'])->name('edit');
+            Route::put('/{usulan}', [UsulanPegawaiController::class, 'updateJabatan'])->name('update');
+        });
+
+        Route::get('/usulan-saya/{usulan}/dokumen/{field}', [UsulanPegawaiController::class, 'showUsulanDocument'])->name('usulan-pegawai.show-document');
     });
 
 
