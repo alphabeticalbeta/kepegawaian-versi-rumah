@@ -19,6 +19,7 @@ use App\Http\Controllers\Backend\PegawaiUnmul\ProfileController as ProfileContro
 use App\Http\Controllers\Backend\AdminUnivUsulan\PeriodeUsulanController;
 use App\Http\Controllers\Backend\AdminUnivUsulan\PusatUsulanController;
 use App\Http\Controllers\Backend\PegawaiUnmul\UsulanPegawaiController as UsulanPegawaiController;
+use App\Http\Controllers\Backend\AdminFakultas\AdminFakultasController;
 
 // ------ RUTE HALAMAN LOGIN & LOGOUT ------//
 Route::get('/login', [LoginController::class, 'showLoginForm'])->middleware('guest:pegawai')->name('login');
@@ -38,8 +39,8 @@ Route::middleware(['auth:pegawai'])->group(function () {
 
 
     // ------ RUTE HALAMAN BACKEND ADMIN UNIVERSITAS USULAN------//
-    Route::prefix('admin-univ-usulan')->name('backend.admin-univ-usulan.')->group(function () {
-        Route::get('/dashboard', [AdminUnivUsulanDashboardController::class, 'index'])->name('dashboard');
+    Route::prefix('admin-universitas-usulan')->middleware(['auth', 'role:Admin Universitas Usulan'])->name('backend.admin-univ-usulan.')->group(function () {
+          Route::get('/dashboard', [AdminUnivUsulanDashboardController::class, 'index'])->name('dashboard');
 
         // Resource Routes untuk Master Data
         Route::resource('/data-pegawai', DataPegawaiController::class)
@@ -101,8 +102,12 @@ Route::middleware(['auth:pegawai'])->group(function () {
 
 
     // ------ RUTE HALAMAN BACKEND ADMIN FAKULTAS ------//
-    Route::prefix('admin-fakultas')->name('admin-fakultas.')->group(function () {
-        Route::get('/dashboard', [AdminFakultasDashboardController::class, 'index'])->name('dashboard-fakultas');
+    Route::prefix('admin-fakultas')->middleware(['auth', 'role:Admin Fakultas'])->name('admin-fakultas.')->group(function () {
+
+            // Rute untuk menampilkan dasbor utama Admin Fakultas
+            Route::get('/dashboard', [AdminFakultasController::class, 'index'])->name('dashboard');
+
+            // (Nanti kita akan tambahkan rute untuk show, update, dll di sini)
     });
 
 

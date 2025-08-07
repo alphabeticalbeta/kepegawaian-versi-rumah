@@ -1,5 +1,5 @@
-console.log('--- TEST: app.js BERHASIL DIMUAT ---');
 import './bootstrap';
+import '../css/app.css';
 
 import Alpine from 'alpinejs';
 

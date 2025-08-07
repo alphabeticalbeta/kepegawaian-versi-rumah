@@ -3,135 +3,41 @@
 namespace App\Models\BackendUnivUsulan;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles; // Trait ini sudah benar
 
 class Pegawai extends Authenticatable
 {
-    use HasFactory;
+    use HasFactory, Notifiable, HasRoles; // Penggunaan trait ini sudah benar
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = [
-        'email',
-        'password',
-        'pangkat_terakhir_id',
-        'jabatan_terakhir_id',
-        'unit_kerja_terakhir_id',
-        'jenis_pegawai',
-        'status_kepegawaian',
-        'nip',
-        'nuptk',
-        'gelar_depan',
-        'nama_lengkap',
-        'gelar_belakang',
-        'nomor_kartu_pegawai',
-        'tempat_lahir',
-        'tanggal_lahir',
-        'jenis_kelamin',
-        'nomor_handphone',
-        'tmt_pangkat',
-        'sk_pangkat_terakhir',
-        'tmt_jabatan',
-        'sk_jabatan_terakhir',
-        'pendidikan_terakhir',
-        'ijazah_terakhir',
-        'transkrip_nilai_terakhir',
-        'sk_penyetaraan_ijazah',
-        'disertasi_thesis_terakhir',
-        'mata_kuliah_diampu',
-        'ranting_ilmu_kepakaran',
-        'url_profil_sinta',
-        'predikat_kinerja_tahun_pertama',
-        'skp_tahun_pertama',
-        'predikat_kinerja_tahun_kedua',
-        'skp_tahun_kedua',
-        'nilai_konversi',
-        'pak_konversi',
-        'sk_cpns',
-        'sk_pns',
-        'tmt_cpns',
-        'tmt_pns',
-        'foto',
-        'status_kepegawaian'
-    ];
+    protected $guarded = ['id'];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
-        'tanggal_lahir' => 'date',
-        'tmt_pangkat' => 'date',
-        'tmt_jabatan' => 'date',
-        'tmt_cpns' => 'date',
-        'tmt_pns' => 'date',
+        'email_verified_at' => 'datetime',
+        'tmt_pangkat'       => 'date',
+        'tanggal_lahir'     => 'date',
+        'tmt_jabatan'       => 'date',
+        'tmt_pns'           => 'date',
+        'tmt_cpns'          => 'date',
     ];
 
-    /**
-     * Get the pangkat for the pegawai.
-     */
+    // [PERBAIKAN UTAMA]
+    // Method 'roles()' di bawah ini telah dihapus.
+    // Kita tidak memerlukannya lagi karena sudah ditangani oleh trait 'HasRoles'.
+
     public function pangkat()
     {
         return $this->belongsTo(Pangkat::class, 'pangkat_terakhir_id');
     }
 
-    /**
-     * Get the jabatan for the pegawai.
-     */
     public function jabatan()
     {
-         return $this->belongsTo(Jabatan::class, 'jabatan_terakhir_id');
+        return $this->belongsTo(Jabatan::class, 'jabatan_terakhir_id');
     }
 
-    /**
-     * Get the unit kerja for the pegawai.
-     */
     public function unitKerja()
     {
-        return $this->belongsTo(SubSubUnitKerja::class, 'unit_kerja_terakhir_id');
-    }
-
-    //  * Relasi many-to-many ke model Role.
-    //  * Seorang pegawai bisa memiliki banyak role.
-    //  */
-    public function roles(): BelongsToMany
-    {
-        return $this->belongsToMany(Role::class, 'pegawai_role');
-    }
-
-    public function usulans()
-    {
-        return $this->hasMany(\App\Models\BackendUnivUsulan\Usulan::class, 'pegawai_id');
-    }
-
-    protected static function boot()
-    {
-        parent::boot();
-
-        // Event yang berjalan otomatis SEBELUM pegawai baru disimpan
-        static::creating(function ($pegawai) {
-            // Jika password tidak diisi secara manual dari form,
-            // atur nilainya menjadi NIP pegawai DAN LANGSUNG DI-HASH.
-            if (empty($pegawai->password)) {
-                $pegawai->password = Hash::make($pegawai->nip);
-            }
-        });
-
-        // Event yang berjalan otomatis SETELAH pegawai baru dibuat
-        static::created(function ($pegawai) {
-            // Cari role dengan nama 'Pegawai'
-            $defaultRole = Role::where('name', 'Pegawai')->first();
-            if ($defaultRole) {
-                // Lampirkan role tersebut ke pegawai yang baru dibuat
-                $pegawai->roles()->attach($defaultRole->id);
-            }
-        });
+        return $this->belongsTo(UnitKerja::class, 'unit_kerja_terakhir_id');
     }
 }

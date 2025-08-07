@@ -22,6 +22,7 @@ return new class extends Migration
 
             // Data Utama & Autentikasi
             $table->string('jenis_pegawai'); // Dosen, Tenaga Kependidikan
+            $table->string('status_kepegawaian')->nullable();
             $table->string('nip', 18)->unique();
             $table->string('nuptk', 16)->nullable();
             $table->string('gelar_depan')->nullable();

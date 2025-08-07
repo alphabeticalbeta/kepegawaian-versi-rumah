@@ -6,7 +6,7 @@
     <title>@yield('title', 'Dashboard Penilai Universitas') - Kepegawaian UNMUL</title>
 
     {{-- Memuat CSS dari Vite --}}
-    @vite('resources/css/app.css')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     {{-- Memuat pustaka ikon Lucide --}}
     <script src="https://unpkg.com/lucide@latest"></script>

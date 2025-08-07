@@ -14,8 +14,8 @@ return [
     */
 
     'defaults' => [
-        'guard' => env('AUTH_GUARD', 'web'),
-        'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
+        'guard' => 'pegawai',
+        'passwords' => 'users',
     ],
 
     /*
@@ -36,16 +36,10 @@ return [
     */
 
     'guards' => [
-        // 'web' => [
-        //     'driver' => 'session',
-        //     'provider' => 'pegawais', // <-- Ganti baris ini
-        // ],
-
-        // Kita ubah konfigurasi guard 'web' untuk menggunakan provider 'pegawais'
-
+        // [KONFIRMASI] Guard 'web' adalah satu-satunya yang kita butuhkan untuk sesi.
         'web' => [
             'driver' => 'session',
-            'provider' => 'pegawais',
+            'provider' => 'users', // Kita akan gunakan provider 'users' standar.
         ],
 
         // Kita juga tambahkan guard 'pegawai' secara eksplisit
@@ -73,9 +67,10 @@ return [
     */
 
     'providers' => [
+        // Kita beritahu provider 'users' untuk menggunakan model 'Pegawai' Anda.
         'users' => [
             'driver' => 'eloquent',
-            'model' => App\Models\User::class,
+            'model' => App\Models\BackendUnivUsulan\Pegawai::class,
         ],
 
         // ▼▼▼ TAMBAHKAN BLOK BARU INI DI BAWAHNYA ▼▼▼
@@ -107,7 +102,7 @@ return [
     'passwords' => [
         'users' => [
             'provider' => 'users',
-            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'table' => 'password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,
         ],
@@ -124,6 +119,6 @@ return [
     |
     */
 
-    'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
+    'password_timeout' => 10800,
 
 ];

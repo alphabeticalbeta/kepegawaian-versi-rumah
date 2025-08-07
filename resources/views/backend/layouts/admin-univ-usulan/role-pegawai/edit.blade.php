@@ -22,10 +22,10 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border rounded-md bg-gray-50">
                     @foreach ($roles as $role)
                         <label for="role-{{ $role->id }}" class="flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-md cursor-pointer">
-                            <input id="role-{{ $role->id }}" name="roles[]" type="checkbox" value="{{ $role->id }}"
+                            <input id="role-{{ $role->id }}" name="roles[]" type="checkbox" value="{{ $role->name }}"
                                    class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                                    {{-- Cek apakah pegawai sudah memiliki role ini --}}
-                                   @if($pegawai->roles->contains($role)) checked @endif
+                                   @if($pegawai->hasRole($role->name)) checked @endif
                                    >
                             <span class="text-gray-700 text-sm font-medium">{{ $role->name }}</span>
                         </label>

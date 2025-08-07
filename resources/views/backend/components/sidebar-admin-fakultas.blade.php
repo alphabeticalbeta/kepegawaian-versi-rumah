@@ -12,8 +12,9 @@
         <div class="space-y-1">
 
             <div class="px-4 mb-4">
-                <a href="#" {{-- Ganti # dengan route dashboard pegawai --}}
-                class="flex items-center px-3 py-2.5 rounded-lg font-semibold {{ request()->routeIs('backend.pegawai-unmul.dashboard-pegawai-unmul') ? 'bg-indigo-50 text-indigo-600' : 'text-slate-600 hover:bg-slate-100' }}">
+                {{-- [PERBAIKAN] Menggunakan nama rute yang benar --}}
+                <a href="{{ route('admin-fakultas.dashboard') }}"
+                class="flex items-center px-3 py-2.5 rounded-lg font-semibold {{ request()->routeIs('admin-fakultas.dashboard') ? 'bg-indigo-50 text-indigo-600' : 'text-slate-600 hover:bg-slate-100' }}">
                     <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3 flex-shrink-0"></i>
                     <span class="sidebar-text">Dashboard</span>
                 </a>

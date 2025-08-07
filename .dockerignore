@@ -1,0 +1,18 @@
+# Abaikan dependensi Node.js
+node_modules
+
+# Abaikan dependensi PHP Composer
+vendor
+
+# Abaikan file environment
+.env
+
+# Abaikan direktori Git
+.git
+.github
+
+# Abaikan file log Laravel
+storage/logs
+
+# Abaikan symbolic link storage Laravel
+/public/storage

@@ -81,6 +81,8 @@ class ProfileController extends Controller
             'pendidikan_terakhir' => 'required|string',
             'predikat_kinerja_tahun_pertama' => 'required|string',
             'predikat_kinerja_tahun_kedua' => 'required|string',
+            'nuptk' => 'nullable|string',
+            'nilai_konversi' => 'nullable|string',
             'unit_kerja_terakhir_id' => 'required|exists:sub_sub_unit_kerjas,id',
             'nomor_handphone' => 'required|string',
             'tmt_cpns' => 'required|date',

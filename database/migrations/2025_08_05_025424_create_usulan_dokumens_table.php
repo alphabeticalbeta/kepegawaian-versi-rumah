@@ -4,28 +4,32 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+class CreateUsulanDokumensTable extends Migration
 {
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
+    public function up()
     {
         Schema::create('usulan_dokumens', function (Blueprint $table) {
             $table->id();
             $table->foreignId('usulan_id')->constrained('usulans')->onDelete('cascade');
-            $table->foreignId('pegawai_id')->constrained('pegawais')->onDelete('cascade');
-            $table->string('nama_dokumen'); // e.g., 'bukti_korespondensi'
-            $table->string('path');
+
+            // GANTI: dari 'pegawai_id' menjadi 'diupload_oleh_id'
+            $table->foreignId('diupload_oleh_id')
+                  ->constrained('pegawais')
+                  ->onDelete('restrict')
+                  ->comment('ID pegawai yang upload dokumen');
+
+            $table->string('nama_dokumen', 100);
+            $table->string('path', 500);
             $table->timestamps();
+
+            // Add indexes for better performance
+            $table->index(['usulan_id', 'created_at']);
+            $table->index('diupload_oleh_id');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('usulan_dokumens');
     }
-};
+}

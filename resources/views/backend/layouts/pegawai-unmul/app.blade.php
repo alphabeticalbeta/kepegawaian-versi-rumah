@@ -6,13 +6,13 @@
     <title>@yield('title', 'Dashboard Pegawai') - Kepegawaian UNMUL</title>
 
     {{-- Memuat CSS dari Vite --}}
-    @vite('resources/css/app.css')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     {{-- Memuat pustaka ikon Lucide --}}
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    {{-- Memuat pustaka Alpine.js untuk interaktivitas dropdown --}}
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
 </head>
 <body class="bg-slate-100">
 
@@ -39,9 +39,54 @@
     {{-- =================== BLOK SCRIPT YANG DIPERBAIKI ====================== --}}
     {{-- ====================================================================== --}}
     <script>
+        function usulanForm() {
+            return {
+                action: 'save_draft',
+                isSubmitting: false,
+                showConfirmModal: false,
+
+                submitForm() {
+                    if (this.action === 'submit_final') {
+                        this.showConfirmModal = true;
+                    } else {
+                        this.doSubmit();
+                    }
+                },
+
+                confirmSubmit() {
+                    this.showConfirmModal = false;
+                    this.doSubmit();
+                },
+
+                doSubmit() {
+                    this.isSubmitting = true;
+                    this.$el.submit();
+                }
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             // Inisialisasi ikon Lucide setelah halaman dimuat
             lucide.createIcons();
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+
+        document.addEventListener('click', () => {
+            setTimeout(() => {
+                lucide.createIcons();
+            }, 100);
+        });
+
+        document.addEventListener('alpine:initialized', () => {
+            lucide.createIcons();
+        });
+
+        document.addEventListener('alpine:initialized', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
 
             // Referensi ke elemen-elemen penting
             const sidebar = document.getElementById('sidebar');
@@ -55,7 +100,7 @@
                 const sidebarTexts = sidebar.querySelectorAll('.sidebar-text');
 
                 if (collapsed) {
-                    // --- Logika saat Sidebar DICCIUTKAN ---
+                    // --- Logika saat Sidebar DICIUTKAN ---
                     sidebar.classList.remove('w-64');
                     sidebar.classList.add('w-20');
                     mainContent.classList.remove('ml-64');
@@ -87,6 +132,6 @@
             }
         });
     </script>
-
+    @stack('scripts')
 </body>
 </html>

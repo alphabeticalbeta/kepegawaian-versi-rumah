@@ -93,13 +93,17 @@
         </div>
     </div>
 
-    <form action="{{ isset($usulan) && $usulan->exists ? route('pegawai-unmul.usulan-jabatan.update', $usulan) : route('pegawai-unmul.usulan-jabatan.store') }}" method="POST" enctype="multipart/form-data">
-        @csrf
+    @if (isset($usulan) && $usulan->exists)
+        {{-- Jika ini adalah mode EDIT, form akan mengarah ke route 'update' --}}
+        <form action="{{ route('pegawai-unmul.usulan-jabatan.update', $usulan->id) }}" method="POST" enctype="multipart/form-data">
+            @method('PUT') {{-- Menambahkan method PUT untuk Laravel --}}
+    @else
+        {{-- Jika ini adalah mode CREATE, form akan mengarah ke route 'store' --}}
+        <form action="{{ route('pegawai-unmul.usulan-jabatan.store') }}" method="POST" enctype="multipart/form-data">
+    @endif
 
-        {{-- Jika ini adalah form edit, WAJIB sertakan method PUT --}}
-        @if (isset($usulan) && $usulan->exists)
-            @method('PUT')
-        @endif
+        {{-- @csrf harus ada di dalam form, cukup satu kali --}}
+        @csrf
 
     <div class="bg-gradient-to-r from-indigo-50 via-white to-purple-50 border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         <!-- Header with gradient background -->
@@ -225,7 +229,7 @@
                                 A. Data Pribadi
                             </h3>
                         </div>
-                        <div class="p-6 space-y-4 grid grid-cols-1 xl:grid-cols-2">
+                        <div class="p-6 space-y-4 grid grid-cols-2 xl:grid-cols-2">
                             {{-- Data Pribadi --}}
                             @foreach ([
                                 'jenis_pegawai'      => ['Jenis Pegawai', $pegawai->jenis_pegawai, 'briefcase'],
@@ -263,7 +267,7 @@
                                 B. Data Kepegawaian
                             </h3>
                         </div>
-                        <div class="p-6 space-y-4 grid grid-cols-1 xl:grid-cols-2">
+                        <div class="p-6 space-y-4 grid grid-cols-2 xl:grid-cols-2">
                             @php
                                 $kep = [
                                     'pangkat_saat_usul'    => ['Pangkat',         $pegawai->pangkat?->pangkat, 'star'],
@@ -379,7 +383,7 @@
                             </h3>
                         </div>
                         <div class="p-6">
-                            <div class="space-y-3 grid grid-cols-1 xl:grid-cols-2">
+                            <div class="space-y-3 grid grid-cols-2 xl:grid-cols-2">
                                 @foreach ([
                                     'ijazah_terakhir'           => ['Ijazah Terakhir', 'graduation-cap'],
                                     'transkrip_nilai_terakhir'  => ['Transkrip Nilai Terakhir', 'file-text'],
@@ -552,7 +556,7 @@
                         @endif
                         <input type="file" name="pakta_integritas" id="pakta_integritas" class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 file:cursor-pointer cursor-pointer"
                             {{-- [FIX] 'required' dibuat kondisional --}}
-                            @if(!$usulan || empty($usulan->data_usulan['pakta_integritas'])) required @endif>
+                            @if(empty($usulan) || empty($usulan->data_usulan['pakta_integritas'])) required @endif
                         <p class="mt-2 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
                         @error('pakta_integritas')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
@@ -576,7 +580,7 @@
                         @endif
                         <input type="file" name="bukti_korespondensi" id="bukti_korespondensi" class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 file:cursor-pointer cursor-pointer"
                             {{-- [FIX] 'required' dibuat kondisional --}}
-                            @if(!$usulan || empty($usulan->data_usulan['bukti_korespondensi'])) required @endif>
+                            @if(empty($usulan) || empty($usulan->data_usulan['bukti_korespondensi'])) required @endif
                         <p class="mt-2 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
                         @error('bukti_korespondensi')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
@@ -600,7 +604,7 @@
                         @endif
                         <input type="file" name="turnitin" id="turnitin" class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-100 file:text-green-700 hover:file:bg-green-200 file:cursor-pointer cursor-pointer"
                             {{-- [FIX] 'required' dibuat kondisional --}}
-                            @if(!$usulan || empty($usulan->data_usulan['turnitin'])) required @endif>
+                            @if(empty($usulan) || empty($usulan->data_usulan['turnitin'])) required @endif
                         <p class="mt-2 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
                         @error('turnitin')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
@@ -624,7 +628,7 @@
                         @endif
                         <input type="file" name="upload_artikel" id="upload_artikel" class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 file:cursor-pointer cursor-pointer"
                             {{-- [FIX] 'required' dibuat kondisional --}}
-                            @if(!$usulan || empty($usulan->data_usulan['upload_artikel'])) required @endif>
+                            @if(empty($usulan) || empty($usulan->data_usulan['upload_artikel'])) required @endif
                         <p class="mt-2 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
                         @error('upload_artikel')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>

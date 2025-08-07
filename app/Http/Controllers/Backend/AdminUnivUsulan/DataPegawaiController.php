@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Backend\AdminUnivUsulan;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use App\Models\BackendUnivUsulan\Jabatan;
 use App\Models\BackendUnivUsulan\Pangkat;
 use App\Models\BackendUnivUsulan\Pegawai;
@@ -15,6 +16,11 @@ use Illuminate\Support\Facades\File as FileFacade;
 
 class DataPegawaiController extends Controller
 {
+    public function __construct()
+    {
+
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -98,11 +104,14 @@ class DataPegawaiController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Pegawai $pegawai)
+   public function destroy(Pegawai $pegawai)
     {
+
+        // Existing delete logic
         $fileColumns = [
             'sk_pangkat_terakhir', 'sk_jabatan_terakhir',
-            'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir',
+            'ijazah_terakhir', 'transkrip_nilai_terakhir',
+            'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir',
             'pak_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua',
             'sk_cpns', 'sk_pns', 'foto'
         ];
@@ -206,9 +215,9 @@ class DataPegawaiController extends Controller
         foreach ($fileColumns as $column) {
             if ($request->hasFile($column)) {
                 if ($pegawai && $pegawai->$column) {
-                    Storage::disk('public')->delete($pegawai->$column);
+                    Storage::disk('local')->delete($pegawai->$column);
                 }
-                $path = $request->file($column)->store('pegawai-files/' . $column, 'public');
+                $path = $request->file($column)->store('pegawai-files/' . $column, 'local');
                 $validatedData[$column] = $path;
             }
         }
@@ -231,8 +240,8 @@ class DataPegawaiController extends Controller
         }
 
         $filePath = $pegawai->$field;
-        if (!$filePath || !Storage::disk('public')->exists($filePath)) {
-            abort(404, 'File tidak ditemukan.');
+        if (!$filePath || !Storage::disk('local')->exists($filePath)) {
+            abort(404, 'File tidak ditemukan');
         }
 
         $path = Storage::disk('public')->path($filePath);
@@ -242,6 +251,6 @@ class DataPegawaiController extends Controller
             'Content-Disposition' => 'inline; filename="' . basename($path) . '"',
         ];
 
-        return response()->file($path, $headers);
+        return response()->file(Storage::disk('local')->path($filePath));
     }
 }

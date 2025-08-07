@@ -4,48 +4,25 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\BackendUnivUsulan\Pegawai;
-use App\Models\BackendUnivUsulan\Role;
-use Illuminate\Support\Facades\Hash; // Import Hash untuk password
+use Illuminate\Support\Facades\Hash;
 
 class PegawaiSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
     public function run(): void
     {
-        // Data untuk 3 pegawai
         $pegawais = [
-            [
-                'nip' => '199001012015011001',
-                'nama_lengkap' => 'Budi Santoso',
-                'email' => 'budi.santoso@example.com',
-            ],
-            [
-                'nip' => '199202022016022002',
-                'nama_lengkap' => 'Citra Lestari',
-                'email' => 'citra.lestari@example.com',
-            ],
-            [
-                'nip' => '199405242024061001', // NIP yang sudah ada akan di-update
-                'nama_lengkap' => 'Muhammad Rivani Ibrahim',
-                'email' => 'alpha.cloud24@gmail.com',
-            ],
+            ['nip' => '199001012015011001', 'nama_lengkap' => 'Budi Santoso', 'email' => 'budi.santoso@example.com', 'is_admin' => false],
+            ['nip' => '199202022016022002', 'nama_lengkap' => 'Citra Lestari', 'email' => 'citra.lestari@example.com', 'is_admin' => false],
+            ['nip' => '199405242024061001', 'nama_lengkap' => 'Muhammad Rivani Ibrahim', 'email' => 'admin.fakultas@kepegawaian.com', 'is_admin' => true],
         ];
 
-        // Ambil role default "Pegawai"
-        $defaultRole = Role::where('name', 'Pegawai')->first();
-
         foreach ($pegawais as $pegawaiData) {
-            // updateOrCreate akan membuat data baru atau memperbarui jika NIP sudah ada
             $pegawai = Pegawai::updateOrCreate(
                 ['nip' => $pegawaiData['nip']],
                 [
-                    'pangkat_terakhir_id' => 1, // Asumsi ID 1 ada
-                    'jabatan_terakhir_id' => 1, // Asumsi ID 1 ada
-                    'unit_kerja_terakhir_id' => 1, // Asumsi ID 1 ada
+                    'pangkat_terakhir_id' => 1,
+                    'jabatan_terakhir_id' => 1,
+                    'unit_kerja_terakhir_id' => 1,
                     'jenis_pegawai' => 'Dosen',
                     'nama_lengkap' => $pegawaiData['nama_lengkap'],
                     'email' => $pegawaiData['email'],
@@ -64,17 +41,21 @@ class PegawaiSeeder extends Seeder
                     'skp_tahun_pertama' => 'path/to/dummy.pdf',
                     'predikat_kinerja_tahun_kedua' => 'Baik',
                     'skp_tahun_kedua' => 'path/to/dummy.pdf',
-
-                    // PENAMBAHAN UNTUK MEMPERBAIKI ERROR
                     'status_kepegawaian' => 'PNS',
-
+                    'password' => Hash::make('password')
                 ]
             );
 
-            // Tetapkan role "Pegawai" jika role tersebut ada
-            if ($defaultRole) {
-                $pegawai->roles()->syncWithoutDetaching([$defaultRole->id]);
+            // FIX: Ganti 'Pegawai' dengan 'Pegawai Unmul' sesuai RoleSeeder
+            $pegawai->assignRole('Pegawai Unmul');
+
+            if ($pegawaiData['is_admin']) {
+                $pegawai->assignRole('Admin Fakultas');
+                $pegawai->assignRole('Admin Universitas Usulan');
             }
         }
+
+        $this->command->info('✅ Pegawai seeder berhasil!');
+        $this->command->info('Login: NIP 199405242024061001, Password: password');
     }
 }

@@ -32,7 +32,7 @@ class JabatanSeeder extends Seeder
         ];
 
         foreach ($jabatans as $jabatan) {
-            Jabatan::create($jabatan);
+            Jabatan::firstOrCreate($jabatan);
         }
     }
 }

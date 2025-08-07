@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Jobs\ProcessUsulanDocuments;
+use App\Jobs\SendUsulanNotification;
+use App\Jobs\GenerateUsulanReport;
 
 class UsulanPegawaiController extends Controller
 {
@@ -28,7 +31,6 @@ class UsulanPegawaiController extends Controller
                            ->latest()
                            ->paginate(10);
 
-        // Pastikan path view ini benar sesuai lokasi file Anda
         return view('backend.layouts.pegawai-unmul.dashboard', [
             'usulans' => $usulans
         ]);
@@ -39,16 +41,69 @@ class UsulanPegawaiController extends Controller
         $pegawai = Pegawai::with(['jabatan', 'pangkat', 'unitKerja'])
                         ->findOrFail(Auth::id());
 
-        // 1. Cek Kelengkapan Profil
-        if (is_null($pegawai->pangkat_terakhir_id) || is_null($pegawai->jabatan_terakhir_id) || is_null($pegawai->unit_kerja_terakhir_id)) {
-            return redirect()->route('pegawai-unmul.profile.edit')
-                ->with('warning', 'Profil Anda belum lengkap. Silakan lengkapi data Pangkat, Jabatan, dan Unit Kerja sebelum membuat usulan.');
+        // =====================================================
+        // KONDISI #1: CEK APAKAH SUDAH DI JABATAN TERTINGGI
+        // =====================================================
+        $jabatanLama = $pegawai->jabatan;
+        $jabatanTujuan = null;
+
+        if ($jabatanLama) {
+            // Cari jabatan yang lebih tinggi
+            $jabatanTujuan = Jabatan::where('id', '>', $jabatanLama->id)
+                                    ->orderBy('id', 'asc')
+                                    ->first();
+
+            // Jika tidak ada jabatan yang lebih tinggi, berarti sudah di puncak
+            if (!$jabatanTujuan) {
+                return redirect()->route('pegawai-unmul.usulan-pegawai.dashboard')
+                    ->with('warning', 'Anda sudah berada di jabatan fungsional tertinggi. Tidak ada jabatan yang lebih tinggi untuk diajukan.');
+            }
         }
 
-        // 2. Cek apakah ada usulan jabatan yang masih aktif
+        // =====================================================
+        // KONDISI #2: CEK KELENGKAPAN PROFIL (SEMUA FIELD)
+        // =====================================================
+        $requiredFields = [
+            'nip', 'nama_lengkap', 'email', 'jenis_pegawai', 'status_kepegawaian',
+            'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'nomor_handphone',
+            'nomor_kartu_pegawai', 'pangkat_terakhir_id', 'tmt_pangkat',
+            'jabatan_terakhir_id', 'tmt_jabatan', 'unit_kerja_terakhir_id',
+            'pendidikan_terakhir', 'tmt_cpns', 'tmt_pns',
+            'predikat_kinerja_tahun_pertama', 'predikat_kinerja_tahun_kedua',
+            'sk_pangkat_terakhir', 'sk_jabatan_terakhir', 'ijazah_terakhir',
+            'transkrip_nilai_terakhir', 'skp_tahun_pertama', 'skp_tahun_kedua',
+            'sk_cpns', 'sk_pns'
+        ];
+
+        // Additional fields for Dosen
+        if ($pegawai->jenis_pegawai == 'Dosen') {
+            $requiredFields[] = 'mata_kuliah_diampu';
+            $requiredFields[] = 'ranting_ilmu_kepakaran';
+        }
+
+        $missingFields = [];
+        foreach ($requiredFields as $field) {
+            if (empty($pegawai->$field)) {
+                $missingFields[] = $field;
+            }
+        }
+
+        if (!empty($missingFields)) {
+            Log::warning('Profil tidak lengkap', [
+                'pegawai_id' => $pegawai->id,
+                'missing_fields' => $missingFields
+            ]);
+
+            return redirect()->route('pegawai-unmul.profile.edit')
+                ->with('warning', 'Profil Anda belum lengkap. Silakan lengkapi semua data profil sebelum membuat usulan. Data yang belum lengkap: ' . count($missingFields) . ' field.');
+        }
+
+        // =====================================================
+        // KONDISI #3: CEK USULAN YANG MASIH AKTIF
+        // =====================================================
         $usulanAktif = Usulan::where('pegawai_id', Auth::id())
             ->where('jenis_usulan', 'jabatan')
-            ->whereNotIn('status_usulan', ['Diterima', 'Ditolak']) // Sesuaikan status final jika perlu
+            ->whereNotIn('status_usulan', ['Direkomendasikan', 'Ditolak'])
             ->exists();
 
         if ($usulanAktif) {
@@ -56,7 +111,9 @@ class UsulanPegawaiController extends Controller
                 ->with('error', 'Anda sudah memiliki usulan jabatan yang sedang aktif. Anda tidak dapat membuat usulan baru sampai usulan sebelumnya selesai diproses.');
         }
 
-        // 3. Cek apakah ada periode yang sedang buka
+        // =====================================================
+        // KONDISI #4: CEK PERIODE YANG SEDANG BUKA
+        // =====================================================
         $daftarPeriode = PeriodeUsulan::where('jenis_usulan', 'jabatan')
             ->where('tanggal_mulai', '<=', now())
             ->where('tanggal_selesai', '>=', now())
@@ -68,23 +125,18 @@ class UsulanPegawaiController extends Controller
                 ->with('error', 'Saat ini tidak ada periode pengajuan usulan jabatan yang aktif atau dibuka.');
         }
 
-            $jabatanLama = $pegawai->jabatan;
-            $jabatanTujuan = $jabatanLama
-                ? Jabatan::where('id', '>', $jabatanLama->id)->orderBy('id', 'asc')->first()
-                : null;
+        // Jika semua kondisi terpenuhi, tampilkan form
+        $usulan = new Usulan();
 
-            return view('backend.layouts.pegawai-unmul.usul-jabatan.create-jabatan', [
-                'pegawai' => $pegawai,
-                'daftarPeriode' => $daftarPeriode,
-                'jabatanTujuan' => $jabatanTujuan,
-            ]);
+        return view('backend.layouts.pegawai-unmul.usul-jabatan.create-jabatan', [
+            'pegawai' => $pegawai,
+            'daftarPeriode' => $daftarPeriode,
+            'jabatanTujuan' => $jabatanTujuan,
+        ]);
     }
 
     public function storeJabatan(StoreJabatanUsulanRequest $request)
     {
-
-        // dd('ERROR: Method STORE yang berjalan, seharusnya UPDATE.');
-
         $validatedData = $request->validated();
         $pegawai       = Auth::user();
         $statusUsulan  = ($request->input('action') === 'submit_final') ? 'Diajukan' : 'Draft';
@@ -117,7 +169,9 @@ class UsulanPegawaiController extends Controller
         $dataSnapshotProfil = $request->input('snapshot', []);
 
         try {
-            DB::transaction(function () use ($request, $pegawai, $jabatanLama, $jabatanTujuan, $validatedData, $dataSnapshotProfil, $dataUsulanTambahan, $statusUsulan) {
+            $usulanCreated = null;
+
+            DB::transaction(function () use ($request, $pegawai, $jabatanLama, $jabatanTujuan, $validatedData, $dataSnapshotProfil, $dataUsulanTambahan, $statusUsulan, &$usulanCreated) {
                 $daftarDokumenKeys = [
                     'bukti_korespondensi',
                     'pakta_integritas',
@@ -129,7 +183,8 @@ class UsulanPegawaiController extends Controller
 
                 foreach ($daftarDokumenKeys as $key) {
                     if ($request->hasFile($key)) {
-                        $path = $request->file($key)->store('usulan-dokumen/' . $pegawai->id, 'public');
+                        // Simpan ke 'local' disk untuk keamanan
+                        $path = $request->file($key)->store('usulan-dokumen/' . $pegawai->id, 'local');
                         $filePaths[$key] = $path;
                     }
                 }
@@ -147,12 +202,15 @@ class UsulanPegawaiController extends Controller
                     'catatan_verifikator' => null,
                 ]);
 
+                // Save for queue jobs
+                $usulanCreated = $usulan;
+
                 foreach ($filePaths as $key => $path) {
                     UsulanDokumen::create([
-                        'usulan_id'   => $usulan->id,
-                        'pegawai_id'  => $pegawai->id,
-                        'nama_dokumen'=> $key,
-                        'path'        => $path,
+                        'usulan_id'        => $usulan->id,
+                        'diupload_oleh_id' => $pegawai->id,
+                        'nama_dokumen'     => $key,
+                        'path'             => $path,
                     ]);
                 }
 
@@ -164,13 +222,38 @@ class UsulanPegawaiController extends Controller
                     'dilakukan_oleh_id' => $pegawai->id,
                 ]);
             });
+
+            // ========================================
+            // DISPATCH JOBS TO QUEUE (Outside Transaction)
+            // ========================================
+            if ($usulanCreated) {
+                // 1. Process documents in background (wait 10 seconds)
+                ProcessUsulanDocuments::dispatch($usulanCreated)
+                    ->delay(now()->addSeconds(10));
+
+                // 2. Send notification email if submitted
+                if ($statusUsulan === 'Diajukan') {
+                    SendUsulanNotification::dispatch($usulanCreated, 'submitted')
+                        ->delay(now()->addSeconds(5));
+
+                    // 3. Generate report after 2 minutes
+                    GenerateUsulanReport::dispatch($usulanCreated)
+                        ->delay(now()->addMinutes(2));
+                }
+
+                Log::info('Jobs dispatched for usulan', [
+                    'usulan_id' => $usulanCreated->id,
+                    'status' => $statusUsulan
+                ]);
+            }
+
         } catch (\Exception $e) {
             Log::error('Gagal menyimpan usulan jabatan: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString());
             return redirect()->back()->with('error', 'Terjadi kesalahan, data usulan tidak tersimpan. Silakan cek log.');
         }
 
         $message = $statusUsulan === 'Diajukan'
-            ? 'Usulan kenaikan jabatan berhasil diajukan.'
+            ? 'Usulan kenaikan jabatan berhasil diajukan. Anda akan menerima email konfirmasi.'
             : 'Usulan Anda berhasil disimpan sebagai Draft.';
 
         return redirect()->route('pegawai-unmul.usulan-pegawai.dashboard')
@@ -185,7 +268,6 @@ class UsulanPegawaiController extends Controller
 
         $pegawai = Auth::user();
 
-        // [FIXED] Mengganti get() menjadi first() untuk mengambil satu objek
         $daftarPeriode = PeriodeUsulan::where('status', 'Buka')
                                       ->where('jenis_usulan', 'jabatan')
                                       ->where('tanggal_mulai', '<=', now())
@@ -206,8 +288,6 @@ class UsulanPegawaiController extends Controller
         ]);
     }
 
-// In file: app/Http/Controllers/Backend/PegawaiUnmul/UsulanPegawaiController.php
-
     public function updateJabatan(StoreJabatanUsulanRequest $request, Usulan $usulan)
     {
         // Pastikan hanya pemilik yang bisa mengedit
@@ -217,22 +297,16 @@ class UsulanPegawaiController extends Controller
 
         $validatedData = $request->validated();
         $pegawai       = Auth::user();
+        $oldStatus     = $usulan->status_usulan;
         $statusUsulan  = ($request->input('action') === 'submit_final') ? 'Diajukan' : 'Draft';
 
         try {
-            DB::transaction(function () use ($request, $usulan, $pegawai, $statusUsulan, $validatedData) {
+            DB::transaction(function () use ($request, $usulan, $pegawai, $statusUsulan, $validatedData, $oldStatus) {
 
-                // =====================================================================
-                // [!!!] PERBAIKAN UTAMA ADA DI SINI [!!!]
-                // Kita akan memanipulasi kolom JSON 'data_usulan'
-                // =====================================================================
-
-                // 1. Ambil data JSON yang sudah ada dari database.
-                //    Kita berikan array kosong sebagai default jika datanya null.
+                // TAHAP 1: Siapkan semua data non-file terlebih dahulu
                 $dataUsulanLama = $usulan->data_usulan ?? [];
 
-                // 2. Siapkan array data baru dari form yang sudah divalidasi.
-                $dataUsulanBaru = [
+                $dataTeksBaru = [
                     'karya_ilmiah'      => $validatedData['karya_ilmiah'] ?? null,
                     'nama_jurnal'       => $validatedData['nama_jurnal'] ?? null,
                     'judul_artikel'     => $validatedData['judul_artikel'] ?? null,
@@ -248,44 +322,79 @@ class UsulanPegawaiController extends Controller
                     'link_scimago'      => $validatedData['link_scimago'] ?? null,
                     'link_wos'          => $validatedData['link_wos'] ?? null,
                     'syarat_guru_besar' => $validatedData['syarat_guru_besar'] ?? null,
+                    'catatan_pengusul'  => $validatedData['catatan'] ?? null,
                 ];
 
-                // 3. Gabungkan data lama dengan data baru.
-                //    Data baru akan menimpa data lama jika key-nya sama.
-                $dataUsulanFinal = array_merge($dataUsulanLama, $dataUsulanBaru);
+                // Gabungkan data lama dengan data teks baru
+                $dataUsulanFinal = array_merge($dataUsulanLama, $dataTeksBaru);
 
-                // 4. Proses dan perbarui path file dokumen di dalam data JSON
+                // TAHAP 2: Proses file HANYA SETELAH data digabung
                 $daftarDokumenKeys = [
-                    'bukti_korespondensi', 'turnitin', 'upload_artikel', 'pakta_integritas', 'bukti_syarat_guru_besar'
+                    'bukti_korespondensi', 'turnitin', 'upload_artikel',
+                    'pakta_integritas', 'bukti_syarat_guru_besar'
                 ];
+
                 foreach ($daftarDokumenKeys as $key) {
                     if ($request->hasFile($key)) {
-                        // Hapus file lama jika ada path-nya di data JSON
-                        if (!empty($dataUsulanFinal[$key]) && Storage::disk('public')->exists($dataUsulanFinal[$key])) {
-                            Storage::disk('public')->delete($dataUsulanFinal[$key]);
+                        // Hapus file lama jika ada
+                        if (!empty($dataUsulanFinal[$key]) && Storage::disk('local')->exists($dataUsulanFinal[$key])) {
+                            Storage::disk('local')->delete($dataUsulanFinal[$key]);
                         }
-                        // Simpan file baru dan perbarui path di data JSON
-                        $path = $request->file($key)->store('usulan-dokumen/' . $pegawai->id, 'public');
+                        // Simpan file baru
+                        $path = $request->file($key)->store('usulan-dokumen/' . $pegawai->id, 'local');
+                        // Perbarui path di data JSON
                         $dataUsulanFinal[$key] = $path;
+
+                        // Perbarui juga path di tabel 'usulan_dokumens'
+                        UsulanDokumen::updateOrCreate(
+                            ['usulan_id' => $usulan->id, 'nama_dokumen' => $key],
+                            ['diupload_oleh_id' => $pegawai->id, 'path' => $path]
+                        );
                     }
                 }
 
-                // 5. Simpan semua perubahan ke database
+                // TAHAP 3: Simpan semua perubahan ke database
                 $usulan->update([
                     'status_usulan'   => $statusUsulan,
-                    'catatan_pegawai' => $validatedData['catatan'] ?? null,
-                    'data_usulan'     => $dataUsulanFinal, // Simpan kolom JSON yang sudah diperbarui
+                    'data_usulan'     => $dataUsulanFinal,
                 ]);
 
-                // 6. Catat log perubahan
-                UsulanLog::create([
-                    'usulan_id'         => $usulan->id,
-                    'status_sebelumnya' => $usulan->getOriginal('status_usulan'),
-                    'status_baru'       => $statusUsulan,
-                    'catatan'           => 'Usulan diperbarui oleh pengusul.',
-                    'dilakukan_oleh_id' => $pegawai->id,
-                ]);
+                // Buat log jika status berubah
+                if ($oldStatus !== $statusUsulan) {
+                    UsulanLog::create([
+                        'usulan_id'         => $usulan->id,
+                        'status_sebelumnya' => $oldStatus,
+                        'status_baru'       => $statusUsulan,
+                        'catatan'           => 'Usulan diperbarui oleh pengusul.',
+                        'dilakukan_oleh_id' => $pegawai->id,
+                    ]);
+                }
             });
+
+            // ========================================
+            // DISPATCH JOBS TO QUEUE (Outside Transaction)
+            // ========================================
+
+            // If status changed from Draft to Diajukan
+            if ($oldStatus !== 'Diajukan' && $statusUsulan === 'Diajukan') {
+                // Send notification
+                SendUsulanNotification::dispatch($usulan, 'submitted')
+                    ->delay(now()->addSeconds(5));
+
+                // Generate report
+                GenerateUsulanReport::dispatch($usulan)
+                    ->delay(now()->addMinutes(1));
+
+                // Process documents
+                ProcessUsulanDocuments::dispatch($usulan)
+                    ->delay(now()->addSeconds(10));
+
+                Log::info('Jobs dispatched for updated usulan', [
+                    'usulan_id' => $usulan->id,
+                    'old_status' => $oldStatus,
+                    'new_status' => $statusUsulan
+                ]);
+            }
 
         } catch (\Exception $e) {
             Log::error('Gagal memperbarui usulan jabatan: ' . $e->getMessage() . ' Trace: ' . $e->getTraceAsString());
@@ -293,7 +402,7 @@ class UsulanPegawaiController extends Controller
         }
 
         $message = $statusUsulan === 'Diajukan'
-            ? 'Usulan kenaikan jabatan berhasil diperbarui dan diajukan.'
+            ? 'Usulan kenaikan jabatan berhasil diperbarui dan diajukan. Anda akan menerima email konfirmasi.'
             : 'Perubahan pada usulan Anda berhasil disimpan sebagai Draft.';
 
         return redirect()->route('pegawai-unmul.usulan-pegawai.dashboard')
@@ -303,15 +412,22 @@ class UsulanPegawaiController extends Controller
     public function showUsulanDocument(Usulan $usulan, $field)
     {
         if ($usulan->pegawai_id !== Auth::id()) {
-            abort(403, 'TIDAK DIIZINKAN');
+            abort(403, 'Anda tidak punya akses ke dokumen ini');
         }
 
         $filePath = $usulan->data_usulan[$field] ?? null;
 
-        if (!$filePath || !Storage::disk('public')->exists($filePath)) {
-            abort(404, 'File tidak ditemukan.');
+        if (!$filePath || !Storage::disk('local')->exists($filePath)) {
+            abort(404, 'File tidak ditemukan');
         }
 
-        return response()->file(Storage::disk('public')->path($filePath));
+        // Log document access
+        Log::info('Document accessed', [
+            'usulan_id' => $usulan->id,
+            'field' => $field,
+            'user_id' => Auth::id()
+        ]);
+
+        return response()->file(Storage::disk('local')->path($filePath));
     }
 }

@@ -24,9 +24,9 @@
                     $availableDashboards['Admin Usulan'] = route('backend.admin-univ-usulan.dashboard');
                 }
                 if ($roles->contains('Admin Fakultas')) {
-                    $availableDashboards['Admin Fakultas'] = route('admin-fakultas.dashboard-fakultas');
+                    $availableDashboards['Admin Fakultas'] = route('admin-fakultas.dashboard');
                 }
-                if ($roles->contains('Penilai')) {
+                if ($roles->contains('Penilai Universitas')) {
                     $availableDashboards['Penilai'] = route('penilai-universitas.dashboard-penilai-universitas');
                 }
 
