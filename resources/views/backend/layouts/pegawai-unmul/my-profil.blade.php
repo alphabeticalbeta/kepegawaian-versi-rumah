@@ -122,7 +122,11 @@
                                 <label for="foto" class="absolute bottom-0 right-0 bg-indigo-600 text-white p-2 rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors shadow-lg">
                                     <i data-lucide="camera" class="w-4 h-4"></i>
                                 </label>
-                                <input type="file" id="foto" name="foto" class="hidden" accept="image/*" onchange="previewImage(this)">
+                                <input type="file" id="foto" name="foto" class="hidden" accept="image/*"
+                                    onchange="previewUploadedFile(this, 'preview-foto')">
+
+                                {{-- Preview area untuk foto --}}
+                                <div id="preview-foto" class="hidden mt-2"></div>
                             @endif
                         </div>
 
@@ -583,15 +587,20 @@
                                     @if($isEditing)
                                         <div class="mt-3">
                                             <label for="{{ $field }}"
-                                                   class="block w-full text-center px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                                                class="block w-full text-center px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                                                 <i data-lucide="upload" class="w-4 h-4 inline mr-2"></i>
-                                                {{ $pegawai->$field ? 'Ganti File' : 'Upload File' }}
+                                                {{ $pegawai->{$field} ? 'Ganti File' : 'Upload File' }}
                                             </label>
                                             <input type="file"
-                                                   name="{{ $field }}"
-                                                   id="{{ $field }}"
-                                                   class="hidden"
-                                                   accept=".pdf">
+                                                name="{{ $field }}"
+                                                id="{{ $field }}"
+                                                class="hidden"
+                                                accept=".pdf"
+                                                onchange="previewUploadedFile(this, 'preview-{{ $field }}')">
+
+                                            {{-- Preview area untuk file yang baru diupload --}}
+                                            <div id="preview-{{ $field }}" class="hidden"></div>
+
                                             <p class="text-xs text-gray-500 mt-2 text-center">Format: PDF, Max: 2MB</p>
                                         </div>
                                     @endif

@@ -5,7 +5,9 @@ namespace App\Models\BackendUnivUsulan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Spatie\Permission\Traits\HasRoles; // Trait ini sudah benar
+use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Pegawai extends Authenticatable
 {
@@ -26,6 +28,11 @@ class Pegawai extends Authenticatable
     // Method 'roles()' di bawah ini telah dihapus.
     // Kita tidak memerlukannya lagi karena sudah ditangani oleh trait 'HasRoles'.
 
+    public function usulans(): HasMany
+    {
+        return $this->hasMany(Usulan::class, 'pegawai_id', 'id');
+    }
+
     public function pangkat()
     {
         return $this->belongsTo(Pangkat::class, 'pangkat_terakhir_id');
@@ -38,6 +45,6 @@ class Pegawai extends Authenticatable
 
     public function unitKerja()
     {
-        return $this->belongsTo(UnitKerja::class, 'unit_kerja_terakhir_id');
+        return $this->belongsTo(SubSubUnitKerja::class, 'unit_kerja_terakhir_id');
     }
 }

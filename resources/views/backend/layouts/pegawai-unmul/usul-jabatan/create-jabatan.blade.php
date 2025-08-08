@@ -2,7 +2,19 @@
 
 @section('content')
 <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-     {{-- Pesan Notifikasi Sukses atau Error --}}
+    @php
+        // Define read-only status
+        $isReadOnly = isset($usulan) && in_array($usulan->status_usulan, [
+            'Diajukan', 'Sedang Direview', 'Disetujui', 'Direkomendasikan'
+        ]);
+
+        // Define editable status
+        $canEdit = !$isReadOnly && (!isset($usulan) || in_array($usulan->status_usulan, [
+            'Draft', 'Perlu Perbaikan', 'Dikembalikan'
+        ]));
+    @endphp
+
+    {{-- Pesan Notifikasi --}}
     @if(session('success'))
         <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
             <div class="flex">
@@ -33,40 +45,92 @@
         </div>
     @endif
 
-
-    {{-- Judul Halaman --}}
+    {{-- Header Section - Dynamic Title --}}
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Formulir Pengajuan Usulan Jabatan</h1>
+        <h1 class="text-3xl font-bold text-gray-900">
+            @if($isReadOnly)
+                Detail Usulan Jabatan
+            @elseif(isset($usulan) && $usulan->exists)
+                Edit Usulan Jabatan
+            @else
+                Formulir Pengajuan Usulan Jabatan
+            @endif
+        </h1>
         <p class="mt-2 text-gray-600">
-            Silakan lengkapi semua informasi yang dibutuhkan untuk mengajukan kenaikan jabatan fungsional.
+            @if($isReadOnly)
+                Usulan Anda sedang dalam proses review. Anda tidak dapat mengubah data saat ini.
+            @else
+                Silakan lengkapi semua informasi yang dibutuhkan untuk mengajukan kenaikan jabatan fungsional.
+            @endif
         </p>
+
+        {{-- Status Badge --}}
+        @if(isset($usulan) && $usulan->exists)
+            <div class="mt-4">
+                <span class="px-4 py-2 rounded-lg text-sm font-medium
+                    @if($usulan->status_usulan === 'Draft') bg-gray-100 text-gray-700
+                    @elseif($usulan->status_usulan === 'Diajukan') bg-blue-100 text-blue-700
+                    @elseif($usulan->status_usulan === 'Perlu Perbaikan') bg-yellow-100 text-yellow-700
+                    @elseif($usulan->status_usulan === 'Disetujui') bg-green-100 text-green-700
+                    @else bg-gray-100 text-gray-700
+                    @endif">
+                    Status: {{ $usulan->status_usulan }}
+                </span>
+            </div>
+        @endif
     </div>
 
-    @if($daftarPeriode->count() == 0 || !$jabatanTujuan)
+    {{-- Alert untuk status read-only --}}
+    @if($isReadOnly)
+        <div class="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg flex items-start gap-3 mb-6">
+            <i data-lucide="info" class="w-5 h-5 text-blue-600 mt-0.5"></i>
+            <div class="flex-1">
+                <p class="font-medium">Usulan Sedang Diproses</p>
+                <p class="text-sm">Usulan Anda dengan status "{{ $usulan->status_usulan }}" sedang dalam tahap review. Anda akan dapat melakukan edit kembali jika diminta perbaikan.</p>
+            </div>
+        </div>
+    @endif
+
+    @if(isset($usulan) && $usulan->status_usulan === 'Perlu Perbaikan')
+        <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg flex items-start gap-3 mb-6">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-600 mt-0.5"></i>
+            <div class="flex-1">
+                <p class="font-medium">Perbaikan Diperlukan</p>
+                <p class="text-sm">Usulan Anda memerlukan perbaikan. Silakan lakukan perubahan yang diperlukan dan kirim ulang.</p>
+                @if($usulan->catatan_verifikator)
+                    <p class="text-sm mt-2"><strong>Catatan:</strong> {{ $usulan->catatan_verifikator }}</p>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    @if(!$jabatanTujuan)
         <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
             <div class="flex">
                 <div class="py-1"><svg class="h-5 w-5 text-yellow-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 11-2 0 1 1 0 012 0zm-1-3a1 1 0 00-1 1v2a1 1 0 102 0V9a1 1 0 00-1-1z" clip-rule="evenodd"/></svg></div>
                 <div>
                     <p class="font-bold text-yellow-800">Tidak Dapat Mengajukan Usulan</p>
-                    @if($daftarPeriode->count() == 0)
-                        <p class="text-sm text-yellow-700">Saat ini tidak ada periode pengajuan usulan jabatan yang sedang dibuka.</p>
-                    @else
-                        <p class="text-sm text-yellow-700">Anda sudah berada di jenjang jabatan fungsional tertinggi.</p>
-                    @endif
+                    <p class="text-sm text-yellow-700">Anda sudah berada di jenjang jabatan fungsional tertinggi.</p>
                 </div>
             </div>
         </div>
     @endif
 
-    <form action="{{ isset($usulan) && $usulan->exists ? route('pegawai-unmul.usulan-jabatan.update', $usulan) : route('pegawai-unmul.usulan-jabatan.store') }}" method="POST" enctype="multipart/form-data">
-        @csrf
-
+    {{-- Form Wrapper: Conditional Form or Div --}}
+    @if($canEdit)
         @if (isset($usulan) && $usulan->exists)
-            @method('PUT')
+            <form action="{{ route('pegawai-unmul.usulan-jabatan.update', $usulan->id) }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
+        @else
+            <form action="{{ route('pegawai-unmul.usulan-jabatan.store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
         @endif
+    @else
+        <div>
+    @endif
 
     {{-- Informasi Periode Usulan --}}
-
     <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mb-6">
         <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5">
             <h2 class="text-xl font-bold text-white flex items-center">
@@ -80,30 +144,16 @@
                     <label class="block text-sm font-semibold text-gray-800">Periode</label>
                     <p class="text-xs text-gray-600 mb-2">Periode usulan yang sedang berlangsung</p>
                     <input type="text" value="{{ $daftarPeriode->nama_periode ?? 'Tidak ada periode aktif' }}" class="block w-full border-gray-200 rounded-lg shadow-sm bg-gray-100 px-4 py-3 text-gray-800 font-medium cursor-not-allowed" disabled>
-
-                    {{-- [PERBAIKAN] Input periode_usulan_id sekarang ada di dalam form utama --}}
                     <input type="hidden" name="periode_usulan_id" value="{{ $daftarPeriode->id ?? '' }}">
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-800">Masa Berlaku</sabel>
+                    <label class="block text-sm font-semibold text-gray-800">Masa Berlaku</label>
                     <p class="text-xs text-gray-600 mb-2">Rentang waktu periode usulan</p>
                     <input type="text" value="{{ $daftarPeriode ? \Carbon\Carbon::parse($daftarPeriode->tanggal_mulai)->isoFormat('D MMM YYYY') . ' - ' . \Carbon\Carbon::parse($daftarPeriode->tanggal_selesai)->isoFormat('D MMM YYYY') : '-' }}" class="block w-full border-gray-200 rounded-lg shadow-sm bg-gray-100 px-4 py-3 text-gray-800 font-medium cursor-not-allowed" disabled>
                 </div>
             </div>
         </div>
     </div>
-
-    @if (isset($usulan) && $usulan->exists)
-        {{-- Jika ini adalah mode EDIT, form akan mengarah ke route 'update' --}}
-        <form action="{{ route('pegawai-unmul.usulan-jabatan.update', $usulan->id) }}" method="POST" enctype="multipart/form-data">
-            @method('PUT') {{-- Menambahkan method PUT untuk Laravel --}}
-    @else
-        {{-- Jika ini adalah mode CREATE, form akan mengarah ke route 'store' --}}
-        <form action="{{ route('pegawai-unmul.usulan-jabatan.store') }}" method="POST" enctype="multipart/form-data">
-    @endif
-
-        {{-- @csrf harus ada di dalam form, cukup satu kali --}}
-        @csrf
 
     <div class="bg-gradient-to-r from-indigo-50 via-white to-purple-50 border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         <!-- Header with gradient background -->
@@ -458,16 +508,26 @@
                         <i data-lucide="graduation-cap" class="w-4 h-4 inline mr-2"></i>
                         Karya Ilmiah <span class="text-red-500">*</span>
                     </label>
-                    <select id="karya_ilmiah" name="karya_ilmiah" class="block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 bg-white">
+                    <select id="karya_ilmiah" name="karya_ilmiah"
+                        class="block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 bg-white
+                            @if($isReadOnly) bg-gray-50 text-gray-600 @endif"
+                        @if($isReadOnly) disabled @endif>
                         <option value="">-- Pilih Jenis Karya Ilmiah --</option>
-                        <option value="Jurnal Nasional Bereputasi" {{ old('karya_ilmiah', $usulan->data_usulan['karya_ilmiah'] ?? '') == 'Jurnal Nasional Bereputasi' ? 'selected' : '' }}>Jurnal Nasional Bereputasi</option>
-                        <option value="Jurnal Internasional Bereputasi" {{ old('karya_ilmiah', $usulan->data_usulan['karya_ilmiah'] ?? '') == 'Jurnal Internasional Bereputasi' ? 'selected' : '' }}>Jurnal Internasional Bereputasi</option>
+                        <option value="Jurnal Nasional Bereputasi"
+                            {{ old('karya_ilmiah', $usulan->data_usulan['karya_ilmiah']['jenis_karya'] ?? '') == 'Jurnal Nasional Bereputasi' ? 'selected' : '' }}>
+                            Jurnal Nasional Bereputasi
+                        </option>
+                        <option value="Jurnal Internasional Bereputasi"
+                            {{ old('karya_ilmiah', $usulan->data_usulan['karya_ilmiah']['jenis_karya'] ?? '') == 'Jurnal Internasional Bereputasi' ? 'selected' : '' }}>
+                            Jurnal Internasional Bereputasi
+                        </option>
                     </select>
                     @error('karya_ilmiah')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                 </div>
             </div>
 
             <!-- Form Fields Grid -->
+
             <div class="mb-8">
                 <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
                     <i data-lucide="file-text" class="w-5 h-5 mr-2 text-indigo-600"></i>
@@ -504,10 +564,13 @@
                                 <i data-lucide="{{ $icon }}" class="w-4 h-4 inline mr-1"></i>
                                 {{ $label }}
                             </label>
+                            {{-- PERBAIKAN: Akses data dari struktur baru --}}
                             <input id="{{ $name }}" name="{{ $name }}" type="text"
-                                value="{{ old($name, $usulan->data_usulan[$name] ?? '') }}"
-                                class="block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4"
-                                placeholder="{{ $placeholder }}">
+                                value="{{ old($name, $usulan->data_usulan['karya_ilmiah'][$name] ?? '') }}"
+                                class="block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4
+                                    @if($isReadOnly) bg-gray-50 text-gray-600 @endif"
+                                placeholder="{{ $placeholder }}"
+                                @if($isReadOnly) readonly @endif>
                             @error($name)<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                         </div>
                     @endforeach
@@ -517,12 +580,35 @@
                         <div class="{{ $colSpan }}">
                             <label for="{{ $name }}" class="block text-sm font-medium text-gray-700 mb-2">
                                 <i data-lucide="{{ $icon }}" class="w-4 h-4 inline mr-1"></i>
-                                {{ $label }} @if($isRequired) <span class="text-red-500">*</span> @endif
+                                {{ $label }} @if($isRequired && !$isReadOnly) <span class="text-red-500">*</span> @endif
                             </label>
+                            @php
+                                // PERBAIKAN: Mapping nama field ke struktur data baru
+                                $fieldMapping = [
+                                    'link_artikel' => 'artikel',
+                                    'link_sinta' => 'sinta',
+                                    'link_scopus' => 'scopus',
+                                    'link_scimago' => 'scimago',
+                                    'link_wos' => 'wos'
+                                ];
+                                $mappedField = $fieldMapping[$name] ?? $name;
+
+                                // Akses data dari struktur baru dengan fallback ke struktur lama
+                                $fieldValue = '';
+                                if (isset($usulan->data_usulan['karya_ilmiah']['links'][$mappedField])) {
+                                    $fieldValue = $usulan->data_usulan['karya_ilmiah']['links'][$mappedField];
+                                } elseif (isset($usulan->data_usulan[$name])) {
+                                    // Fallback untuk backward compatibility
+                                    $fieldValue = $usulan->data_usulan[$name];
+                                }
+                            @endphp
                             <input id="{{ $name }}" name="{{ $name }}" type="url"
-                                value="{{ old($name, $usulan->data_usulan[$name] ?? '') }}"
-                                class="block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4"
-                                placeholder="{{ $placeholder }}" {{ $isRequired ? 'required' : '' }}>
+                                value="{{ old($name, $fieldValue) }}"
+                                class="block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4
+                                    @if($isReadOnly) bg-gray-50 text-gray-600 @endif"
+                                placeholder="{{ $placeholder }}"
+                                @if($isRequired && !$isReadOnly) required @endif
+                                @if($isReadOnly) readonly @endif>
                             @error($name)<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                         </div>
                     @endforeach
@@ -537,6 +623,7 @@
                 </h3>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
+                    {{-- PAKTA INTEGRITAS --}}
                     <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
                         <div class="flex items-center mb-4">
                             <div class="bg-blue-100 p-2 rounded-lg mr-3">
@@ -544,23 +631,35 @@
                             </div>
                             <div>
                                 <label for="pakta_integritas" class="block text-sm font-semibold text-gray-800">
-                                    Pakta Integritas <span class="text-red-500">*</span>
+                                    Pakta Integritas @if(!$isReadOnly)<span class="text-red-500">*</span>@endif
                                 </label>
                                 <p class="text-xs text-gray-600">Surat Pakta Integritas</p>
                             </div>
                         </div>
-                        @if(isset($usulan) && !empty($usulan->data_usulan['pakta_integritas']))
-                            <a href="{{ asset('storage/' . $usulan->data_usulan['pakta_integritas']) }}" target="_blank" class="text-xs text-green-600 hover:underline mt-1 inline-block mb-2">
+                        @php
+                            // PERBAIKAN: Cek dokumen dengan struktur baru dan fallback ke struktur lama
+                            $paktaExists = false;
+                            if (isset($usulan)) {
+                                $paktaExists = !empty($usulan->data_usulan['dokumen_usulan']['pakta_integritas']['path']) ||
+                                            !empty($usulan->data_usulan['pakta_integritas']);
+                            }
+                        @endphp
+                        @if($paktaExists)
+                            <a href="{{ route('pegawai-unmul.usulan-pegawai.show-document', ['usulan' => $usulan->id, 'field' => 'pakta_integritas']) }}"
+                            target="_blank" class="text-xs text-green-600 hover:underline mt-1 inline-block mb-2">
                                 <i data-lucide="check-circle" class="inline w-3 h-3 mr-1"></i> File sudah ada. Lihat file.
                             </a>
                         @endif
-                        <input type="file" name="pakta_integritas" id="pakta_integritas" class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 file:cursor-pointer cursor-pointer"
-                            {{-- [FIX] 'required' dibuat kondisional --}}
-                            @if(empty($usulan) || empty($usulan->data_usulan['pakta_integritas'])) required @endif
-                        <p class="mt-2 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
+                        @if(!$isReadOnly)
+                            <input type="file" name="pakta_integritas" id="pakta_integritas"
+                                class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 file:cursor-pointer cursor-pointer"
+                                @if(empty($usulan) || !$paktaExists) required @endif>
+                            <p class="mt-2 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
+                        @endif
                         @error('pakta_integritas')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
 
+                    {{-- BUKTI KORESPONDENSI --}}
                     <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
                         <div class="flex items-center mb-4">
                             <div class="bg-blue-100 p-2 rounded-lg mr-3">
@@ -568,23 +667,35 @@
                             </div>
                             <div>
                                 <label for="bukti_korespondensi" class="block text-sm font-semibold text-gray-800">
-                                    Bukti Korespondensi <span class="text-red-500">*</span>
+                                    Bukti Korespondensi @if(!$isReadOnly)<span class="text-red-500">*</span>@endif
                                 </label>
                                 <p class="text-xs text-gray-600">Surat korespondensi dengan jurnal</p>
                             </div>
                         </div>
-                        @if(isset($usulan) && !empty($usulan->data_usulan['bukti_korespondensi']))
-                            <a href="{{ asset('storage/' . $usulan->data_usulan['bukti_korespondensi']) }}" target="_blank" class="text-xs text-green-600 hover:underline mt-1 inline-block mb-2">
+                        @php
+                            // PERBAIKAN: Cek dokumen dengan struktur baru dan fallback ke struktur lama
+                            $korespondensiExists = false;
+                            if (isset($usulan)) {
+                                $korespondensiExists = !empty($usulan->data_usulan['dokumen_usulan']['bukti_korespondensi']['path']) ||
+                                                    !empty($usulan->data_usulan['bukti_korespondensi']);
+                            }
+                        @endphp
+                        @if($korespondensiExists)
+                            <a href="{{ route('pegawai-unmul.usulan-pegawai.show-document', ['usulan' => $usulan->id, 'field' => 'bukti_korespondensi']) }}"
+                            target="_blank" class="text-xs text-green-600 hover:underline mt-1 inline-block mb-2">
                                 <i data-lucide="check-circle" class="inline w-3 h-3 mr-1"></i> File sudah ada. Lihat file.
                             </a>
                         @endif
-                        <input type="file" name="bukti_korespondensi" id="bukti_korespondensi" class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 file:cursor-pointer cursor-pointer"
-                            {{-- [FIX] 'required' dibuat kondisional --}}
-                            @if(empty($usulan) || empty($usulan->data_usulan['bukti_korespondensi'])) required @endif
-                        <p class="mt-2 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
+                        @if(!$isReadOnly)
+                            <input type="file" name="bukti_korespondensi" id="bukti_korespondensi"
+                                class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 file:cursor-pointer cursor-pointer"
+                                @if(empty($usulan) || !$korespondensiExists) required @endif>
+                            <p class="mt-2 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
+                        @endif
                         @error('bukti_korespondensi')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
 
+                    {{-- TURNITIN --}}
                     <div class="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
                         <div class="flex items-center mb-4">
                             <div class="bg-green-100 p-2 rounded-lg mr-3">
@@ -592,23 +703,35 @@
                             </div>
                             <div>
                                 <label for="turnitin" class="block text-sm font-semibold text-gray-800">
-                                    Turnitin <span class="text-red-500">*</span>
+                                    Turnitin @if(!$isReadOnly)<span class="text-red-500">*</span>@endif
                                 </label>
                                 <p class="text-xs text-gray-600">Laporan similarity check</p>
                             </div>
                         </div>
-                        @if(isset($usulan) && !empty($usulan->data_usulan['turnitin']))
-                            <a href="{{ asset('storage/' . $usulan->data_usulan['turnitin']) }}" target="_blank" class="text-xs text-green-600 hover:underline mt-1 inline-block mb-2">
+                        @php
+                            // PERBAIKAN: Cek dokumen dengan struktur baru dan fallback ke struktur lama
+                            $turnitinExists = false;
+                            if (isset($usulan)) {
+                                $turnitinExists = !empty($usulan->data_usulan['dokumen_usulan']['turnitin']['path']) ||
+                                                !empty($usulan->data_usulan['turnitin']);
+                            }
+                        @endphp
+                        @if($turnitinExists)
+                            <a href="{{ route('pegawai-unmul.usulan-pegawai.show-document', ['usulan' => $usulan->id, 'field' => 'turnitin']) }}"
+                            target="_blank" class="text-xs text-green-600 hover:underline mt-1 inline-block mb-2">
                                 <i data-lucide="check-circle" class="inline w-3 h-3 mr-1"></i> File sudah ada. Lihat file.
                             </a>
                         @endif
-                        <input type="file" name="turnitin" id="turnitin" class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-100 file:text-green-700 hover:file:bg-green-200 file:cursor-pointer cursor-pointer"
-                            {{-- [FIX] 'required' dibuat kondisional --}}
-                            @if(empty($usulan) || empty($usulan->data_usulan['turnitin'])) required @endif
-                        <p class="mt-2 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
+                        @if(!$isReadOnly)
+                            <input type="file" name="turnitin" id="turnitin"
+                                class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-100 file:text-green-700 hover:file:bg-green-200 file:cursor-pointer cursor-pointer"
+                                @if(empty($usulan) || !$turnitinExists) required @endif>
+                            <p class="mt-2 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
+                        @endif
                         @error('turnitin')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
 
+                    {{-- UPLOAD ARTIKEL --}}
                     <div class="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-6">
                         <div class="flex items-center mb-4">
                             <div class="bg-purple-100 p-2 rounded-lg mr-3">
@@ -616,27 +739,40 @@
                             </div>
                             <div>
                                 <label for="upload_artikel" class="block text-sm font-semibold text-gray-800">
-                                    Upload Artikel <span class="text-red-500">*</span>
+                                    Upload Artikel @if(!$isReadOnly)<span class="text-red-500">*</span>@endif
                                 </label>
                                 <p class="text-xs text-gray-600">File artikel lengkap</p>
                             </div>
                         </div>
-                        @if(isset($usulan) && !empty($usulan->data_usulan['upload_artikel']))
-                            <a href="{{ asset('storage/' . $usulan->data_usulan['upload_artikel']) }}" target="_blank" class="text-xs text-green-600 hover:underline mt-1 inline-block mb-2">
+                        @php
+                            // PERBAIKAN: Cek dokumen dengan struktur baru dan fallback ke struktur lama
+                            $artikelExists = false;
+                            if (isset($usulan)) {
+                                $artikelExists = !empty($usulan->data_usulan['dokumen_usulan']['upload_artikel']['path']) ||
+                                                !empty($usulan->data_usulan['upload_artikel']);
+                            }
+                        @endphp
+                        @if($artikelExists)
+                            <a href="{{ route('pegawai-unmul.usulan-pegawai.show-document', ['usulan' => $usulan->id, 'field' => 'upload_artikel']) }}"
+                            target="_blank" class="text-xs text-green-600 hover:underline mt-1 inline-block mb-2">
                                 <i data-lucide="check-circle" class="inline w-3 h-3 mr-1"></i> File sudah ada. Lihat file.
                             </a>
                         @endif
-                        <input type="file" name="upload_artikel" id="upload_artikel" class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 file:cursor-pointer cursor-pointer"
-                            {{-- [FIX] 'required' dibuat kondisional --}}
-                            @if(empty($usulan) || empty($usulan->data_usulan['upload_artikel'])) required @endif
-                        <p class="mt-2 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
+                        @if(!$isReadOnly)
+                            <input type="file" name="upload_artikel" id="upload_artikel"
+                                class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 file:cursor-pointer cursor-pointer"
+                                @if(empty($usulan) || !$artikelExists) required @endif>
+                            <p class="mt-2 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
+                        @endif
                         @error('upload_artikel')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
                     </div>
                 </div>
+
+                {{-- SYARAT KHUSUS GURU BESAR --}}
                 @if($jabatanTujuan && $jabatanTujuan->jabatan == 'Guru Besar')
                     <div class="space-y-4 pt-6 border-t"
                         x-data="{
-                            syaratGb: '{{ old('syarat_guru_besar', $usulan->data_usulan['syarat_guru_besar'] ?? '') }}',
+                            syaratGb: '{{ old('syarat_guru_besar', $usulan->data_usulan['syarat_khusus']['syarat_guru_besar'] ?? '') }}',
                             syaratDeskripsi: {
                                 'hibah': 'Dokumen yang di-upload: MoU, SK Hibah, Laporan Hibah.',
                                 'bimbingan': 'Dokumen yang di-upload: SK Pembimbing, Halaman Pengesahan, Cover Tesis yang dibimbing.',
@@ -646,13 +782,26 @@
                         }">
                         <h4 class="text-md font-semibold text-gray-800">Syarat Khusus Pengajuan Guru Besar</h4>
                         <div>
-                            <label for="syarat_guru_besar" class="block text-sm font-semibold text-gray-800 mb-1">Pilih Salah Satu Syarat <span class="text-red-500">*</span></label>
-                            <select name="syarat_guru_besar" id="syarat_guru_besar" x-model="syaratGb" class="block w-full px-4 py-3 text-gray-900 border-2 border-gray-200 bg-white rounded-xl shadow-sm">
+                            <label for="syarat_guru_besar" class="block text-sm font-semibold text-gray-800 mb-1">
+                                Pilih Salah Satu Syarat @if(!$isReadOnly)<span class="text-red-500">*</span>@endif
+                            </label>
+                            <select name="syarat_guru_besar" id="syarat_guru_besar" x-model="syaratGb"
+                                class="block w-full px-4 py-3 text-gray-900 border-2 border-gray-200 bg-white rounded-xl shadow-sm
+                                    @if($isReadOnly) bg-gray-50 text-gray-600 @endif"
+                                @if($isReadOnly) disabled @endif>
                                 <option value="">-- Silakan Pilih --</option>
-                                <option value="hibah">Pernah mendapatkan hibah penelitian</option>
-                                <option value="bimbingan">Pernah membimbing program doktor</option>
-                                <option value="pengujian">Pernah menguji mahasiswa doktor</option>
-                                <option value="reviewer">Sebagai reviewer jurnal internasional</option>
+                                <option value="hibah" {{ old('syarat_guru_besar', $usulan->data_usulan['syarat_khusus']['syarat_guru_besar'] ?? '') == 'hibah' ? 'selected' : '' }}>
+                                    Pernah mendapatkan hibah penelitian
+                                </option>
+                                <option value="bimbingan" {{ old('syarat_guru_besar', $usulan->data_usulan['syarat_khusus']['syarat_guru_besar'] ?? '') == 'bimbingan' ? 'selected' : '' }}>
+                                    Pernah membimbing program doktor
+                                </option>
+                                <option value="pengujian" {{ old('syarat_guru_besar', $usulan->data_usulan['syarat_khusus']['syarat_guru_besar'] ?? '') == 'pengujian' ? 'selected' : '' }}>
+                                    Pernah menguji mahasiswa doktor
+                                </option>
+                                <option value="reviewer" {{ old('syarat_guru_besar', $usulan->data_usulan['syarat_khusus']['syarat_guru_besar'] ?? '') == 'reviewer' ? 'selected' : '' }}>
+                                    Sebagai reviewer jurnal internasional
+                                </option>
                             </select>
                         </div>
 
@@ -662,17 +811,30 @@
                         </div>
 
                         <div x-show="syaratGb">
-                            <label for="bukti_syarat_guru_besar" class="block text-sm font-semibold text-gray-800 mb-1">Upload Bukti Pendukung <span class="text-red-500">*</span></label>
+                            <label for="bukti_syarat_guru_besar" class="block text-sm font-semibold text-gray-800 mb-1">
+                                Upload Bukti Pendukung @if(!$isReadOnly)<span class="text-red-500">*</span>@endif
+                            </label>
 
-                            {{-- [FIX] Menampilkan file yang sudah ada --}}
-                            @if(isset($usulan) && !empty($usulan->data_usulan['bukti_syarat_guru_besar']))
-                                <a href="{{ asset('storage/' . $usulan->data_usulan['bukti_syarat_guru_besar']) }}" target="_blank" class="text-xs text-green-600 hover:underline mt-1 inline-block mb-2">
+                            @php
+                                // PERBAIKAN: Cek dokumen dengan struktur baru dan fallback ke struktur lama
+                                $buktiGuruBesarExists = false;
+                                if (isset($usulan)) {
+                                    $buktiGuruBesarExists = !empty($usulan->data_usulan['dokumen_usulan']['bukti_syarat_guru_besar']['path']) ||
+                                                            !empty($usulan->data_usulan['bukti_syarat_guru_besar']);
+                                }
+                            @endphp
+                            @if($buktiGuruBesarExists)
+                                <a href="{{ route('pegawai-unmul.usulan-pegawai.show-document', ['usulan' => $usulan->id, 'field' => 'bukti_syarat_guru_besar']) }}"
+                                target="_blank" class="text-xs text-green-600 hover:underline mt-1 inline-block mb-2">
                                     <i data-lucide="check-circle" class="inline w-3 h-3 mr-1"></i> File sudah ada. Lihat file.
                                 </a>
                             @endif
 
-                            <input type="file" name="bukti_syarat_guru_besar" id="bukti_syarat_guru_besar" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                            <p class="mt-1 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
+                            @if(!$isReadOnly)
+                                <input type="file" name="bukti_syarat_guru_besar" id="bukti_syarat_guru_besar"
+                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                                <p class="mt-1 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
+                            @endif
                         </div>
                     </div>
                 @endif
@@ -680,17 +842,33 @@
         </div>
 
         {{-- Tombol Submit --}}
-        <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end items-center gap-4">
-            <a href="{{ route('pegawai-unmul.usulan-pegawai.dashboard') }}" class="text-sm font-medium text-gray-600 hover:text-gray-900">
-                Batal
-            </a>
-            <button type="submit" name="action" value="save_draft" class="px-6 py-2 bg-slate-500 text-white rounded-md shadow-sm hover:bg-slate-600">
-                Simpan Draft
-            </button>
-            <button type="submit" name="action" value="submit_final" class="px-6 py-2 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700">
-                Kirim Usulan
-            </button>
+        @if(!$isReadOnly)
+            <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end items-center gap-4">
+                <a href="{{ route('pegawai-unmul.usulan-pegawai.dashboard') }}" class="text-sm font-medium text-gray-600 hover:text-gray-900">
+                    Batal
+                </a>
+                @if($canEdit)
+                    <button type="submit" name="action" value="save_draft" class="px-6 py-2 bg-slate-500 text-white rounded-md shadow-sm hover:bg-slate-600">
+                        Simpan Draft
+                    </button>
+                    <button type="submit" name="action" value="submit_final" class="px-6 py-2 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700">
+                        Kirim Usulan
+                    </button>
+                @endif
+            </div>
+        @else
+            <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end items-center gap-4">
+                <a href="{{ route('pegawai-unmul.usulan-pegawai.dashboard') }}" class="px-6 py-2 bg-gray-500 text-white rounded-md shadow-sm hover:bg-gray-600">
+                    Kembali ke Dashboard
+                </a>
+            </div>
+        @endif
+
+    {{-- Close form/div --}}
+    @if($canEdit)
+        </form>
+    @else
         </div>
-    </form>
+    @endif
 </div>
 @endsection

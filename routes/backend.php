@@ -98,6 +98,7 @@ Route::middleware(['auth:pegawai'])->group(function () {
         });
 
         Route::get('/usulan-saya/{usulan}/dokumen/{field}', [UsulanPegawaiController::class, 'showUsulanDocument'])->name('usulan-pegawai.show-document');
+        Route::get('/usulan/{usulan}/logs', [UsulanPegawaiController::class, 'getLogs'])->name('usulan-pegawai.logs');
     });
 
 
