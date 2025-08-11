@@ -63,7 +63,10 @@ class PusatUsulanController extends Controller
         $existingValidation = $usulan->getValidasiByRole('admin_universitas');
 
         // Determine if can edit based on status
-        $canEdit = $usulan->status_usulan === 'Diusulkan ke Universitas';
+        $canEdit = in_array($usulan->status_usulan, [
+            'Diusulkan ke Universitas',
+            'Sedang Direview Universitas',
+        ]);
 
         // Return view dengan data yang diperlukan
         return view('backend.layouts.admin-univ-usulan.pusat-usulan.detail-usulan', [
@@ -193,7 +196,7 @@ class PusatUsulanController extends Controller
     public function process(Request $request, Usulan $usulan)
     {
         // Guard Clause: Pastikan hanya usulan yang siap diproses yang bisa diubah.
-        if ($usulan->status_usulan !== 'Diusulkan ke Universitas') {
+        if (!in_array($usulan->status_usulan, ['Diusulkan ke Universitas', 'Sedang Direview Universitas'])) {
             return redirect()->back()->with('error', 'Aksi tidak dapat dilakukan karena status usulan saat ini adalah: ' . $usulan->status_usulan);
         }
 
@@ -216,6 +219,8 @@ class PusatUsulanController extends Controller
             if ($request->has('validation')) {
                 $usulan->setValidasiByRole('admin_universitas', $request->validation, $adminId);
             }
+            $usulan->save();
+
             switch ($actionType) {
                 case 'return_to_pegawai': // Aturan #2: Revisi langsung ke Pegawai
                     $usulan->status_usulan = 'Dikembalikan ke Pegawai';
@@ -235,11 +240,8 @@ class PusatUsulanController extends Controller
                 case 'save_only': // <-- TAMBAHKAN KASUS INI
                     // Jika status masih 'Diusulkan ke Universitas', ubah menjadi 'Sedang Direview Universitas'
                     // untuk menandakan proses sudah berjalan.
-                    if ($usulan->status_usulan === 'Diusulkan ke Universitas') {
-                        $usulan->status_usulan = 'Sedang Direview Universitas';
-                    }
                     $logMessage = 'Validasi dari Admin Universitas disimpan.';
-                    break;
+                        break;
             }
 
             $usulan->save();

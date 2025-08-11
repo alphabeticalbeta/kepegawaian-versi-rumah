@@ -1,7 +1,10 @@
 {{-- Action Buttons Component --}}
 @php
     // Determine if usulan can be edited
-    $canEdit = $canEdit ?? in_array($usulan->status_usulan, ['Diajukan', 'Sedang Direview']);
+     $canEdit = $canEdit ?? in_array($usulan->status_usulan, [
+        'Diusulkan ke Universitas',
+        'Sedang Direview Universitas',
+    ]);
 
     $isCompleted = in_array($usulan->status_usulan, [
         'Perlu Perbaikan',
@@ -29,18 +32,6 @@
         <div class="flex gap-4">
             @if($canEdit)
                 {{-- Editable Actions --}}
-                <button type="submit"
-                        onclick="submitValidation(event)"
-                        class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700
-                               flex items-center gap-2 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
-                        </path>
-                    </svg>
-                    Simpan Validasi
-                </button>
-
                 <button type="button"
                         onclick="showReturnForm()"
                         class="px-6 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 flex items-center gap-2 transition-colors">

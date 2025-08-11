@@ -300,3 +300,110 @@
 
 })();
 </script>
+
+<script>
+    (function () {
+        'use strict';
+
+        const form = document.getElementById('validationForm');
+        if (!form) return;
+
+        // Hindari inisialisasi ganda
+        if (window.__autosaveInit) return;
+        window.__autosaveInit = true;
+
+        // UI indikator
+        let saver = document.getElementById('autosaveIndicator');
+        if (!saver) {
+            saver = document.createElement('div');
+            saver.id = 'autosaveIndicator';
+            saver.className = 'fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow bg-gray-800 text-white text-sm opacity-0 transition-opacity';
+            saver.style.zIndex = 9999;
+            saver.textContent = 'Menyimpan…';
+            document.body.appendChild(saver);
+        }
+
+        let saveTimer = null;
+        let busy = false;
+
+        function showSaving() {
+            saver.textContent = 'Menyimpan…';
+            saver.classList.remove('opacity-0');
+        }
+        function showSaved() {
+            saver.textContent = 'Tersimpan';
+            setTimeout(() => saver.classList.add('opacity-0'), 800);
+        }
+        function showError() {
+            saver.textContent = 'Gagal menyimpan';
+            saver.classList.remove('opacity-0');
+            setTimeout(() => saver.classList.add('opacity-0'), 1200);
+        }
+
+        function ensureActionType() {
+            let input = form.querySelector('input[name="action_type"]');
+            if (!input) {
+            input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'action_type';
+            form.appendChild(input);
+            }
+            input.value = 'save_only';
+        }
+
+        async function autoSave() {
+            if (busy) return;
+            busy = true;
+            showSaving();
+            ensureActionType();
+
+            try {
+            const fd = new FormData(form);
+            const resp = await fetch(form.action, {
+                method: 'POST',
+                body: fd,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin' // ⬅️ tambahkan ini
+            });
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            showSaved();
+            } catch (e) {
+            console.error('Autosave error', e);
+            showError();
+            } finally {
+            busy = false;
+            }
+        }
+
+        function debounceSave() {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(autoSave, 600);
+        }
+
+        // Bind: select status & textarea keterangan
+        const statusSelects = form.querySelectorAll('select[name^="validation["][name$="[status]"]');
+        const ketTextareas = form.querySelectorAll('textarea[name^="validation["][name$="[keterangan]"]');
+
+        statusSelects.forEach(sel => {
+            sel.addEventListener('change', () => {
+            const fieldId = sel.getAttribute('data-field-id');
+            if (typeof window.toggleKeterangan === 'function') {
+                window.toggleKeterangan(fieldId, sel.value);
+            }
+            autoSave();
+            });
+        });
+
+        ketTextareas.forEach(ta => {
+            ta.addEventListener('input', debounceSave);
+            ta.addEventListener('change', autoSave);
+        });
+
+        // Tetap sediakan trigger manual jika dibutuhkan
+        window.submitValidation = function (e) {
+            if (e && e.preventDefault) e.preventDefault();
+            autoSave();
+        };
+    })();
+</script>
+

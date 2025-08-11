@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
+use App\Models\BackendUnivUsulan\UsulanJabatanSenat;
 use App\Models\BackendUnivUsulan\UsulanDokumen;
 use Carbon\Carbon;
 
@@ -836,5 +838,48 @@ class Usulan extends Model
         }
 
         return $labels;
+    }
+
+    public function senatDecisions()
+{
+    return $this->hasMany(UsulanJabatanSenat::class, 'usulan_id');
+}
+
+/** Ambil ambang minimal setuju dari periode (fallback 1) */
+public function getSenateMinSetuju(): int
+{
+    return (int)($this->periodeUsulan->senat_min_setuju ?? 1);
+}
+
+/** Hitung keputusan Senat */
+public function getSenateDecisionCounts(): array
+{
+    $total = $this->senatDecisions()->count();
+    $setuju = $this->senatDecisions()->where('keputusan', 'direkomendasikan')->count();
+    $tolak  = $this->senatDecisions()->where('keputusan', 'belum_direkomendasikan')->count();
+    return [
+        'total' => $total,
+        'setuju' => $setuju,
+        'tolak' => $tolak,
+        'belum' => max(0, $total - $setuju - $tolak),
+    ];
+}
+
+    /** Lulus Senat berdasarkan minimal setuju (default pakai periode) */
+    public function isSenateApproved(?int $minSetuju = null): bool
+    {
+        $min = $minSetuju ?? $this->getSenateMinSetuju();
+        $counts = $this->getSenateDecisionCounts();
+        return $counts['setuju'] >= $min && $counts['total'] > 0;
+    }
+
+    /** Sudah direkomendasikan oleh penilai? (pakai tabel usulan_penilai) */
+    public function isRecommendedByReviewer(): bool
+    {
+        // Sesuaikan kolom 'status' bila namanya berbeda
+        return DB::table('usulan_penilai')
+            ->where('usulan_id', $this->id)
+            ->whereIn('status', ['Direkomendasikan', 'direkomendasikan'])
+            ->exists();
     }
 }
