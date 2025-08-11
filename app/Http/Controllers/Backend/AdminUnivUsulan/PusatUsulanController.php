@@ -54,7 +54,10 @@ class PusatUsulanController extends Controller
         ]);
 
         // UPDATED: Pass usulan object to get dynamic BKD fields
-        $validationFields = Usulan::getValidationFields($usulan);
+        $validationFields = Usulan::getValidationFieldsWithDynamicBkd($usulan);
+
+        // ADDED: Get BKD labels for display
+        $bkdLabels = $usulan->getBkdDisplayLabels();
 
         // Get existing validation data if any
         $existingValidation = $usulan->getValidasiByRole('admin_universitas');
@@ -68,6 +71,7 @@ class PusatUsulanController extends Controller
             'validationFields' => $validationFields,
             'existingValidation' => $existingValidation,
             'canEdit' => $canEdit,
+            'bkdLabels' => $bkdLabels,
         ]);
     }
 

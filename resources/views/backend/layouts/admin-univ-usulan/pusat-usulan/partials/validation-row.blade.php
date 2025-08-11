@@ -14,13 +14,26 @@
             <div class="bg-indigo-100 p-2 rounded-lg flex-shrink-0">
                 <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                     </path>
                 </svg>
             </div>
             <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium text-gray-900">
-                    {{ ucwords(str_replace('_', ' ', $field)) }}
+                    @if($category === 'dokumen_bkd' && str_starts_with($field, 'bkd_'))
+                        {{-- Special formatting for BKD documents --}}
+                        @php
+                            // Extract label from field value if it contains formatted label
+                            $displayName = ucwords(str_replace('_', ' ', $field));
+                            if (str_contains($fieldValue, '✓')) {
+                                preg_match('/✓ (.+)<\/a>/', $fieldValue, $matches);
+                                $displayName = $matches[1] ?? $displayName;
+                            }
+                        @endphp
+                        {{ $displayName }}
+                    @else
+                        {{ ucwords(str_replace('_', ' ', $field)) }}
+                    @endif
                 </p>
                 <div class="text-sm text-gray-700 mt-1 break-words">
                     {!! $fieldValue !!}

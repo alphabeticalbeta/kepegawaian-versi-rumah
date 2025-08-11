@@ -693,20 +693,142 @@ class Usulan extends Model
             'dokumen_usulan' => [
                 'pakta_integritas', 'bukti_korespondensi', 'turnitin', 'upload_artikel', 'bukti_syarat_guru_besar'
             ],
+            'dokumen_bkd' => [
+                'bkd_semester_1',
+                'bkd_semester_2',
+                'bkd_semester_3',
+                'bkd_semester_4',
+            ]
         ];
+    }
 
+    /**
+     * Get validation fields with dynamic BKD
+     * NEW METHOD: Untuk mendapatkan validation fields dengan BKD dinamis
+     */
+    public static function getValidationFieldsWithDynamicBkd($usulan = null): array
+    {
+        // Get base fields
+        $fields = self::getValidationFields();
+
+        // If usulan provided, check for additional BKD fields in data_usulan
         if ($usulan && isset($usulan->data_usulan['dokumen_usulan'])) {
-        $bkdFields = [];
-        foreach ($usulan->data_usulan['dokumen_usulan'] as $key => $value) {
-            if (str_starts_with($key, 'bkd_')) {
-                $bkdFields[] = $key;
+            $additionalBkdFields = [];
+
+            foreach ($usulan->data_usulan['dokumen_usulan'] as $key => $value) {
+                // Check if it's a BKD field and not already in default list
+                if (str_starts_with($key, 'bkd_') && !in_array($key, $fields['dokumen_bkd'])) {
+                    $additionalBkdFields[] = $key;
+                }
+            }
+
+            // Merge additional BKD fields if found
+            if (!empty($additionalBkdFields)) {
+                $fields['dokumen_bkd'] = array_merge($fields['dokumen_bkd'], $additionalBkdFields);
             }
         }
 
-        if (!empty($bkdFields)) {
-            $fields['dokumen_bkd'] = $bkdFields;
-        }
+        return $fields;
     }
-     return $fields;
+
+    /**
+     * Generate BKD field names based on periode
+     * NEW METHOD: Generate nama field BKD berdasarkan periode usulan
+     */
+    public function generateBkdFieldNames(): array
+    {
+        if (!$this->periodeUsulan) {
+            // Return default if no periode
+            return [
+                'bkd_semester_1',
+                'bkd_semester_2',
+                'bkd_semester_3',
+                'bkd_semester_4',
+            ];
+        }
+
+        $startDate = \Carbon\Carbon::parse($this->periodeUsulan->tanggal_mulai);
+        $month = $startDate->month;
+        $year = $startDate->year;
+
+        // Determine current semester
+        if ($month >= 1 && $month <= 6) {
+            $currentSemester = 'genap';
+            $currentYear = $year - 1;
+        } else {
+            $currentSemester = 'ganjil';
+            $currentYear = $year;
+        }
+
+        $fields = [];
+        $tempSemester = $currentSemester;
+        $tempYear = $currentYear;
+
+        // Generate 4 semester fields
+        for ($i = 1; $i <= 4; $i++) {
+            // Move to previous semester
+            if ($tempSemester === 'ganjil') {
+                $tempSemester = 'genap';
+                $tempYear--;
+            } else {
+                $tempSemester = 'ganjil';
+            }
+
+            // Option 1: Simple numbered format
+            $fields[] = 'bkd_semester_' . $i;
+
+            // Option 2: Detailed format (uncomment if preferred)
+            // $fields[] = 'bkd_' . $tempSemester . '_' . $tempYear . '_' . ($tempYear + 1);
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Get BKD display labels based on periode
+     * NEW METHOD: Generate label display untuk BKD
+     */
+    public function getBkdDisplayLabels(): array
+    {
+        if (!$this->periodeUsulan) {
+            return [
+                'bkd_semester_1' => 'BKD Semester 1',
+                'bkd_semester_2' => 'BKD Semester 2',
+                'bkd_semester_3' => 'BKD Semester 3',
+                'bkd_semester_4' => 'BKD Semester 4',
+            ];
+        }
+
+        $startDate = \Carbon\Carbon::parse($this->periodeUsulan->tanggal_mulai);
+        $month = $startDate->month;
+        $year = $startDate->year;
+
+        // Determine current semester
+        if ($month >= 1 && $month <= 6) {
+            $currentSemester = 'Genap';
+            $currentYear = $year - 1;
+        } else {
+            $currentSemester = 'Ganjil';
+            $currentYear = $year;
+        }
+
+        $labels = [];
+        $tempSemester = $currentSemester;
+        $tempYear = $currentYear;
+
+        for ($i = 1; $i <= 4; $i++) {
+            // Move to previous semester
+            if ($tempSemester === 'Ganjil') {
+                $tempSemester = 'Genap';
+                $tempYear--;
+            } else {
+                $tempSemester = 'Ganjil';
+            }
+
+            $academicYear = $tempYear . '/' . ($tempYear + 1);
+            $labels['bkd_semester_' . $i] = "BKD Semester {$tempSemester} {$academicYear}";
+        }
+
+        return $labels;
     }
 }
