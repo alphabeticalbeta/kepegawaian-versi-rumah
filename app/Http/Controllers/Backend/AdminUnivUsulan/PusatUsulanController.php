@@ -93,13 +93,51 @@ class PusatUsulanController extends Controller
 
         // Check if field is BKD document (starts with 'bkd_')
         $isBkdDocument = str_starts_with($field, 'bkd_');
-
-        if (!$isBkdDocument && !in_array($field, $allowedFields)) {
+        if (!$isBkdDocument && !in_array($field, $allowedFields, true)) {
             abort(404, 'Jenis dokumen tidak valid.');
         }
 
         // 2. Get file path from usulan data using model method
         $filePath = $usulan->getDocumentPath($field);
+
+        // 3. Fallback: jika field adalah bkd_semester_N tapi path kosong, map ke key legacy & scan
+        if (!$filePath && str_starts_with($field, 'bkd_semester_')) {
+            // Bangun label target dengan method model
+            $labels = $usulan->getBkdDisplayLabels();
+            if (isset($labels[$field])) {
+                if (preg_match('/BKD\s+Semester\s+(Ganjil|Genap)\s+(\d{4})\/(\d{4})/i', $labels[$field], $m)) {
+                    $sem = strtolower($m[1]);
+                    $y1  = $m[2];
+                    $y2  = $m[3];
+
+                    // a) Coba exact legacy key
+                    $legacyKey = 'bkd_' . $sem . '_' . $y1 . '_' . $y2;
+                    $filePath = $usulan->getDocumentPath($legacyKey);
+
+                    // b) Scan semua key BKD jika masih kosong
+                    if (!$filePath && !empty($usulan->data_usulan['dokumen_usulan'])) {
+                        foreach ($usulan->data_usulan['dokumen_usulan'] as $k => $info) {
+                            if (preg_match('/^bkd_(ganjil|genap)_(\d{4})_(\d{4})$/i', (string) $k, $mm)) {
+                                if (strtolower($mm[1]) === $sem && $mm[2] === $y1 && $mm[3] === $y2) {
+                                    $filePath = is_array($info) ? ($info['path'] ?? null) : $info;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (!$filePath && !empty($usulan->data_usulan)) {
+                        foreach ($usulan->data_usulan as $k => $info) {
+                            if (preg_match('/^bkd_(ganjil|genap)_(\d{4})_(\d{4})$/i', (string) $k, $mm)) {
+                                if (strtolower($mm[1]) === $sem && $mm[2] === $y1 && $mm[3] === $y2) {
+                                    $filePath = is_array($info) ? ($info['path'] ?? null) : $info;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         if (!$filePath) {
             Log::warning('Document path not found in data_usulan', [

@@ -36,6 +36,9 @@ class UsulanFieldHelper
             case 'dokumen_bkd':
                 return $this->getDokumenUsulanLink($field); // Use same method as dokumen_usulan
 
+            case 'dokumen_pendukung':
+                return $this->getDokumenPendukungValue($field);
+
             default:
                 return '-';
         }
@@ -78,21 +81,65 @@ class UsulanFieldHelper
 
     protected function getDokumenUsulanLink(string $field): string
     {
-        // Metode getDocumentPath sudah ada di model Usulan, kita bisa manfaatkan
+        // 1) Coba ambil path langsung dari key yang diminta (baru & lama)
         $docPath = $this->usulan->getDocumentPath($field);
 
-        if (!empty($docPath)) {
-            // Perlu rute untuk menampilkan dokumen usulan dari admin universitas
-            // Asumsikan rutenya ada atau akan dibuat
-            $route = route('backend.admin-univ-usulan.pusat-usulan.show-document', [$this->usulan->id, $field]); // Sesuaikan nama rute jika perlu
+        // 2) Jika kosong dan ini BKD kanonis (bkd_semester_N), map ke key lama (bkd_{ganjil|genap}_YYYY_YYYY)
+        if (empty($docPath) && str_starts_with($field, 'bkd_semester_') && $this->usulan->periodeUsulan) {
+            $num = (int) str_replace('bkd_semester_', '', $field);
+            if ($num >= 1 && $num <= 4) {
+                // Label semester ke-N (mundur) dari periode berjalan
+                $labels = $this->generateBkdLabelsFromPeriode($this->usulan->periodeUsulan);
+                if (isset($labels[$num - 1])) {
+                    // Contoh: "BKD Semester Genap 2023/2024"
+                    if (preg_match('/BKD\s+Semester\s+(Ganjil|Genap)\s+(\d{4})\/(\d{4})/i', $labels[$num - 1], $m)) {
+                        $sem = strtolower($m[1]); // ganjil|genap
+                        $y1  = $m[2];
+                        $y2  = $m[3];
 
-            $label = '✓ Lihat Dokumen';
-            if (str_starts_with($field, 'bkd_')) {
-                $label = '✓ ' . $this->formatBkdLabel($field);
+                        // 2a) Coba exact legacy key
+                        $legacyKey = 'bkd_' . $sem . '_' . $y1 . '_' . $y2;
+                        $docPath = $this->usulan->getDocumentPath($legacyKey);
+
+                        // 2b) Fallback scan semua key BKD (kalau penamaannya sedikit berbeda)
+                        if (empty($docPath)) {
+                            // Struktur baru: data_usulan['dokumen_usulan'][key]['path']
+                            $bucket = $this->usulan->data_usulan['dokumen_usulan'] ?? [];
+                            foreach ($bucket as $k => $info) {
+                                if (preg_match('/^bkd_(ganjil|genap)_(\d{4})_(\d{4})$/i', (string) $k, $mm)) {
+                                    if (strtolower($mm[1]) === $sem && $mm[2] === $y1 && $mm[3] === $y2) {
+                                        $docPath = is_array($info) ? ($info['path'] ?? null) : $info;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (empty($docPath)) {
+                            // Struktur lama (flat): data_usulan[key] = path
+                            $flat = $this->usulan->data_usulan ?? [];
+                            foreach ($flat as $k => $info) {
+                                if (preg_match('/^bkd_(ganjil|genap)_(\d{4})_(\d{4})$/i', (string) $k, $mm)) {
+                                    if (strtolower($mm[1]) === $sem && $mm[2] === $y1 && $mm[3] === $y2) {
+                                        $docPath = is_array($info) ? ($info['path'] ?? null) : $info;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
-            return '<a href="' . $route . '" target="_blank" class="text-blue-600 hover:text-blue-800 underline inline-flex items-center gap-1">✓ Lihat Dokumen</a>';
         }
-        return '<span class="text-red-500">✗ Belum diunggah</span>';
+
+        // 3) Jika ada path → buat link; kalau tidak → info belum diunggah
+        if (!empty($docPath)) {
+            $route = route('backend.admin-univ-usulan.pusat-usulan.show-document', [$this->usulan->id, $field]);
+            // Judul baris sudah menampilkan label semesternya, jadi link cukup "Lihat Dokumen"
+            $label = '✓ Lihat Dokumen';
+            return '<a href="' . $route . '" target="_blank" class="text-blue-600 hover:text-blue-800 underline inline-flex items-center gap-1">' . $label . '</a>';
+        }
+
+        return '<span class="text-red-600">✗ Belum diunggah</span>';
     }
 
     protected function getKaryaIlmiahData(string $field): string
@@ -191,5 +238,39 @@ class UsulanFieldHelper
 
         return $labels;
     }
+
+    private function getDokumenPendukungValue(string $field): string
+    {
+        // Data disimpan oleh Admin Fakultas ketika "forward_to_university"
+        $data = $this->usulan->validasi_data['admin_fakultas']['dokumen_pendukung'] ?? [];
+
+        // Field nomor → tampilkan teks
+        if (in_array($field, ['nomor_surat_usulan', 'nomor_berita_senat'], true)) {
+            $val = trim((string)($data[$field] ?? ''));
+            return $val !== '' ? e($val) : '-';
+        }
+
+        // Field file → baca path lalu buat link (disk: public)
+        if ($field === 'file_surat_usulan' || $field === 'file_berita_senat') {
+            // Nama key path di data: file_*_path (lihat controller AdminFakultas)
+            $pathKey = $field . '_path';
+            $path = $data[$pathKey] ?? $data[$field] ?? null;
+
+            if (!$path) {
+                return '<span class="text-red-600">✗ Belum diunggah</span>';
+            }
+
+            if (\Storage::disk('public')->exists($path)) {
+                $url = \Storage::disk('public')->url($path);
+                return '<a href="' . $url . '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">✓ Lihat Dokumen</a>';
+            }
+
+            return '<span class="text-red-600">✗ File tidak ditemukan</span>';
+        }
+
+        // Default
+        return '-';
+    }
+
 
 }

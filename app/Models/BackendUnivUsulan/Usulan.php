@@ -698,7 +698,13 @@ class Usulan extends Model
                 'bkd_semester_2',
                 'bkd_semester_3',
                 'bkd_semester_4',
-            ]
+            ],
+            'dokumen_pendukung' => [
+                'nomor_surat_usulan',
+                'file_surat_usulan',
+                'nomor_berita_senat',
+                'file_berita_senat',
+            ],
         ];
     }
 
@@ -711,22 +717,22 @@ class Usulan extends Model
         // Get base fields
         $fields = self::getValidationFields();
 
-        // If usulan provided, check for additional BKD fields in data_usulan
-        if ($usulan && isset($usulan->data_usulan['dokumen_usulan'])) {
-            $additionalBkdFields = [];
+        // // If usulan provided, check for additional BKD fields in data_usulan
+        // if ($usulan && isset($usulan->data_usulan['dokumen_usulan'])) {
+        //     $additionalBkdFields = [];
 
-            foreach ($usulan->data_usulan['dokumen_usulan'] as $key => $value) {
-                // Check if it's a BKD field and not already in default list
-                if (str_starts_with($key, 'bkd_') && !in_array($key, $fields['dokumen_bkd'])) {
-                    $additionalBkdFields[] = $key;
-                }
-            }
+        //     foreach ($usulan->data_usulan['dokumen_usulan'] as $key => $value) {
+        //         // Check if it's a BKD field and not already in default list
+        //         if (str_starts_with($key, 'bkd_') && !in_array($key, $fields['dokumen_bkd'])) {
+        //             $additionalBkdFields[] = $key;
+        //         }
+        //     }
 
-            // Merge additional BKD fields if found
-            if (!empty($additionalBkdFields)) {
-                $fields['dokumen_bkd'] = array_merge($fields['dokumen_bkd'], $additionalBkdFields);
-            }
-        }
+        //     // Merge additional BKD fields if found
+        //     if (!empty($additionalBkdFields)) {
+        //         $fields['dokumen_bkd'] = array_merge($fields['dokumen_bkd'], $additionalBkdFields);
+        //     }
+        // }
 
         return $fields;
     }
