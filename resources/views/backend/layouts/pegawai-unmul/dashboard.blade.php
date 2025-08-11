@@ -1,8 +1,26 @@
 @extends('backend.layouts.pegawai-unmul.app')
 
-@section('title', 'Dashboard')
+@section('title', 'Dashboard Pegawai')
 
 @section('content')
+
+    @php
+    // Cek apakah ada usulan yang perlu diperbaiki
+        $usulanPerluPerbaikan = $usulans->firstWhere('status_usulan', 'Perlu Perbaikan');
+    @endphp
+
+    @if($usulanPerluPerbaikan)
+        <div class="bg-orange-100 border-l-4 border-orange-500 text-orange-700 p-4 rounded-lg mb-6 shadow-md" role="alert">
+            <div class="flex">
+                <div class="py-1"><svg class="fill-current h-6 w-6 text-orange-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 5v6h2V5H9zm0 8h2v2H9v-2z"/></svg></div>
+                <div>
+                    <p class="font-bold">Aksi Diperlukan</p>
+                    <p class="text-sm">Satu atau lebih usulan Anda telah dikembalikan dan memerlukan perbaikan. Silakan periksa detailnya di bawah.</p>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
             {{-- [FIX] BLOK NOTIFIKASI LENGKAP --}}
@@ -86,11 +104,19 @@
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <div class="flex justify-center space-x-2">
-                                        <a href="{{ route('pegawai-unmul.usulan-jabatan.edit', $usulan) }}"
-                                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 hover:text-indigo-700 transition-colors duration-200">
-                                            <i data-lucide="eye" class="w-3 h-3 mr-1"></i>
-                                            Detail
-                                        </a>
+                                        @if($usulan->status_usulan == 'Perlu Perbaikan')
+                                            <a href="{{ route('pegawai-unmul.usulan-jabatan.edit', $usulan) }}"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-orange-600 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 hover:text-orange-700 transition-colors duration-200">
+                                                <i data-lucide="edit" class="w-3 h-3 mr-1"></i>
+                                                Perbaiki Usulan
+                                            </a>
+                                        @else
+                                            <a href="{{ route('pegawai-unmul.usulan-jabatan.edit', $usulan) }}"
+                                            class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 hover:text-indigo-700 transition-colors duration-200">
+                                                <i data-lucide="eye" class="w-3 h-3 mr-1"></i>
+                                                Detail
+                                            </a>
+                                        @endif
                                         <button type="button"
                                                 onclick="showLogModal({{ $usulan->id }})"
                                                 class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-gray-700 transition-colors duration-200">

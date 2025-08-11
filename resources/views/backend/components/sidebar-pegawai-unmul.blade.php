@@ -20,12 +20,12 @@
         {{-- Dropdown untuk semua menu usulan --}}
         @php
             $usulanMenus = [
+                ['route' => route('pegawai-unmul.usulan-jabatan.create'), 'icon' => 'file-user', 'label' => 'Usulan Jabatan', 'pattern' => 'pegawai-unmul.usulan-jabatan.*'],
                 ['route' => '#', 'icon' => 'user-check', 'label' => 'Usulan NUPTK', 'pattern' => 'backend.pegawai-unmul.usulan-nuptk.*'],
                 ['route' => '#', 'icon' => 'file-bar-chart-2', 'label' => 'Usulan Laporan LKD', 'pattern' => 'backend.pegawai-unmul.usulan-lkd.*'],
                 ['route' => '#', 'icon' => 'clipboard-check', 'label' => 'Usulan Presensi', 'pattern' => 'backend.pegawai-unmul.usulan-presensi.*'],
                 ['route' => '#', 'icon' => 'clock', 'label' => 'Usulan Penyesuaian Masa Kerja', 'pattern' => 'backend.pegawai-unmul.usulan-masa-kerja.*'],
                 ['route' => '#', 'icon' => 'book-marked', 'label' => 'Usulan Ujian Dinas & Ijazah', 'pattern' => 'backend.pegawai-unmul.usulan-ujian.*'],
-                ['route' => route('pegawai-unmul.usulan-jabatan.create'), 'icon' => 'file-user', 'label' => 'Usulan Jabatan', 'pattern' => 'pegawai-unmul.usulan-jabatan.*'],
                 ['route' => '#', 'icon' => 'file-check-2', 'label' => 'Usulan Laporan Serdos', 'pattern' => 'backend.pegawai-unmul.usulan-serdos.*'],
                 ['route' => '#', 'icon' => 'user-minus', 'label' => 'Usulan Pensiun', 'pattern' => 'backend.pegawai-unmul.usulan-pensiun.*'],
                 ['route' => '#', 'icon' => 'trending-up', 'label' => 'Usulan Kepangkatan', 'pattern' => 'backend.pegawai-unmul.usulan-pangkat.*'],

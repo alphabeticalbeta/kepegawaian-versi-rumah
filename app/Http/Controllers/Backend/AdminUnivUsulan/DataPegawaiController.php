@@ -8,6 +8,7 @@ use App\Models\BackendUnivUsulan\Jabatan;
 use App\Models\BackendUnivUsulan\Pangkat;
 use App\Models\BackendUnivUsulan\Pegawai;
 use App\Models\BackendUnivUsulan\SubSubUnitKerja;
+use App\Models\BackendUnivUsulan\DocumentAccessLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
@@ -118,7 +119,7 @@ class DataPegawaiController extends Controller
 
         foreach ($fileColumns as $column) {
             if ($pegawai->$column) {
-                Storage::disk('public')->delete($pegawai->$column);
+                Storage::disk('local')->delete($pegawai->$column); // FIX: Gunakan disk 'local'
             }
         }
 
@@ -224,10 +225,11 @@ class DataPegawaiController extends Controller
     }
 
     /**
-     * Display a document.
+     * Display a document with access control and logging.
      */
     public function showDocument(Pegawai $pegawai, $field)
     {
+        // 1. Validasi field yang diizinkan
         $allowedFields = [
             'sk_pangkat_terakhir', 'sk_jabatan_terakhir',
             'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir',
@@ -239,18 +241,98 @@ class DataPegawaiController extends Controller
             abort(404, 'Jenis dokumen tidak valid.');
         }
 
+        // 2. Cek apakah file ada
         $filePath = $pegawai->$field;
         if (!$filePath || !Storage::disk('local')->exists($filePath)) {
             abort(404, 'File tidak ditemukan');
         }
 
-        $path = Storage::disk('public')->path($filePath);
-        $mimeType = FileFacade::mimeType($path);
-        $headers = [
-            'Content-Type' => $mimeType,
-            'Content-Disposition' => 'inline; filename="' . basename($path) . '"',
-        ];
+        // 3. **ACCESS CONTROL** - Cek permission berdasarkan role
+        $currentUser = Auth::guard('pegawai')->user();
 
-        return response()->file(Storage::disk('local')->path($filePath));
+        if (!$this->canAccessDocument($currentUser, $pegawai)) {
+            abort(403, 'Anda tidak memiliki akses untuk halaman atau dokumen ini.');
+        }
+
+        // 4. **LOGGING** - Catat akses dokumen
+        $this->logDocumentAccess($pegawai->id, $currentUser->id, $field, request());
+
+        // 5. **FIX STORAGE BUG** - Gunakan disk 'local' yang konsisten
+        $fullPath = Storage::disk('local')->path($filePath);
+
+        if (!file_exists($fullPath)) {
+            abort(404, 'File tidak ditemukan di storage');
+        }
+
+        $mimeType = FileFacade::mimeType($fullPath);
+
+        return response()->file($fullPath, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . basename($fullPath) . '"',
+        ]);
+    }
+
+    /**
+     * Cek apakah user bisa mengakses dokumen pegawai tertentu
+     */
+    private function canAccessDocument($currentUser, $targetPegawai): bool
+    {
+        // Admin Univ Usulan - bisa akses semua dokumen
+        if ($currentUser->hasPermissionTo('view_all_pegawai_documents')) {
+            return true;
+        }
+
+        // Pegawai - hanya bisa akses dokumen sendiri
+        if ($currentUser->hasPermissionTo('view_own_documents')) {
+            return $currentUser->id === $targetPegawai->id;
+        }
+
+        // Admin Fakultas - bisa akses dokumen pegawai di fakultasnya
+        if ($currentUser->hasPermissionTo('view_fakultas_pegawai_documents')) {
+            return $this->isInSameFakultas($currentUser, $targetPegawai);
+        }
+
+        // Penilai - untuk saat ini return false (akan diimplementasi nanti)
+        if ($currentUser->hasPermissionTo('view_assessment_documents')) {
+            // TODO: Implementasi logic penilai saat modul penilaian sudah ada
+            return false;
+        }
+
+        return false;
+    }
+
+    /**
+     * Cek apakah dua pegawai berada di fakultas yang sama
+     */
+    private function isInSameFakultas($user1, $user2): bool
+    {
+        // Load relasi jika belum ada
+        if (!$user1->relationLoaded('unitKerja')) {
+            $user1->load('unitKerja.subUnitKerja.unitKerja');
+        }
+        if (!$user2->relationLoaded('unitKerja')) {
+            $user2->load('unitKerja.subUnitKerja.unitKerja');
+        }
+
+        // Ambil fakultas (unit_kerja) dari masing-masing pegawai
+        $fakultas1 = $user1->unitKerja?->subUnitKerja?->unitKerja?->id;
+        $fakultas2 = $user2->unitKerja?->subUnitKerja?->unitKerja?->id;
+
+        return $fakultas1 && $fakultas2 && $fakultas1 === $fakultas2;
+    }
+
+    /**
+     * Catat akses dokumen ke log
+     */
+    private function logDocumentAccess($pegawaiId, $accessorId, $documentField, $request): void
+    {
+        DocumentAccessLog::create([
+            'pegawai_id' => $pegawaiId,
+            'accessor_id' => $accessorId,
+            'document_field' => $documentField,
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->header('User-Agent', ''),
+            'accessed_at' => now(),
+        ]);
     }
 }

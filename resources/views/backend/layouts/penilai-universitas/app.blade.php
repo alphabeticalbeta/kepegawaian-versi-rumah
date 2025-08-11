@@ -8,11 +8,12 @@
     {{-- Memuat CSS dari Vite --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    {{-- Memuat pustaka ikon Lucide --}}
+    {{-- External Libraries --}}
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    {{-- Memuat pustaka Alpine.js untuk interaktivitas dropdown --}}
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    {{-- Alpine.js for reactive components --}}
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-slate-100">
 

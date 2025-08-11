@@ -1,20 +1,24 @@
+<!-- create-jabatan.blade.php - FIXED VERSION -->
 @extends('backend.layouts.pegawai-unmul.app')
 
 @section('content')
 <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
     @php
         // Define read-only status
-        $isReadOnly = isset($usulan) && in_array($usulan->status_usulan, [
+        $isReadOnly = isset($usulan) && $usulan->exists && in_array($usulan->status_usulan, [
             'Diajukan', 'Sedang Direview', 'Disetujui', 'Direkomendasikan'
         ]);
 
         // Define editable status
-        $canEdit = !$isReadOnly && (!isset($usulan) || in_array($usulan->status_usulan, [
+        $canEdit = !$isReadOnly && (!isset($usulan) || !$usulan->exists || in_array($usulan->status_usulan, [
             'Draft', 'Perlu Perbaikan', 'Dikembalikan'
         ]));
+
+        // FIX: Ensure usulan exists check is proper
+        $isEditMode = isset($usulan) && $usulan->exists && $usulan->id;
     @endphp
 
-    {{-- Pesan Notifikasi --}}
+    {{-- Success/Error Messages --}}
     @if(session('success'))
         <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
             <div class="flex">
@@ -45,28 +49,54 @@
         </div>
     @endif
 
-    {{-- Header Section - Dynamic Title --}}
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">
-            @if($isReadOnly)
-                Detail Usulan Jabatan
-            @elseif(isset($usulan) && $usulan->exists)
-                Edit Usulan Jabatan
-            @else
-                Formulir Pengajuan Usulan Jabatan
-            @endif
-        </h1>
-        <p class="mt-2 text-gray-600">
-            @if($isReadOnly)
-                Usulan Anda sedang dalam proses review. Anda tidak dapat mengubah data saat ini.
-            @else
-                Silakan lengkapi semua informasi yang dibutuhkan untuk mengajukan kenaikan jabatan fungsional.
-            @endif
-        </p>
+    {{-- Validation Errors --}}
+    @if($errors->any())
+        <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+            <div class="flex">
+                <div class="py-1">
+                    <svg class="h-5 w-5 text-red-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 11-2 0 1 1 0 012 0zm-1-3a1 1 0 00-1 1v2a1 1 0 102 0V9a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="font-bold text-red-800">Terdapat kesalahan pada form:</h3>
+                    <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        </div>
+    @endif
 
-        {{-- Status Badge --}}
-        @if(isset($usulan) && $usulan->exists)
-            <div class="mt-4">
+    {{-- Dynamic Header Section --}}
+    <div class="mb-8 border-collapse bg-gray-500 rounded-xl">
+        <div class="bg-gradient-to-r {{ $formConfig['gradient_colors'] }} rounded-xl p-6 text-white">
+            <div class="flex items-center gap-4">
+                <div class="bg-white/20 p-3 rounded-xl">
+                    <i data-lucide="{{ $formConfig['icon'] }}" class="w-8 h-8"></i>
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold">
+                        @if($isReadOnly)
+                            Detail {{ $formConfig['title'] }}
+                        @elseif($isEditMode)
+                            Edit {{ $formConfig['title'] }}
+                        @else
+                            {{ $formConfig['title'] }}
+                        @endif
+                    </h1>
+                    <p class="mt-2 text-white">
+                        {{ $formConfig['description'] }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Status Badge for existing usulan --}}
+        @if($isEditMode)
+            <div class="mt-4 px-6 pb-4">
                 <span class="px-4 py-2 rounded-lg text-sm font-medium
                     @if($usulan->status_usulan === 'Draft') bg-gray-100 text-gray-700
                     @elseif($usulan->status_usulan === 'Diajukan') bg-blue-100 text-blue-700
@@ -80,7 +110,7 @@
         @endif
     </div>
 
-    {{-- Alert untuk status read-only --}}
+    {{-- Status Alerts --}}
     @if($isReadOnly)
         <div class="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg flex items-start gap-3 mb-6">
             <i data-lucide="info" class="w-5 h-5 text-blue-600 mt-0.5"></i>
@@ -91,39 +121,32 @@
         </div>
     @endif
 
-    @if(isset($usulan) && $usulan->status_usulan === 'Perlu Perbaikan')
+    @if($isEditMode && $usulan->status_usulan === 'Perlu Perbaikan')
         <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg flex items-start gap-3 mb-6">
             <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-600 mt-0.5"></i>
             <div class="flex-1">
                 <p class="font-medium">Perbaikan Diperlukan</p>
                 <p class="text-sm">Usulan Anda memerlukan perbaikan. Silakan lakukan perubahan yang diperlukan dan kirim ulang.</p>
                 @if($usulan->catatan_verifikator)
-                    <p class="text-sm mt-2"><strong>Catatan:</strong> {{ $usulan->catatan_verifikator }}</p>
+                    <div class="text-sm mt-2">
+                        <strong>Catatan dari Verifikator:</strong>
+                        <div class="mt-1 pl-4 border-l-2 border-yellow-400">
+                            {!! nl2br(e($usulan->catatan_verifikator)) !!}
+                        </div>
+                    </div>
                 @endif
             </div>
         </div>
     @endif
 
-    @if(!$jabatanTujuan)
-        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-            <div class="flex">
-                <div class="py-1"><svg class="h-5 w-5 text-yellow-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.21 3.03-1.742 3.03H4.42c-1.532 0-2.492-1.696-1.742-3.03l5.58-9.92zM10 13a1 1 0 11-2 0 1 1 0 012 0zm-1-3a1 1 0 00-1 1v2a1 1 0 102 0V9a1 1 0 00-1-1z" clip-rule="evenodd"/></svg></div>
-                <div>
-                    <p class="font-bold text-yellow-800">Tidak Dapat Mengajukan Usulan</p>
-                    <p class="text-sm text-yellow-700">Anda sudah berada di jenjang jabatan fungsional tertinggi.</p>
-                </div>
-            </div>
-        </div>
-    @endif
-
-    {{-- Form Wrapper: Conditional Form or Div --}}
-    @if($canEdit)
-        @if (isset($usulan) && $usulan->exists)
-            <form action="{{ route('pegawai-unmul.usulan-jabatan.update', $usulan->id) }}" method="POST" enctype="multipart/form-data">
+    {{-- FIXED: Form Wrapper Logic --}}
+    @if($canEdit && $jenjangType !== 'tenaga-kependidikan')
+        @if($isEditMode)
+            <form id="usulan-form" action="{{ route('pegawai-unmul.usulan-jabatan.update', $usulan->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
         @else
-            <form action="{{ route('pegawai-unmul.usulan-jabatan.store') }}" method="POST" enctype="multipart/form-data">
+            <form id="usulan-form" action="{{ route('pegawai-unmul.usulan-jabatan.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
         @endif
     @else
@@ -155,18 +178,17 @@
         </div>
     </div>
 
-    <div class="bg-gradient-to-r from-indigo-50 via-white to-purple-50 border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-        <!-- Header with gradient background -->
-        <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5">
-            <h3 class="text-xl font-bold text-white flex items-center">
+    {{-- Informasi Pengusul (Always show) --}}
+    <div class="bg-gradient-to-r from-indigo-50 via-white to-purple-50 border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-6">
+        <div class="bg-gradient-to-r {{ $formConfig['gradient_colors'] }} px-6 py-5">
+            <h3 class="text-xl font-bold text-black flex items-center">
                 <i data-lucide="user-circle" class="w-6 h-6 mr-3"></i>
                 Informasi Pengusul
             </h3>
-            <p class="text-indigo-100 text-sm mt-1">Detail informasi pemohon usulan jabatan fungsional</p>
+            <p class="text-white/90 text-sm mt-1">Detail informasi pemohon usulan jabatan fungsional</p>
         </div>
 
-        <!-- Content with improved layout -->
-        <div class="px-6 py-6">
+        <div class="px-6 py-6 bg-slate-600">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Nama -->
                 <div class="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-400">
@@ -221,6 +243,11 @@
                                         <i data-lucide="arrow-up-right" class="w-3 h-3 mr-1"></i>
                                         {{ $jabatanTujuan->jabatan }}
                                     </span>
+                                @elseif($jenjangType === 'tenaga-kependidikan')
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        <i data-lucide="shuffle" class="w-3 h-3 mr-1"></i>
+                                        Perpindahan Jabatan Tendik
+                                    </span>
                                 @else
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                         <i data-lucide="crown" class="w-3 h-3 mr-1"></i>
@@ -232,643 +259,264 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Progress indicator -->
-            <div class="mt-6 pt-6 border-t border-gray-200">
-                <div class="flex items-center justify-between text-xs text-gray-500">
-                    <span class="flex items-center">
-                        <i data-lucide="info" class="w-3 h-3 mr-1"></i>
-                        Informasi pengusul telah terverifikasi
-                    </span>
-                    <span class="flex items-center">
-                        <div class="w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse"></div>
-                        Status: Aktif
-                    </span>
-                </div>
-            </div>
         </div>
     </div>
 
-        {{-- Data Profil & Dokumen --}}
-        <div class="bg-gradient-to-br from-slate-50 to-blue-50 p-6 rounded-xl shadow-lg mb-8">
-            <!-- Header Section -->
-            <div class="border-b border-slate-200 pb-6 mb-8">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <div class="bg-indigo-100 p-3 rounded-full">
-                            <i data-lucide="user-circle" class="w-8 h-8 text-indigo-600"></i>
-                        </div>
-                        <div>
-                            <h1 class="text-2xl font-bold text-slate-800">Data Profil & Dokumen Pegawai</h1>
-                            <p class="text-slate-600 mt-1">Informasi lengkap kepegawaian dan dokumen pendukung</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    {{-- INCLUDE: Profile Display Component (Always show) --}}
+    @include('backend.layouts.pegawai-unmul.usul-jabatan.components.profile-display', ['pegawai' => $pegawai])
 
-            <!-- Main Content Grid -->
-            <div class="grid grid-cols-1 xl:grid-cols-1 gap-8">
+    {{-- CONDITIONAL: Karya Ilmiah Section (Only for dosen, not for tendik) --}}
+    @if($jenjangType !== 'tenaga-kependidikan')
+        @include('backend.layouts.pegawai-unmul.usul-jabatan.components.karya-ilmiah-section', [
+            'formConfig' => $formConfig,
+            'jenjangType' => $jenjangType,
+            'usulan' => $usulan,
+            'isReadOnly' => $isReadOnly
+        ])
 
-                <!-- Column 1: Personal & Employment Data -->
-                <div class="xl:col-span-1 space-y-6 ">
-                    <!-- A. Data Pribadi -->
-                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200 ">
-                        <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-t-xl">
-                            <h3 class="text-lg font-semibold flex items-center">
-                                <i data-lucide="user" class="w-5 h-5 mr-3"></i>
-                                A. Data Pribadi
-                            </h3>
-                        </div>
-                        <div class="p-6 space-y-4 grid grid-cols-2 xl:grid-cols-2">
-                            {{-- Data Pribadi --}}
-                            @foreach ([
-                                'jenis_pegawai'      => ['Jenis Pegawai', $pegawai->jenis_pegawai, 'briefcase'],
-                                'status_kepegawaian' => ['Status Kepegawaian', $pegawai->status_kepegawaian, 'shield-check'],
-                                'nip'               => ['NIP', $pegawai->nip, 'hash'],
-                                'nuptk'             => ['NUPTK', $pegawai->nuptk, 'credit-card'],
-                                'gelar_depan'       => ['Gelar Depan', $pegawai->gelar_depan, 'award'],
-                                'nama_lengkap'      => ['Nama Lengkap', $pegawai->nama_lengkap, 'user'],
-                                'gelar_belakang'    => ['Gelar Belakang', $pegawai->gelar_belakang, 'award'],
-                                'email'             => ['Email', $pegawai->email, 'mail'],
-                                'tempat_lahir'      => ['Tempat Lahir', $pegawai->tempat_lahir, 'map-pin'],
-                                'tanggal_lahir'     => ['Tanggal Lahir', optional($pegawai->tanggal_lahir)->isoFormat('D MMMM YYYY'), 'calendar'],
-                                'jenis_kelamin'     => ['Jenis Kelamin', $pegawai->jenis_kelamin, 'users'],
-                                'nomor_handphone'   => ['Nomor HP', $pegawai->nomor_handphone, 'phone'],
-                            ] as $key => [$label, $value, $icon])
-                                <div class="flex items-start gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
-                                    <div class="bg-white p-2 rounded-lg shadow-sm">
-                                        <i data-lucide="{{ $icon }}" class="w-4 h-4 text-slate-600"></i>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <dt class="text-sm font-medium text-slate-700">{{ $label }}</dt>
-                                        <dd class="text-sm text-slate-900 mt-1 break-words">{{ $value ?? '-' }}</dd>
-                                        <input type="hidden" name="snapshot[{{ $key }}]" value="{{ $pegawai[$key] }}">
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
+        @include('backend.layouts.pegawai-unmul.usul-jabatan.components.bkd-upload', [
+            'isReadOnly' => $isReadOnly,
+            'usulan' => $usulan,
+            'bkdSemesters' => $bkdSemesters,
+        ])
 
-                    <!-- B. Data Kepegawaian -->
-                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200">
-                        <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white p-4 rounded-t-xl">
-                            <h3 class="text-lg font-semibold flex items-center">
-                                <i data-lucide="briefcase" class="w-5 h-5 mr-3"></i>
-                                B. Data Kepegawaian
-                            </h3>
-                        </div>
-                        <div class="p-6 space-y-4 grid grid-cols-2 xl:grid-cols-2">
-                            @php
-                                $kep = [
-                                    'pangkat_saat_usul'    => ['Pangkat',         $pegawai->pangkat?->pangkat, 'star'],
-                                    'tmt_pangkat'          => ['TMT Pangkat',     optional($pegawai->tmt_pangkat)->isoFormat('D MMMM YYYY'), 'calendar-days'],
-                                    'jabatan_saat_usul'    => ['Jabatan',         $pegawai->jabatan?->jabatan, 'crown'],
-                                    'tmt_jabatan'          => ['TMT Jabatan',     optional($pegawai->tmt_jabatan)->isoFormat('D MMMM YYYY'), 'calendar-check'],
-                                    'tmt_cpns'             => ['TMT CPNS',        optional($pegawai->tmt_cpns)->isoFormat('D MMMM YYYY'), 'calendar'],
-                                    'tmt_pns'              => ['TMT PNS',         optional($pegawai->tmt_pns)->isoFormat('D MMMM YYYY'), 'calendar-plus'],
-                                    'unit_kerja_saat_usul' => ['Unit Kerja',     $pegawai->unitKerja?->nama, 'building'],
-                                ];
-                            @endphp
-                            @foreach ($kep as $key => [$label, $value, $icon])
-                                <div class="flex items-start gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
-                                    <div class="bg-white p-2 rounded-lg shadow-sm">
-                                        <i data-lucide="{{ $icon }}" class="w-4 h-4 text-slate-600"></i>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <dt class="text-sm font-medium text-slate-700">{{ $label }}</dt>
-                                        <dd class="text-sm text-slate-900 mt-1 break-words">{{ $value ?? '-' }}</dd>
-                                        <input type="hidden" name="snapshot[{{ $key }}]"
-                                            value="{{ is_string($value) ? $value : $pegawai->{$key} }}">
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
+        {{-- CONDITIONAL: Dokumen Upload Section (Only for dosen, not for tendik) --}}
+        @include('backend.layouts.pegawai-unmul.usul-jabatan.components.dokumen-upload', [
+            'formConfig' => $formConfig,
+            'jenjangType' => $jenjangType,
+            'usulan' => $usulan,
+            'isReadOnly' => $isReadOnly
+        ])
+    @endif
 
-                <!-- Column 2: Education & Performance -->
-                <div class="xl:col-span-1 space-y-6">
-                    <!-- C. Data Pendidikan & Fungsional -->
-                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200">
-                        <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-t-xl">
-                            <h3 class="text-lg font-semibold flex items-center">
-                                <i data-lucide="graduation-cap" class="w-5 h-5 mr-3"></i>
-                                C. Data Pendidikan & Fungsional
-                            </h3>
-                        </div>
-                        <div class="p-6 space-y-4">
-                            @foreach ([
-                                'pendidikan_terakhir'    => ['Pendidikan Terakhir',    $pegawai->pendidikan_terakhir, 'book-open'],
-                                'mata_kuliah_diampu'     => ['Mata Kuliah Diampu',     $pegawai->mata_kuliah_diampu, 'book'],
-                                'ranting_ilmu_kepakaran' => ['Bidang Kepakaran',       $pegawai->ranting_ilmu_kepakaran, 'brain'],
-                                'url_profil_sinta'       => ['Profil SINTA',           $pegawai->url_profil_sinta, 'external-link'],
-                            ] as $key => [$label, $value, $icon])
-                                <div class="flex items-start gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
-                                    <div class="bg-white p-2 rounded-lg shadow-sm">
-                                        <i data-lucide="{{ $icon }}" class="w-4 h-4 text-slate-600"></i>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <dt class="text-sm font-medium text-slate-700">{{ $label }}</dt>
-                                        <dd class="text-sm text-slate-900 mt-1 break-words">
-                                            @if($key === 'url_profil_sinta' && $value)
-                                                <a href="{{ $value }}" target="_blank" class="text-purple-600 hover:text-purple-800 underline">
-                                                    {{ $value }}
-                                                </a>
-                                            @else
-                                                {{ $value ?? '-' }}
-                                            @endif
-                                        </dd>
-                                        <input type="hidden" name="snapshot[{{ $key }}]" value="{{ $value }}">
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <!-- D. Data Kinerja -->
-                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200">
-                        <div class="bg-gradient-to-r from-amber-500 to-amber-600 text-white p-4 rounded-t-xl">
-                            <h3 class="text-lg font-semibold flex items-center">
-                                <i data-lucide="trending-up" class="w-5 h-5 mr-3"></i>
-                                D. Data Kinerja
-                            </h3>
-                        </div>
-                        <div class="p-6 space-y-4">
-                            @foreach ([
-                                'predikat_kinerja_tahun_pertama' => ['Predikat Kinerja Thn. 1', $pegawai->predikat_kinerja_tahun_pertama, 'target'],
-                                'predikat_kinerja_tahun_kedua'   => ['Predikat Kinerja Thn. 2', $pegawai->predikat_kinerja_tahun_kedua, 'target'],
-                                'nilai_konversi'                 => ['Nilai Konversi',          $pegawai->nilai_konversi, 'calculator'],
-                            ] as $key => [$label, $value, $icon])
-                                <div class="flex items-start gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors">
-                                    <div class="bg-white p-2 rounded-lg shadow-sm">
-                                        <i data-lucide="{{ $icon }}" class="w-4 h-4 text-slate-600"></i>
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <dt class="text-sm font-medium text-slate-700">{{ $label }}</dt>
-                                        <dd class="text-sm text-slate-900 mt-1">
-                                            @if($key === 'nilai_konversi' && $value)
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                    {{ $value }}
-                                                </span>
-                                            @else
-                                                {{ $value ?? '-' }}
-                                            @endif
-                                        </dd>
-                                        <input type="hidden" name="snapshot[{{ $key }}]" value="{{ $value }}">
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Column 3: Documents -->
-                <div class="xl:col-span-1">
-                    <!-- E. Dokumen Profil -->
-                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200">
-                        <div class="bg-gradient-to-r from-rose-500 to-rose-600 text-white p-4 rounded-t-xl">
-                            <h3 class="text-lg font-semibold flex items-center">
-                                <i data-lucide="folder" class="w-5 h-5 mr-3"></i>
-                                E. Dokumen Profil
-                            </h3>
-                        </div>
-                        <div class="p-6">
-                            <div class="space-y-3 grid grid-cols-2 xl:grid-cols-2">
-                                @foreach ([
-                                    'ijazah_terakhir'           => ['Ijazah Terakhir', 'graduation-cap'],
-                                    'transkrip_nilai_terakhir'  => ['Transkrip Nilai Terakhir', 'file-text'],
-                                    'sk_pangkat_terakhir'       => ['SK Pangkat Terakhir', 'award'],
-                                    'sk_jabatan_terakhir'       => ['SK Jabatan Terakhir', 'briefcase'],
-                                    'skp_tahun_pertama'         => ['SKP Tahun Pertama', 'target'],
-                                    'skp_tahun_kedua'           => ['SKP Tahun Kedua', 'target'],
-                                    'pak_konversi'              => ['PAK Konversi', 'refresh-cw'],
-                                    'sk_cpns'                   => ['SK CPNS', 'user-plus'],
-                                    'sk_pns'                    => ['SK PNS', 'user-check'],
-                                    'sk_penyetaraan_ijazah'     => ['SK Penyetaraan Ijazah', 'scale'],
-                                    'disertasi_thesis_terakhir' => ['Disertasi/Thesis Terakhir', 'book-open'],
-                                ] as $key => [$label, $icon])
-                                    <div class="group flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition-all duration-200">
-                                        <div class="flex items-center gap-3 flex-1 min-w-0">
-                                            <div class="bg-white p-2 rounded-lg shadow-sm group-hover:shadow-md transition-shadow">
-                                                <i data-lucide="{{ $icon }}" class="w-4 h-4 text-slate-600"></i>
-                                            </div>
-                                            <div class="flex-1 min-w-0">
-                                                <p class="text-sm font-medium text-slate-700 truncate">{{ $label }}</p>
-                                                @if ($pegawai->{$key})
-                                                    <p class="text-xs text-slate-500 mt-1">File tersedia</p>
-                                                @else
-                                                    <p class="text-xs text-slate-400 italic mt-1">Belum diunggah</p>
-                                                @endif
-                                            </div>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            @if ($pegawai->{$key})
-                                                <div class="flex items-center gap-1">
-                                                    <div class="w-2 h-2 bg-green-400 rounded-full"></div>
-                                                    <a href="{{ asset('storage/' . $pegawai->{$key}) }}" target="_blank"
-                                                    class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors duration-200">
-                                                        <i data-lucide="eye" class="w-3 h-3"></i>
-                                                        Lihat
-                                                    </a>
-                                                </div>
-                                            @else
-                                                <div class="flex items-center gap-1">
-                                                    <div class="w-2 h-2 bg-slate-300 rounded-full"></div>
-                                                    <span class="px-3 py-1.5 text-xs font-medium text-slate-500 bg-slate-200 rounded-lg">
-                                                        Tidak ada
-                                                    </span>
-                                                </div>
-                                            @endif
-                                            <input type="hidden" name="snapshot[{{ $key }}]" value="{{ $pegawai->{$key} }}">
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Karya Ilmiah & Artikel --}}
+    {{-- SPECIAL: Tenaga Kependidikan Information --}}
+    @if($jenjangType === 'tenaga-kependidikan')
         <div class="bg-white p-8 rounded-xl shadow-lg mb-6 border border-gray-100">
-            <!-- Header -->
-            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 -m-8 mb-8 p-6 rounded-t-xl">
+            <div class="bg-gradient-to-r {{ $formConfig['gradient_colors'] }} -m-8 mb-8 p-6 rounded-t-xl">
                 <h2 class="text-2xl font-bold text-white flex items-center">
-                    <i data-lucide="book-open" class="w-6 h-6 mr-3"></i>
-                    Karya Ilmiah &amp; Artikel
+                    <i data-lucide="info" class="w-6 h-6 mr-3"></i>
+                    Informasi Usulan Tenaga Kependidikan
                 </h2>
-                <p class="text-indigo-100 mt-2">Lengkapi informasi karya ilmiah dan artikel yang akan disubmit</p>
+                <p class="text-white/90 mt-2">Profil Anda sudah lengkap dan siap untuk usulan</p>
             </div>
 
-            <!-- Jenis Karya Ilmiah -->
-            <div class="mb-8">
-                <div class="bg-gray-50 rounded-lg p-6 border-l-4 border-indigo-500">
-                    <label for="karya_ilmiah" class="block text-sm font-semibold text-gray-800 mb-3">
-                        <i data-lucide="graduation-cap" class="w-4 h-4 inline mr-2"></i>
-                        Karya Ilmiah <span class="text-red-500">*</span>
-                    </label>
-                    <select id="karya_ilmiah" name="karya_ilmiah"
-                        class="block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 bg-white
-                            @if($isReadOnly) bg-gray-50 text-gray-600 @endif"
-                        @if($isReadOnly) disabled @endif>
-                        <option value="">-- Pilih Jenis Karya Ilmiah --</option>
-                        <option value="Jurnal Nasional Bereputasi"
-                            {{ old('karya_ilmiah', $usulan->data_usulan['karya_ilmiah']['jenis_karya'] ?? '') == 'Jurnal Nasional Bereputasi' ? 'selected' : '' }}>
-                            Jurnal Nasional Bereputasi
-                        </option>
-                        <option value="Jurnal Internasional Bereputasi"
-                            {{ old('karya_ilmiah', $usulan->data_usulan['karya_ilmiah']['jenis_karya'] ?? '') == 'Jurnal Internasional Bereputasi' ? 'selected' : '' }}>
-                            Jurnal Internasional Bereputasi
-                        </option>
-                    </select>
-                    @error('karya_ilmiah')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
+            <div class="text-center py-12">
+                <div class="mx-auto w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+                    <i data-lucide="check-circle" class="w-12 h-12 text-blue-600"></i>
                 </div>
-            </div>
-
-            <!-- Form Fields Grid -->
-
-            <div class="mb-8">
-                <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
-                    <i data-lucide="file-text" class="w-5 h-5 mr-2 text-indigo-600"></i>
-                    Informasi Artikel
-                </h3>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    @php
-                        // Definisikan array pertama untuk input teks
-                        $textFields = [
-                            'nama_jurnal'       => ['Nama Jurnal', 'Nama jurnal tempat terbit', 'bookmark', 'md:col-span-2'],
-                            'judul_artikel'     => ['Judul Artikel', 'Judul artikel ilmiah', 'type', 'md:col-span-2'],
-                            'penerbit_artikel'  => ['Penerbit Artikel', 'Nama penerbit', 'building', ''],
-                            'volume_artikel'    => ['Volume Artikel', 'Volume (edisi)', 'layers', ''],
-                            'nomor_artikel'     => ['Nomor Artikel', 'Nomor artikel / issue', 'hash', ''],
-                            'edisi_artikel'     => ['Edisi Artikel (Tahun)', 'Edisi atau tahun artikel', 'calendar', ''],
-                            'halaman_artikel'   => ['Halaman Artikel', 'Halaman artikel', 'file-minus', ''],
-                        ];
-
-                        // Definisikan array kedua untuk input link
-                        $linkFields = [
-                            'link_artikel' => ['Link Artikel', 'Tautan ke artikel online (wajib diisi)', 'link', 'md:col-span-2', true],
-                            'link_sinta'   => ['Link SINTA', 'Tautan ke profil SINTA (opsional)', 'link-2', 'md:col-span-2', false],
-                            'link_scopus'  => ['Link SCOPUS', 'Tautan ke profil SCOPUS (opsional)', 'link-2', 'md:col-span-2', false],
-                            'link_scimago' => ['Link SCIMAGO', 'Tautan ke profil SCIMAGO (opsional)', 'link-2', 'md:col-span-2', false],
-                            'link_wos'     => ['Link WoS', 'Tautan ke profil WoS (opsional)', 'link-2', 'md:col-span-2', false],
-                        ];
-                    @endphp
-
-                    {{-- PERULANGAN UNTUK INPUT TEKS --}}
-                    @foreach ($textFields as $name => [$label, $placeholder, $icon, $colSpan])
-                        <div class="{{ $colSpan }}">
-                            <label for="{{ $name }}" class="block text-sm font-medium text-gray-700 mb-2">
-                                <i data-lucide="{{ $icon }}" class="w-4 h-4 inline mr-1"></i>
-                                {{ $label }}
-                            </label>
-                            {{-- PERBAIKAN: Akses data dari struktur baru --}}
-                            <input id="{{ $name }}" name="{{ $name }}" type="text"
-                                value="{{ old($name, $usulan->data_usulan['karya_ilmiah'][$name] ?? '') }}"
-                                class="block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4
-                                    @if($isReadOnly) bg-gray-50 text-gray-600 @endif"
-                                placeholder="{{ $placeholder }}"
-                                @if($isReadOnly) readonly @endif>
-                            @error($name)<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
-                        </div>
-                    @endforeach
-
-                    {{-- PERULANGAN UNTUK INPUT LINK --}}
-                    @foreach ($linkFields as $name => [$label, $placeholder, $icon, $colSpan, $isRequired])
-                        <div class="{{ $colSpan }}">
-                            <label for="{{ $name }}" class="block text-sm font-medium text-gray-700 mb-2">
-                                <i data-lucide="{{ $icon }}" class="w-4 h-4 inline mr-1"></i>
-                                {{ $label }} @if($isRequired && !$isReadOnly) <span class="text-red-500">*</span> @endif
-                            </label>
-                            @php
-                                // PERBAIKAN: Mapping nama field ke struktur data baru
-                                $fieldMapping = [
-                                    'link_artikel' => 'artikel',
-                                    'link_sinta' => 'sinta',
-                                    'link_scopus' => 'scopus',
-                                    'link_scimago' => 'scimago',
-                                    'link_wos' => 'wos'
-                                ];
-                                $mappedField = $fieldMapping[$name] ?? $name;
-
-                                // Akses data dari struktur baru dengan fallback ke struktur lama
-                                $fieldValue = '';
-                                if (isset($usulan->data_usulan['karya_ilmiah']['links'][$mappedField])) {
-                                    $fieldValue = $usulan->data_usulan['karya_ilmiah']['links'][$mappedField];
-                                } elseif (isset($usulan->data_usulan[$name])) {
-                                    // Fallback untuk backward compatibility
-                                    $fieldValue = $usulan->data_usulan[$name];
-                                }
-                            @endphp
-                            <input id="{{ $name }}" name="{{ $name }}" type="url"
-                                value="{{ old($name, $fieldValue) }}"
-                                class="block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4
-                                    @if($isReadOnly) bg-gray-50 text-gray-600 @endif"
-                                placeholder="{{ $placeholder }}"
-                                @if($isRequired && !$isReadOnly) required @endif
-                                @if($isReadOnly) readonly @endif>
-                            @error($name)<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
-                        </div>
-                    @endforeach
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Profil Anda Sudah Lengkap</h3>
+                <p class="text-gray-600 mb-6 max-w-md mx-auto">
+                    Semua data profil Anda sudah terverifikasi dan siap untuk proses usulan jabatan tenaga kependidikan
+                    ketika fitur ini telah tersedia.
+                </p>
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-lg mx-auto">
+                    <p class="text-blue-800 text-sm">
+                        <strong>Fitur akan segera hadir:</strong> Form usulan jabatan tenaga kependidikan sedang dalam pengembangan
+                        dan akan tersedia dalam update mendatang.
+                    </p>
                 </div>
-            </div>
-
-            <!-- Upload Documents -->
-            <div class="mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
-                    <i data-lucide="upload" class="w-5 h-5 mr-2 text-indigo-600"></i>
-                    Upload Dokumen Pendukung
-                </h3>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
-                    {{-- PAKTA INTEGRITAS --}}
-                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-                        <div class="flex items-center mb-4">
-                            <div class="bg-blue-100 p-2 rounded-lg mr-3">
-                                <i data-lucide="award" class="w-5 h-5 text-blue-600"></i>
-                            </div>
-                            <div>
-                                <label for="pakta_integritas" class="block text-sm font-semibold text-gray-800">
-                                    Pakta Integritas @if(!$isReadOnly)<span class="text-red-500">*</span>@endif
-                                </label>
-                                <p class="text-xs text-gray-600">Surat Pakta Integritas</p>
-                            </div>
-                        </div>
-                        @php
-                            // PERBAIKAN: Cek dokumen dengan struktur baru dan fallback ke struktur lama
-                            $paktaExists = false;
-                            if (isset($usulan)) {
-                                $paktaExists = !empty($usulan->data_usulan['dokumen_usulan']['pakta_integritas']['path']) ||
-                                            !empty($usulan->data_usulan['pakta_integritas']);
-                            }
-                        @endphp
-                        @if($paktaExists)
-                            <a href="{{ route('pegawai-unmul.usulan-pegawai.show-document', ['usulan' => $usulan->id, 'field' => 'pakta_integritas']) }}"
-                            target="_blank" class="text-xs text-green-600 hover:underline mt-1 inline-block mb-2">
-                                <i data-lucide="check-circle" class="inline w-3 h-3 mr-1"></i> File sudah ada. Lihat file.
-                            </a>
-                        @endif
-                        @if(!$isReadOnly)
-                            <input type="file" name="pakta_integritas" id="pakta_integritas"
-                                class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 file:cursor-pointer cursor-pointer"
-                                @if(empty($usulan) || !$paktaExists) required @endif>
-                            <p class="mt-2 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
-                        @endif
-                        @error('pakta_integritas')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
-                    </div>
-
-                    {{-- BUKTI KORESPONDENSI --}}
-                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-                        <div class="flex items-center mb-4">
-                            <div class="bg-blue-100 p-2 rounded-lg mr-3">
-                                <i data-lucide="mail" class="w-5 h-5 text-blue-600"></i>
-                            </div>
-                            <div>
-                                <label for="bukti_korespondensi" class="block text-sm font-semibold text-gray-800">
-                                    Bukti Korespondensi @if(!$isReadOnly)<span class="text-red-500">*</span>@endif
-                                </label>
-                                <p class="text-xs text-gray-600">Surat korespondensi dengan jurnal</p>
-                            </div>
-                        </div>
-                        @php
-                            // PERBAIKAN: Cek dokumen dengan struktur baru dan fallback ke struktur lama
-                            $korespondensiExists = false;
-                            if (isset($usulan)) {
-                                $korespondensiExists = !empty($usulan->data_usulan['dokumen_usulan']['bukti_korespondensi']['path']) ||
-                                                    !empty($usulan->data_usulan['bukti_korespondensi']);
-                            }
-                        @endphp
-                        @if($korespondensiExists)
-                            <a href="{{ route('pegawai-unmul.usulan-pegawai.show-document', ['usulan' => $usulan->id, 'field' => 'bukti_korespondensi']) }}"
-                            target="_blank" class="text-xs text-green-600 hover:underline mt-1 inline-block mb-2">
-                                <i data-lucide="check-circle" class="inline w-3 h-3 mr-1"></i> File sudah ada. Lihat file.
-                            </a>
-                        @endif
-                        @if(!$isReadOnly)
-                            <input type="file" name="bukti_korespondensi" id="bukti_korespondensi"
-                                class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 file:cursor-pointer cursor-pointer"
-                                @if(empty($usulan) || !$korespondensiExists) required @endif>
-                            <p class="mt-2 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
-                        @endif
-                        @error('bukti_korespondensi')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
-                    </div>
-
-                    {{-- TURNITIN --}}
-                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6">
-                        <div class="flex items-center mb-4">
-                            <div class="bg-green-100 p-2 rounded-lg mr-3">
-                                <i data-lucide="shield-check" class="w-5 h-5 text-green-600"></i>
-                            </div>
-                            <div>
-                                <label for="turnitin" class="block text-sm font-semibold text-gray-800">
-                                    Turnitin @if(!$isReadOnly)<span class="text-red-500">*</span>@endif
-                                </label>
-                                <p class="text-xs text-gray-600">Laporan similarity check</p>
-                            </div>
-                        </div>
-                        @php
-                            // PERBAIKAN: Cek dokumen dengan struktur baru dan fallback ke struktur lama
-                            $turnitinExists = false;
-                            if (isset($usulan)) {
-                                $turnitinExists = !empty($usulan->data_usulan['dokumen_usulan']['turnitin']['path']) ||
-                                                !empty($usulan->data_usulan['turnitin']);
-                            }
-                        @endphp
-                        @if($turnitinExists)
-                            <a href="{{ route('pegawai-unmul.usulan-pegawai.show-document', ['usulan' => $usulan->id, 'field' => 'turnitin']) }}"
-                            target="_blank" class="text-xs text-green-600 hover:underline mt-1 inline-block mb-2">
-                                <i data-lucide="check-circle" class="inline w-3 h-3 mr-1"></i> File sudah ada. Lihat file.
-                            </a>
-                        @endif
-                        @if(!$isReadOnly)
-                            <input type="file" name="turnitin" id="turnitin"
-                                class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-100 file:text-green-700 hover:file:bg-green-200 file:cursor-pointer cursor-pointer"
-                                @if(empty($usulan) || !$turnitinExists) required @endif>
-                            <p class="mt-2 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
-                        @endif
-                        @error('turnitin')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
-                    </div>
-
-                    {{-- UPLOAD ARTIKEL --}}
-                    <div class="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-6">
-                        <div class="flex items-center mb-4">
-                            <div class="bg-purple-100 p-2 rounded-lg mr-3">
-                                <i data-lucide="file-text" class="w-5 h-5 text-purple-600"></i>
-                            </div>
-                            <div>
-                                <label for="upload_artikel" class="block text-sm font-semibold text-gray-800">
-                                    Upload Artikel @if(!$isReadOnly)<span class="text-red-500">*</span>@endif
-                                </label>
-                                <p class="text-xs text-gray-600">File artikel lengkap</p>
-                            </div>
-                        </div>
-                        @php
-                            // PERBAIKAN: Cek dokumen dengan struktur baru dan fallback ke struktur lama
-                            $artikelExists = false;
-                            if (isset($usulan)) {
-                                $artikelExists = !empty($usulan->data_usulan['dokumen_usulan']['upload_artikel']['path']) ||
-                                                !empty($usulan->data_usulan['upload_artikel']);
-                            }
-                        @endphp
-                        @if($artikelExists)
-                            <a href="{{ route('pegawai-unmul.usulan-pegawai.show-document', ['usulan' => $usulan->id, 'field' => 'upload_artikel']) }}"
-                            target="_blank" class="text-xs text-green-600 hover:underline mt-1 inline-block mb-2">
-                                <i data-lucide="check-circle" class="inline w-3 h-3 mr-1"></i> File sudah ada. Lihat file.
-                            </a>
-                        @endif
-                        @if(!$isReadOnly)
-                            <input type="file" name="upload_artikel" id="upload_artikel"
-                                class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 file:cursor-pointer cursor-pointer"
-                                @if(empty($usulan) || !$artikelExists) required @endif>
-                            <p class="mt-2 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
-                        @endif
-                        @error('upload_artikel')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
-                    </div>
-                </div>
-
-                {{-- SYARAT KHUSUS GURU BESAR --}}
-                @if($jabatanTujuan && $jabatanTujuan->jabatan == 'Guru Besar')
-                    <div class="space-y-4 pt-6 border-t"
-                        x-data="{
-                            syaratGb: '{{ old('syarat_guru_besar', $usulan->data_usulan['syarat_khusus']['syarat_guru_besar'] ?? '') }}',
-                            syaratDeskripsi: {
-                                'hibah': 'Dokumen yang di-upload: MoU, SK Hibah, Laporan Hibah.',
-                                'bimbingan': 'Dokumen yang di-upload: SK Pembimbing, Halaman Pengesahan, Cover Tesis yang dibimbing.',
-                                'pengujian': 'Dokumen yang di-upload: SK Penguji, Berita Acara Hasil Ujian, Cover Tesis yang diuji.',
-                                'reviewer': 'Dokumen yang di-upload: Surat Permohonan Reviewer, Dokumen yang di review.'
-                            }
-                        }">
-                        <h4 class="text-md font-semibold text-gray-800">Syarat Khusus Pengajuan Guru Besar</h4>
-                        <div>
-                            <label for="syarat_guru_besar" class="block text-sm font-semibold text-gray-800 mb-1">
-                                Pilih Salah Satu Syarat @if(!$isReadOnly)<span class="text-red-500">*</span>@endif
-                            </label>
-                            <select name="syarat_guru_besar" id="syarat_guru_besar" x-model="syaratGb"
-                                class="block w-full px-4 py-3 text-gray-900 border-2 border-gray-200 bg-white rounded-xl shadow-sm
-                                    @if($isReadOnly) bg-gray-50 text-gray-600 @endif"
-                                @if($isReadOnly) disabled @endif>
-                                <option value="">-- Silakan Pilih --</option>
-                                <option value="hibah" {{ old('syarat_guru_besar', $usulan->data_usulan['syarat_khusus']['syarat_guru_besar'] ?? '') == 'hibah' ? 'selected' : '' }}>
-                                    Pernah mendapatkan hibah penelitian
-                                </option>
-                                <option value="bimbingan" {{ old('syarat_guru_besar', $usulan->data_usulan['syarat_khusus']['syarat_guru_besar'] ?? '') == 'bimbingan' ? 'selected' : '' }}>
-                                    Pernah membimbing program doktor
-                                </option>
-                                <option value="pengujian" {{ old('syarat_guru_besar', $usulan->data_usulan['syarat_khusus']['syarat_guru_besar'] ?? '') == 'pengujian' ? 'selected' : '' }}>
-                                    Pernah menguji mahasiswa doktor
-                                </option>
-                                <option value="reviewer" {{ old('syarat_guru_besar', $usulan->data_usulan['syarat_khusus']['syarat_guru_besar'] ?? '') == 'reviewer' ? 'selected' : '' }}>
-                                    Sebagai reviewer jurnal internasional
-                                </option>
-                            </select>
-                        </div>
-
-                        <div x-show="syaratGb" class="p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
-                            <p class="font-semibold">Keterangan Dokumen:</p>
-                            <p x-text="syaratDeskripsi[syaratGb]"></p>
-                        </div>
-
-                        <div x-show="syaratGb">
-                            <label for="bukti_syarat_guru_besar" class="block text-sm font-semibold text-gray-800 mb-1">
-                                Upload Bukti Pendukung @if(!$isReadOnly)<span class="text-red-500">*</span>@endif
-                            </label>
-
-                            @php
-                                // PERBAIKAN: Cek dokumen dengan struktur baru dan fallback ke struktur lama
-                                $buktiGuruBesarExists = false;
-                                if (isset($usulan)) {
-                                    $buktiGuruBesarExists = !empty($usulan->data_usulan['dokumen_usulan']['bukti_syarat_guru_besar']['path']) ||
-                                                            !empty($usulan->data_usulan['bukti_syarat_guru_besar']);
-                                }
-                            @endphp
-                            @if($buktiGuruBesarExists)
-                                <a href="{{ route('pegawai-unmul.usulan-pegawai.show-document', ['usulan' => $usulan->id, 'field' => 'bukti_syarat_guru_besar']) }}"
-                                target="_blank" class="text-xs text-green-600 hover:underline mt-1 inline-block mb-2">
-                                    <i data-lucide="check-circle" class="inline w-3 h-3 mr-1"></i> File sudah ada. Lihat file.
-                                </a>
-                            @endif
-
-                            @if(!$isReadOnly)
-                                <input type="file" name="bukti_syarat_guru_besar" id="bukti_syarat_guru_besar"
-                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                                <p class="mt-1 text-xs text-gray-500">File harus dalam format PDF, maksimal 1MB.</p>
-                            @endif
-                        </div>
-                    </div>
-                @endif
             </div>
         </div>
+    @endif
 
-        {{-- Tombol Submit --}}
+    {{-- Tombol Submit (Only for dosen and editable) --}}
+@if($jenjangType !== 'tenaga-kependidikan')
         @if(!$isReadOnly)
             <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end items-center gap-4">
                 <a href="{{ route('pegawai-unmul.usulan-pegawai.dashboard') }}" class="text-sm font-medium text-gray-600 hover:text-gray-900">
                     Batal
                 </a>
                 @if($canEdit)
-                    <button type="submit" name="action" value="save_draft" class="px-6 py-2 bg-slate-500 text-white rounded-md shadow-sm hover:bg-slate-600">
-                        Simpan Draft
+                    <button type="submit" name="action" value="save_draft"
+                            class="px-6 py-2 bg-slate-500 text-white rounded-md shadow-sm hover:bg-slate-600 transition-colors">
+                        <span class="loading-text">Simpan Draft</span>
+                        <span class="loading-spinner hidden">
+                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Menyimpan...
+                        </span>
                     </button>
-                    <button type="submit" name="action" value="submit_final" class="px-6 py-2 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700">
-                        Kirim Usulan
+                    <button type="submit" name="action" value="submit_final"
+                            class="px-6 py-2 bg-blue-600 bg-gradient-to-r {{ $formConfig['gradient_colors'] }} text-white rounded-md shadow-sm hover:opacity-90 transition-opacity">
+                        <span class="loading-text">
+                            @if($isEditMode)
+                                Update & Kirim Usulan
+                            @else
+                                Kirim Usulan
+                            @endif
+                        </span>
+                        <span class="loading-spinner hidden">
+                            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            @if($isEditMode)
+                                Memperbarui...
+                            @else
+                                Mengirim...
+                            @endif
+                        </span>
                     </button>
                 @endif
             </div>
         @else
             <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end items-center gap-4">
-                <a href="{{ route('pegawai-unmul.usulan-pegawai.dashboard') }}" class="px-6 py-2 bg-gray-500 text-white rounded-md shadow-sm hover:bg-gray-600">
+                <a href="{{ route('pegawai-unmul.usulan-pegawai.dashboard') }}" class="px-6 py-2 bg-gray-500 text-white rounded-md shadow-sm hover:bg-gray-600 transition-colors">
                     Kembali ke Dashboard
                 </a>
             </div>
         @endif
+    @else
+        <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end items-center gap-4">
+            <a href="{{ route('pegawai-unmul.usulan-pegawai.dashboard') }}" class="px-6 py-2 bg-gray-500 text-white rounded-md shadow-sm hover:bg-gray-600 transition-colors">
+                Kembali ke Dashboard
+            </a>
+        </div>
+    @endif
 
     {{-- Close form/div --}}
-    @if($canEdit)
+    @if($canEdit && $jenjangType !== 'tenaga-kependidikan')
         </form>
     @else
         </div>
     @endif
 </div>
+
+{{-- FIXED: JavaScript --}}
+@push('scripts')
+    <script>
+        // EMERGENCY FIX: Disable problematic JavaScript dan focus on core functionality
+        function initializeForm() {
+            console.log('Initializing form...');
+
+            try {
+                // FIXED: More specific form selection to avoid RadioNodeList conflict
+                let form = null;
+
+                // Try multiple approaches to find the actual form element
+                const forms = document.forms;
+                for (let i = 0; i < forms.length; i++) {
+                    if (forms[i].method.toLowerCase() === 'post') {
+                        form = forms[i];
+                        break;
+                    }
+                }
+
+                // Fallback: Try by action
+                if (!form) {
+                    form = document.querySelector('form[action*="usulan-jabatan"]');
+                }
+
+                // Last resort: Get first form
+                if (!form) {
+                    form = document.querySelector('form');
+                }
+
+                console.log('Form found:', form ? form.constructor.name : 'null');
+                console.log('Form is HTMLFormElement:', form instanceof HTMLFormElement);
+
+                if (form && form instanceof HTMLFormElement) {
+                    console.log('Valid form found, adding event listener');
+
+                    form.addEventListener('submit', function(e) {
+                        console.log('Form submitting...');
+
+                        // SIMPLIFIED: Remove client-side validation for now
+                        // Just let the form submit normally
+                        return true;
+                    });
+                } else {
+                    console.warn('No valid HTMLFormElement found, skipping form validation');
+                }
+
+                // FIXED: Syarat Guru Besar handling - but with better error handling
+                setTimeout(function() {
+                    try {
+                        const syaratSelect = document.getElementById('syarat_guru_besar');
+                        if (syaratSelect && syaratSelect.tagName === 'SELECT') {
+                            console.log('Syarat guru besar select found');
+
+                            const syaratDeskripsi = {
+                                'hibah': 'Dokumen yang di-upload: MoU, SK Hibah, Laporan Hibah.',
+                                'bimbingan': 'Dokumen yang di-upload: SK Pembimbing, Halaman Pengesahan, Cover Tesis yang dibimbing.',
+                                'pengujian': 'Dokumen yang di-upload: SK Penguji, Berita Acara Hasil Ujian, Cover Tesis yang diuji.',
+                                'reviewer': 'Dokumen yang di-upload: Surat Permohonan Reviewer, Dokumen yang di review.'
+                            };
+
+                            // Initialize display based on current value
+                            updateSyaratDisplay(syaratSelect.value);
+
+                            // CRITICAL FIX: Check if element is actually a form element
+                            if (syaratSelect.addEventListener && typeof syaratSelect.addEventListener === 'function') {
+                                syaratSelect.addEventListener('change', function() {
+                                    updateSyaratDisplay(this.value);
+                                });
+                            } else {
+                                console.error('syaratSelect does not support addEventListener:', syaratSelect);
+                            }
+
+                            function updateSyaratDisplay(value) {
+                                try {
+                                    console.log('updateSyaratDisplay called with value:', value);
+
+                                    const buktiContainer = document.getElementById('bukti_container');
+                                    const keteranganDiv = document.getElementById('keterangan_div');
+                                    const keteranganText = document.getElementById('keterangan_text');
+
+                                    console.log('Elements found:', {
+                                        buktiContainer: !!buktiContainer,
+                                        keteranganDiv: !!keteranganDiv,
+                                        keteranganText: !!keteranganText
+                                    });
+
+                                    if (buktiContainer) {
+                                        buktiContainer.style.display = value ? 'block' : 'none';
+                                    }
+
+                                    if (keteranganDiv) {
+                                        keteranganDiv.style.display = value ? 'block' : 'none';
+                                        if (keteranganText && syaratDeskripsi[value]) {
+                                            keteranganText.textContent = syaratDeskripsi[value];
+                                        }
+                                    }
+                                } catch (error) {
+                                    console.error('Error in updateSyaratDisplay:', error);
+                                }
+                            }
+                        } else {
+                            console.log('Syarat guru besar select not found or not a SELECT element');
+                        }
+                    } catch (error) {
+                        console.error('Error in syarat guru besar initialization:', error);
+                    }
+                }, 200);
+
+                // SIMPLIFIED: Remove file upload validation that might be causing conflicts
+                console.log('Skipping file upload validation to avoid conflicts');
+
+            } catch (error) {
+                console.error('Error in initializeForm:', error);
+            }
+        }
+
+        // MULTIPLE DOM READY APPROACHES
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log('DOM loaded via DOMContentLoaded');
+                setTimeout(initializeForm, 100);
+            });
+        } else {
+            console.log('DOM already loaded');
+            setTimeout(initializeForm, 100);
+        }
+
+        // Fallback approach
+        window.addEventListener('load', function() {
+            console.log('Window loaded');
+            setTimeout(initializeForm, 200);
+        });
+    </script>
+@endpush
 @endsection

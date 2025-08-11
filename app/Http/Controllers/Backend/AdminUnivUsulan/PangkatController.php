@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Backend\AdminUnivUsulan;
 use App\Http\Controllers\Controller;
 use App\Models\BackendUnivUsulan\Pangkat;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class PangkatController extends Controller
 {
     public function index()
     {
-        $pangkats = Pangkat::orderBy('pangkat')->paginate(10);
+        // Mengurutkan pangkat berdasarkan hierarchy_level menggunakan scope
+        $pangkats = Pangkat::orderByHierarchy('asc')->paginate(10);
+
         return view('backend.layouts.admin-univ-usulan.pangkat.master-data-pangkat', compact('pangkats'));
     }
 
@@ -22,15 +25,40 @@ class PangkatController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'pangkat' => 'required|unique:pangkats,pangkat',
+            // UBAH ATURAN INI
+            'pangkat' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('pangkats')->where(function ($query) use ($request) {
+                    return $query->where('status_pangkat', $request->status_pangkat);
+                }),
+            ],
+            'status_pangkat' => 'required|in:PNS,PPPK,Non-ASN',
+            // UBAH ATURAN INI
+            'hierarchy_level' => [
+                'nullable',
+                'integer',
+                'min:1',
+                'max:20',
+                Rule::unique('pangkats')->where(function ($query) use ($request) {
+                    return $query->where('status_pangkat', $request->status_pangkat);
+                }),
+            ],
+        ], [
+            'pangkat.required' => 'Nama pangkat wajib diisi.',
+            'pangkat.unique' => 'Nama pangkat ini sudah ada untuk status kepegawaian yang dipilih.',
+            'status_pangkat.required' => 'Status pangkat wajib dipilih.',
+            'hierarchy_level.integer' => 'Level hirarki harus berupa angka.',
+            'hierarchy_level.min' => 'Level hirarki minimal 1.',
+            'hierarchy_level.max' => 'Level hirarki maksimal 20.',
+            'hierarchy_level.unique' => 'Level hirarki ini sudah digunakan untuk status kepegawaian yang dipilih.',
         ]);
 
-        Pangkat::create([
-            'pangkat' => $request->input('pangkat')
-        ]);
+        Pangkat::create($request->all());
 
         return redirect()->route('backend.admin-univ-usulan.pangkat.index')
-                         ->with('success', 'Data Pangkat berhasil ditambahkan.');
+                            ->with('success', 'Data Pangkat berhasil ditambahkan.');
     }
 
     public function edit(Pangkat $pangkat)
@@ -41,22 +69,152 @@ class PangkatController extends Controller
     public function update(Request $request, Pangkat $pangkat)
     {
         $request->validate([
-            'pangkat' => 'required|unique:pangkats,pangkat,' . $pangkat->id,
+            // UBAH ATURAN INI
+            'pangkat' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('pangkats')->where(function ($query) use ($request) {
+                    return $query->where('status_pangkat', $request->status_pangkat);
+                })->ignore($pangkat->id),
+            ],
+            'status_pangkat' => 'required|in:PNS,PPPK,Non-ASN',
+            // UBAH ATURAN INI
+            'hierarchy_level' => [
+                'nullable',
+                'integer',
+                'min:1',
+                'max:20',
+                Rule::unique('pangkats')->where(function ($query) use ($request) {
+                    return $query->where('status_pangkat', $request->status_pangkat);
+                })->ignore($pangkat->id),
+            ],
+        ], [
+            'pangkat.required' => 'Nama pangkat wajib diisi.',
+            'pangkat.unique' => 'Nama pangkat ini sudah ada untuk status kepegawaian yang dipilih.',
+            'status_pangkat.required' => 'Status pangkat wajib dipilih.',
+            'hierarchy_level.integer' => 'Level hirarki harus berupa angka.',
+            'hierarchy_level.min' => 'Level hirarki minimal 1.',
+            'hierarchy_level.max' => 'Level hirarki maksimal 20.',
+            'hierarchy_level.unique' => 'Level hirarki ini sudah digunakan untuk status kepegawaian yang dipilih.',
         ]);
 
-        $pangkat->update([
-            'pangkat' => $request->input('pangkat')
-        ]);
+        $pangkat->update($request->all());
 
         return redirect()->route('backend.admin-univ-usulan.pangkat.index')
-                         ->with('success', 'Data Pangkat berhasil diperbarui.');
+                            ->with('success', 'Data Pangkat berhasil diperbarui.');
     }
 
     public function destroy(Pangkat $pangkat)
     {
+        // Cek apakah pangkat sedang digunakan oleh pegawai
+        if ($pangkat->pegawais()->count() > 0) {
+            return redirect()->route('backend.admin-univ-usulan.pangkat.index')
+                             ->with('error', 'Pangkat tidak dapat dihapus karena masih digunakan oleh pegawai.');
+        }
+
         $pangkat->delete();
 
         return redirect()->route('backend.admin-univ-usulan.pangkat.index')
                          ->with('success', 'Data Pangkat berhasil dihapus.');
+    }
+
+    /**
+     * API endpoint untuk mendapatkan pangkat berdasarkan hirarki
+     */
+    public function getPangkatByHierarchy(Request $request)
+    {
+        $type = $request->get('type', 'all'); // all, pns, non-pns
+
+        $query = Pangkat::query();
+
+        switch ($type) {
+            case 'pns':
+                $query->withHierarchy();
+                break;
+            case 'non-pns':
+                $query->withoutHierarchy();
+                break;
+            default:
+                // all - tidak perlu filter
+                break;
+        }
+
+        $pangkats = $query->orderByHierarchy('asc')->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $pangkats->map(function ($pangkat) {
+                return [
+                    'id' => $pangkat->id,
+                    'pangkat' => $pangkat->pangkat,
+                    'hierarchy_level' => $pangkat->hierarchy_level,
+                    'hierarchy_info' => $pangkat->hierarchy_info,
+                    'formatted_display' => $pangkat->formatted_display,
+                    'golongan' => $pangkat->golongan,
+                    'has_hierarchy' => $pangkat->hasHierarchy()
+                ];
+            })
+        ]);
+    }
+
+    /**
+     * API endpoint untuk mendapatkan pangkat yang bisa dipromosikan
+     */
+    public function getPromotionTargets(Request $request, Pangkat $pangkat)
+    {
+        $validTargets = $pangkat->getValidPromotionTargets();
+
+        return response()->json([
+            'status' => 'success',
+            'current_pangkat' => [
+                'id' => $pangkat->id,
+                'pangkat' => $pangkat->pangkat,
+                'hierarchy_level' => $pangkat->hierarchy_level,
+                'formatted_display' => $pangkat->formatted_display
+            ],
+            'promotion_targets' => $validTargets->map(function ($target) {
+                return [
+                    'id' => $target->id,
+                    'pangkat' => $target->pangkat,
+                    'hierarchy_level' => $target->hierarchy_level,
+                    'formatted_display' => $target->formatted_display,
+                    'golongan' => $target->golongan
+                ];
+            })
+        ]);
+    }
+
+    /**
+     * API endpoint untuk mendapatkan hirarki lengkap
+     */
+    public function getHierarchyStructure()
+    {
+        $pangkats = Pangkat::getAllHierarchy();
+
+        // Group by golongan untuk visualisasi
+        $hierarchyStructure = [
+            'golongan_i' => $pangkats->whereBetween('hierarchy_level', [1, 4])->values(),
+            'golongan_ii' => $pangkats->whereBetween('hierarchy_level', [5, 8])->values(),
+            'golongan_iii' => $pangkats->whereBetween('hierarchy_level', [9, 12])->values(),
+            'golongan_iv' => $pangkats->whereBetween('hierarchy_level', [13, 17])->values(),
+            'non_pns' => $pangkats->whereNull('hierarchy_level')->values()
+        ];
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $hierarchyStructure,
+            'statistics' => [
+                'total_pangkat' => $pangkats->count(),
+                'total_pns' => $pangkats->whereNotNull('hierarchy_level')->count(),
+                'total_non_pns' => $pangkats->whereNull('hierarchy_level')->count(),
+                'by_golongan' => [
+                    'i' => $hierarchyStructure['golongan_i']->count(),
+                    'ii' => $hierarchyStructure['golongan_ii']->count(),
+                    'iii' => $hierarchyStructure['golongan_iii']->count(),
+                    'iv' => $hierarchyStructure['golongan_iv']->count(),
+                ]
+            ]
+        ]);
     }
 }

@@ -35,11 +35,27 @@
                 // ==========================================================
                 // ======================= AKHIR PERBAIKAN ====================
                 // ==========================================================
+
+                // Check user eligibility for usulan (PNS only)
+                $canCreateUsulan = in_array($user->status_kepegawaian, ['Dosen PNS', 'Tenaga Kependidikan PNS']);
+
+                // Count documents uploaded
+                $documentFields = [
+                    'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_pangkat_terakhir',
+                    'sk_jabatan_terakhir', 'skp_tahun_pertama', 'skp_tahun_kedua',
+                    'sk_cpns', 'sk_pns', 'pak_konversi', 'sk_penyetaraan_ijazah',
+                    'disertasi_thesis_terakhir'
+                ];
+                $uploadedDocs = collect($documentFields)->filter(fn($field) => !empty($user->$field))->count();
+                $totalDocs = count($documentFields);
+                $profileCompleteness = round(($uploadedDocs / $totalDocs) * 100);
             @endphp
 
-            {{-- Tombol notifikasi (contoh) --}}
+            {{-- Tombol notifikasi --}}
             <button class="p-2 hover:bg-gray-100 rounded-full relative">
                 <i data-lucide="bell" class="w-5 h-5 text-gray-600"></i>
+                {{-- Notification badge (if needed) --}}
+                {{-- <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span> --}}
             </button>
 
             <div class="w-px h-6 bg-gray-200"></div>
@@ -64,27 +80,159 @@
             </div>
             @endif
 
-            {{-- Dropdown Profil --}}
+            {{-- Enhanced Dropdown Profil --}}
             <div class="relative">
                 <button onclick="toggleProfileDropdown()" class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100">
-                    <img
-                        src="{{ $user->foto ? Storage::url($user->foto) : 'https://ui-avatars.com/api/?name=' . urlencode($user->nama_lengkap) }}"
-                        alt="{{ $user->nama_lengkap }}"
-                        class="w-8 h-8 rounded-full object-cover"
-                    />
-                    <span class="hidden md:inline text-sm font-medium text-gray-700">{{ $user->nama_lengkap }}</span>
-                </button>
-                <div id="profile-dropdown-menu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg hidden z-50 border">
-                    <div class="py-1">
-                        <a href="{{ route('pegawai-unmul.profile.show') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            <i data-lucide="user" class="w-4 h-4"></i> Profil Saya
-                        </a>
+                    <div class="relative">
+                        <img
+                            src="{{ $user->foto ? Storage::url($user->foto) : 'https://ui-avatars.com/api/?name=' . urlencode($user->nama_lengkap) . '&size=32&background=6366f1&color=fff' }}"
+                            alt="{{ $user->nama_lengkap }}"
+                            class="w-8 h-8 rounded-full object-cover ring-2 ring-gray-200"
+                        />
+                        {{-- Profile completion indicator --}}
+                        @if($profileCompleteness < 100)
+                            <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-orange-400 border-2 border-white rounded-full"
+                                 title="Profil belum lengkap ({{ $profileCompleteness }}%)"></div>
+                        @else
+                            <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full"
+                                 title="Profil lengkap"></div>
+                        @endif
                     </div>
-                    <div class="border-t border-gray-100">
+                    <div class="hidden md:block text-left">
+                        <div class="text-sm font-medium text-gray-700">{{ $user->nama_lengkap }}</div>
+                        <div class="text-xs text-gray-500">{{ $user->nip }}</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500"></i>
+                </button>
+
+                <div id="profile-dropdown-menu" class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg hidden z-50 border">
+                    {{-- Profile Header --}}
+                    <div class="px-4 py-3 border-b border-gray-100">
+                        <div class="flex items-center gap-3">
+                            <img
+                                src="{{ $user->foto ? Storage::url($user->foto) : 'https://ui-avatars.com/api/?name=' . urlencode($user->nama_lengkap) . '&size=48&background=6366f1&color=fff' }}"
+                                alt="{{ $user->nama_lengkap }}"
+                                class="w-12 h-12 rounded-full object-cover"
+                            />
+                            <div class="flex-1 min-w-0">
+                                <div class="font-medium text-gray-900 truncate">
+                                    {{ $user->gelar_depan ? $user->gelar_depan . ' ' : '' }}{{ $user->nama_lengkap }}{{ $user->gelar_belakang ? ', ' . $user->gelar_belakang : '' }}
+                                </div>
+                                <div class="text-sm text-gray-500">{{ $user->nip }}</div>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                        {{ in_array($user->status_kepegawaian, ['Dosen PNS', 'Tenaga Kependidikan PNS']) ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' }}">
+                                        {{ $user->status_kepegawaian }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Profile Completeness --}}
+                        <div class="mt-3">
+                            <div class="flex items-center justify-between text-xs text-gray-600 mb-1">
+                                <span>Kelengkapan Profil</span>
+                                <span class="font-medium">{{ $profileCompleteness }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="h-2 rounded-full transition-all duration-300
+                                    {{ $profileCompleteness == 100 ? 'bg-green-500' : ($profileCompleteness >= 70 ? 'bg-blue-500' : 'bg-orange-500') }}"
+                                     style="width: {{ $profileCompleteness }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Menu Items --}}
+                    <div class="py-2">
+                        {{-- Profile Section --}}
+                        <div class="px-3 py-1">
+                            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Profil</div>
+                        </div>
+
+                        <a href="{{ route('pegawai-unmul.profile.show') }}"
+                           class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium">Lihat Profil</div>
+                                <div class="text-xs text-gray-500">Data pribadi & kepegawaian</div>
+                            </div>
+                        </a>
+
+                        <a href="{{ route('pegawai-unmul.profile.edit') }}"
+                           class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                            <div class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                <i data-lucide="edit" class="w-4 h-4 text-orange-600"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium">Edit Profil</div>
+                                <div class="text-xs text-gray-500">Perbarui informasi Anda</div>
+                            </div>
+                            @if($profileCompleteness < 100)
+                                <div class="w-2 h-2 bg-orange-400 rounded-full"></div>
+                            @endif
+                        </a>
+
+                        {{-- Quick Actions --}}
+                        <div class="px-3 py-1 mt-2">
+                            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Aksi Cepat</div>
+                        </div>
+
+                        @if($canCreateUsulan)
+                            <a href="{{ route('pegawai-unmul.usulan-jabatan.create') }}"
+                               class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                                <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                    <i data-lucide="plus-circle" class="w-4 h-4 text-green-600"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-medium">Buat Usulan Baru</div>
+                                    <div class="text-xs text-gray-500">Usulan jabatan atau pangkat</div>
+                                </div>
+                            </a>
+                        @endif
+
+                        <a href="{{ route('pegawai-unmul.usulan-pegawai.dashboard') }}"
+                           class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                            <div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                                <i data-lucide="file-text" class="w-4 h-4 text-purple-600"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium">Usulan Saya</div>
+                                <div class="text-xs text-gray-500">Lihat riwayat usulan</div>
+                            </div>
+                        </a>
+
+                        {{-- Settings --}}
+                        <div class="px-3 py-1 mt-2">
+                            <div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Pengaturan</div>
+                        </div>
+
+                        <button onclick="openPasswordModal()"
+                                class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full text-left">
+                            <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                                <i data-lucide="key" class="w-4 h-4 text-indigo-600"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="font-medium">Ubah Password</div>
+                                <div class="text-xs text-gray-500">Keamanan akun</div>
+                            </div>
+                        </button>
+                    </div>
+
+                    {{-- Logout Section --}}
+                    <div class="border-t border-gray-100 py-2">
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <button type="submit" class="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+                            <button type="submit"
+                                    class="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors w-full text-left">
+                                <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                                    <i data-lucide="log-out" class="w-4 h-4 text-red-600"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-medium">Sign Out</div>
+                                    <div class="text-xs text-red-500">Keluar dari sistem</div>
+                                </div>
                             </button>
                         </form>
                     </div>
@@ -97,6 +245,54 @@
         @endguest
     </div>
 </header>
+
+{{-- Quick Password Change Modal --}}
+<div id="passwordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-xl bg-white">
+        <div class="flex items-center justify-between pb-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Ubah Password</h3>
+            <button type="button" onclick="closePasswordModal()" class="text-gray-400 hover:text-gray-600">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <form action="{{ route('pegawai-unmul.profile.update') }}" method="POST" class="mt-4">
+            @csrf
+            @method('PUT')
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password Saat Ini</label>
+                    <input type="password" name="current_password" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password Baru</label>
+                    <input type="password" name="new_password" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Konfirmasi Password Baru</label>
+                    <input type="password" name="new_password_confirmation" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
+                <button type="button" onclick="closePasswordModal()"
+                        class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                    Ubah Password
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -114,17 +310,37 @@
             document.getElementById('role-dropdown-menu')?.classList.toggle('hidden');
         };
 
+        window.openPasswordModal = function() {
+            document.getElementById('profile-dropdown-menu')?.classList.add('hidden');
+            document.getElementById('passwordModal')?.classList.remove('hidden');
+        };
+
+        window.closePasswordModal = function() {
+            document.getElementById('passwordModal')?.classList.add('hidden');
+        };
+
         window.addEventListener('click', function(e) {
             const profileDropdown = document.getElementById('profile-dropdown-menu');
             const profileButton = document.querySelector('button[onclick="toggleProfileDropdown()"]');
             const roleDropdown = document.getElementById('role-dropdown-menu');
             const roleButton = document.querySelector('button[onclick="toggleRoleDropdown()"]');
+            const passwordModal = document.getElementById('passwordModal');
 
             if (profileDropdown && profileButton && !profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
                 profileDropdown.classList.add('hidden');
             }
             if (roleDropdown && roleButton && !roleButton.contains(e.target) && !roleDropdown.contains(e.target)) {
                 roleDropdown.classList.add('hidden');
+            }
+            if (passwordModal && e.target === passwordModal) {
+                closePasswordModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closePasswordModal();
             }
         });
     });

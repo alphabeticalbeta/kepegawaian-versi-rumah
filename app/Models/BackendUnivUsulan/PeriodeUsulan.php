@@ -34,6 +34,18 @@ class PeriodeUsulan extends Model
         'status',
     ];
 
+     /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'tanggal_mulai' => 'date',
+        'tanggal_selesai' => 'date',
+        'tanggal_mulai_perbaikan' => 'date',
+        'tanggal_selesai_perbaikan' => 'date',
+    ];
+
     /**
      * Mendefinisikan relasi "one-to-many" ke model Usulan.
      * Satu periode bisa memiliki banyak usulan.

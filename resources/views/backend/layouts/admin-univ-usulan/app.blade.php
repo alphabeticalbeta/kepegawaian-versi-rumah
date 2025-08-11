@@ -3,14 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin Dashboard') - Kepegawaian UNMUL</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script type="module" src="http://127.0.0.1:5173/resources/js/app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link rel="stylesheet" href="http://127.0.0.1:5173/resources/css/app.css">
 
-    {{-- CSS Kustom (jika ada) bisa ditambahkan di sini atau di file app.css --}}
+    {{-- Vite Integration - FIXED: Removed hardcoded development URLs --}}
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    {{-- External Libraries --}}
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    {{-- Alpine.js for reactive components --}}
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    {{-- CSS Kustom --}}
     <style>
         #sidebar, #main-content {
             transition: all 0.3s ease-in-out;
@@ -26,9 +32,32 @@
         .card { background-color: white; border-radius: 0.5rem; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); overflow: hidden; }
         .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; }
         .card-body { padding: 1.5rem; }
+
+        /* Loading overlay styles */
+        #loadingOverlay {
+            display: none;
+        }
+        #loadingOverlay.show {
+            display: flex;
+        }
     </style>
+
+    {{-- Additional styles from views --}}
+    @stack('styles')
 </head>
 <body class="bg-gray-100 font-sans">
+
+    {{-- Loading Overlay (Hidden by default) --}}
+    <div id="loadingOverlay" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[9999] items-center justify-center">
+        <div class="relative mx-auto p-5 w-96">
+            <div class="bg-white rounded-lg shadow-xl p-6">
+                <div class="flex justify-center items-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                </div>
+                <p class="text-center mt-4 text-gray-600">Memproses...</p>
+            </div>
+        </div>
+    </div>
 
     <div class="flex h-screen">
         {{-- Memuat Sidebar --}}
@@ -45,13 +74,36 @@
     </div>
 
     {{-- ========================================================= --}}
-    {{-- SEMUA JAVASCRIPT DIKONSOLIDASIKAN DI SINI UNTUK EFISIENSI --}}
+    {{-- JAVASCRIPT SECTION - PROPERLY ORGANIZED --}}
     {{-- ========================================================= --}}
+
+    {{-- Global JavaScript Functions --}}
+    <script>
+        // CSRF Token Setup for AJAX requests
+        window.addEventListener('DOMContentLoaded', function() {
+            // Setup CSRF token for all AJAX requests
+            const token = document.querySelector('meta[name="csrf-token"]');
+            if (token) {
+                window.csrfToken = token.getAttribute('content');
+
+                // Setup for fetch API
+                window.fetchWithCsrf = function(url, options = {}) {
+                    options.headers = options.headers || {};
+                    options.headers['X-CSRF-TOKEN'] = window.csrfToken;
+                    options.headers['X-Requested-With'] = 'XMLHttpRequest';
+                    return fetch(url, options);
+                };
+            }
+        });
+    </script>
+
+    {{-- Main Application JavaScript --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            Alpine.start();
-            // Inisialisasi semua ikon Lucide
-            lucide.createIcons();
+            // Initialize Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
 
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.getElementById('main-content');
@@ -77,24 +129,29 @@
                         const button = document.querySelector(`[data-collapse-toggle="${menu.id}"]`);
                         if (button) {
                             button.setAttribute('aria-expanded', 'false');
-                            button.querySelector('[data-lucide="chevron-down"]')?.classList.remove('rotate-180');
+                            const chevron = button.querySelector('[data-lucide="chevron-down"]');
+                            if (chevron) {
+                                chevron.classList.remove('rotate-180');
+                            }
                         }
                     });
                 }
             };
 
             // --- FUNGSI UNTUK DROPDOWN SIDEBAR (Master Data, Usulan) ---
-            // PERBAIKAN UTAMA ADA DI SINI: Logika disederhanakan
             document.querySelectorAll('button[data-collapse-toggle]').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
                     const targetId = this.getAttribute('data-collapse-toggle');
                     const dropdown = document.getElementById(targetId);
 
-                    // Langsung buka/tutup dropdown tanpa mengubah ukuran sidebar.
+                    if (!dropdown) return;
+
                     const isOpening = dropdown.classList.contains('hidden');
 
-                    // PENTING: Saat membuka dropdown, tutup dulu semua dropdown lain
-                    // agar tidak tumpang tindih.
+                    // Saat membuka dropdown, tutup dulu semua dropdown lain
                     if (isOpening) {
                         document.querySelectorAll('.dropdown-menu').forEach(otherDropdown => {
                             if (otherDropdown.id !== targetId) {
@@ -102,7 +159,10 @@
                                 const otherButton = document.querySelector(`[data-collapse-toggle="${otherDropdown.id}"]`);
                                 if (otherButton) {
                                     otherButton.setAttribute('aria-expanded', 'false');
-                                    otherButton.querySelector('[data-lucide="chevron-down"]')?.classList.remove('rotate-180');
+                                    const otherChevron = otherButton.querySelector('[data-lucide="chevron-down"]');
+                                    if (otherChevron) {
+                                        otherChevron.classList.remove('rotate-180');
+                                    }
                                 }
                             }
                         });
@@ -110,38 +170,138 @@
 
                     // Toggle dropdown yang diklik
                     dropdown.classList.toggle('hidden');
-                    btn.setAttribute('aria-expanded', isOpening);
-                    btn.querySelector('[data-lucide="chevron-down"]')?.classList.toggle('rotate-180', isOpening);
+                    this.setAttribute('aria-expanded', isOpening);
+
+                    const chevron = this.querySelector('[data-lucide="chevron-down"]');
+                    if (chevron) {
+                        chevron.classList.toggle('rotate-180', isOpening);
+                    }
+
+                    // Re-initialize Lucide icons after DOM changes
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
                 });
             });
 
             // --- FUNGSI UNTUK DROPDOWN HEADER (PROFIL & PINDAH HALAMAN) ---
-            // (Tidak ada perubahan di bagian ini)
             const profileDropdownMenu = document.getElementById('profile-dropdown-menu');
             const roleDropdownMenu = document.getElementById('role-dropdown-menu');
             const profileButton = document.querySelector('button[onclick="toggleProfileDropdown()"]');
             const roleButton = document.querySelector('button[onclick="toggleRoleDropdown()"]');
 
             window.toggleProfileDropdown = function() {
-                roleDropdownMenu?.classList.add('hidden');
-                profileDropdownMenu?.classList.toggle('hidden');
+                if (roleDropdownMenu) {
+                    roleDropdownMenu.classList.add('hidden');
+                }
+                if (profileDropdownMenu) {
+                    profileDropdownMenu.classList.toggle('hidden');
+                }
             };
 
             window.toggleRoleDropdown = function() {
-                profileDropdownMenu?.classList.add('hidden');
-                roleDropdownMenu?.classList.toggle('hidden');
+                if (profileDropdownMenu) {
+                    profileDropdownMenu.classList.add('hidden');
+                }
+                if (roleDropdownMenu) {
+                    roleDropdownMenu.classList.toggle('hidden');
+                }
             };
 
+            // Close dropdowns when clicking outside
             window.addEventListener('click', function(e) {
-                if (profileButton && !profileButton.contains(e.target) && !profileDropdownMenu?.contains(e.target)) {
-                    profileDropdownMenu?.classList.add('hidden');
+                if (profileButton && !profileButton.contains(e.target) && profileDropdownMenu && !profileDropdownMenu.contains(e.target)) {
+                    profileDropdownMenu.classList.add('hidden');
                 }
-                if (roleButton && !roleButton.contains(e.target) && !roleDropdownMenu?.contains(e.target)) {
-                    roleDropdownMenu?.classList.add('hidden');
+                if (roleButton && !roleButton.contains(e.target) && roleDropdownMenu && !roleDropdownMenu.contains(e.target)) {
+                    roleDropdownMenu.classList.add('hidden');
                 }
             });
+
+            // --- HELPER FUNCTIONS ---
+
+            // Show loading overlay
+            window.showLoadingOverlay = function(message = 'Memproses...') {
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) {
+                    const messageEl = overlay.querySelector('p');
+                    if (messageEl) {
+                        messageEl.textContent = message;
+                    }
+                    overlay.classList.add('show');
+                }
+            };
+
+            // Hide loading overlay
+            window.hideLoadingOverlay = function() {
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) {
+                    overlay.classList.remove('show');
+                }
+            };
+
+            // Show SweetAlert success
+            window.showSuccessAlert = function(title, text) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: title,
+                        text: text,
+                        confirmButtonColor: '#3b82f6'
+                    });
+                }
+            };
+
+            // Show SweetAlert error
+            window.showErrorAlert = function(title, text) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: title,
+                        text: text,
+                        confirmButtonColor: '#ef4444'
+                    });
+                }
+            };
+
+            // Show SweetAlert confirmation
+            window.showConfirmation = function(title, text, callback) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: title,
+                        text: text,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3b82f6',
+                        cancelButtonColor: '#ef4444',
+                        confirmButtonText: 'Ya, Lanjutkan!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed && typeof callback === 'function') {
+                            callback();
+                        }
+                    });
+                }
+            };
+        });
+
+        // Re-initialize icons after any dynamic content load
+        document.addEventListener('htmx:afterSwap', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+
+        // Re-initialize icons after Alpine renders
+        document.addEventListener('alpine:initialized', function() {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         });
     </script>
+
+    {{-- Additional scripts from views (THIS IS CRITICAL FOR VALIDATION SCRIPTS) --}}
+    @stack('scripts')
 
 </body>
 </html>

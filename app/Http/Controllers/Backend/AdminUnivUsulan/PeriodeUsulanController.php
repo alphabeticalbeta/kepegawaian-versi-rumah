@@ -25,7 +25,15 @@ class PeriodeUsulanController extends Controller
     {
         $jenisUsulan = $request->query('jenis', 'jabatan');
 
-        return view('backend.layouts.periode-usulan.form', [
+        // Tentukan view berdasarkan jenis usulan
+        $viewMapping = [
+            'usulan-jabatan-dosen' => 'backend.layouts.periode-usulan.form-jabatan-dosen',
+            'usulan-jabatan-tendik' => 'backend.layouts.periode-usulan.form-jabatan-tendik',
+        ];
+
+        $view = $viewMapping[$jenisUsulan] ?? 'backend.layouts.periode-usulan.form';
+
+        return view($view, [
             'jenis_usulan_otomatis' => $jenisUsulan
         ]);
     }
@@ -37,13 +45,16 @@ class PeriodeUsulanController extends Controller
     {
         $validatedData = $request->validate([
             'nama_periode'              => 'required|string|max:255',
-            'jenis_usulan'              => 'required|string',
+            'jenis_usulan'              => 'required|string|in:usulan-jabatan-dosen,usulan-jabatan-tendik',
             'tanggal_mulai'             => ['required', 'date', new NoDateRangeOverlap($request)],
             'tanggal_selesai'           => 'required|date|after_or_equal:tanggal_mulai',
             'tanggal_mulai_perbaikan'   => 'nullable|date|after_or_equal:tanggal_selesai',
             'tanggal_selesai_perbaikan' => 'nullable|date|after_or_equal:tanggal_mulai_perbaikan',
             'status'                    => 'required|in:Buka,Tutup',
         ]);
+
+        // Validasi tambahan: cek overlap berdasarkan jenis usulan yang sama
+        $this->validateOverlapByJenisUsulan($request);
 
         $validatedData['tahun_periode'] = \Carbon\Carbon::parse($validatedData['tanggal_mulai'])->year;
 
@@ -59,8 +70,7 @@ class PeriodeUsulanController extends Controller
     public function edit(PeriodeUsulan $periodeUsulan)
     {
         return view('backend.layouts.periode-usulan.form', [
-            'periode'                 => $periodeUsulan,
-            'jenis_usulan_otomatis'   => $periodeUsulan->jenis_usulan,
+            'periode' => $periodeUsulan
         ]);
     }
 
@@ -71,13 +81,16 @@ class PeriodeUsulanController extends Controller
     {
         $validatedData = $request->validate([
             'nama_periode'              => 'required|string|max:255',
-            'jenis_usulan'              => 'required|string',
-            'tanggal_mulai'             => ['required', 'date', new NoDateRangeOverlap($request)],
+            'jenis_usulan'              => 'required|string|in:usulan-jabatan-dosen,usulan-jabatan-tendik',
+            'tanggal_mulai'             => 'required|date',
             'tanggal_selesai'           => 'required|date|after_or_equal:tanggal_mulai',
             'tanggal_mulai_perbaikan'   => 'nullable|date|after_or_equal:tanggal_selesai',
             'tanggal_selesai_perbaikan' => 'nullable|date|after_or_equal:tanggal_mulai_perbaikan',
             'status'                    => 'required|in:Buka,Tutup',
         ]);
+
+        // Validasi tambahan: cek overlap berdasarkan jenis usulan yang sama (kecuali periode yang sedang di-edit)
+        $this->validateOverlapByJenisUsulan($request, $periodeUsulan->id);
 
         $validatedData['tahun_periode'] = \Carbon\Carbon::parse($validatedData['tanggal_mulai'])->year;
 
@@ -99,5 +112,39 @@ class PeriodeUsulanController extends Controller
         $periodeUsulan->delete();
 
         return back()->with('success', 'Periode Usulan berhasil dihapus.');
+    }
+
+    /**
+     * Validasi overlap berdasarkan jenis usulan yang sama
+     */
+    private function validateOverlapByJenisUsulan(Request $request, $excludeId = null)
+    {
+        $jenisUsulan = $request->jenis_usulan;
+        $tanggalMulai = $request->tanggal_mulai;
+        $tanggalSelesai = $request->tanggal_selesai;
+
+        $query = PeriodeUsulan::where('jenis_usulan', $jenisUsulan)
+            ->where(function ($q) use ($tanggalMulai, $tanggalSelesai) {
+                $q->whereBetween('tanggal_mulai', [$tanggalMulai, $tanggalSelesai])
+                  ->orWhereBetween('tanggal_selesai', [$tanggalMulai, $tanggalSelesai])
+                  ->orWhere(function ($subQ) use ($tanggalMulai, $tanggalSelesai) {
+                      $subQ->where('tanggal_mulai', '<=', $tanggalMulai)
+                           ->where('tanggal_selesai', '>=', $tanggalSelesai);
+                  });
+            });
+
+        if ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        $overlappingPeriode = $query->first();
+
+        if ($overlappingPeriode) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'tanggal_mulai' => [
+                    "Tanggal periode overlapping dengan periode '{$overlappingPeriode->nama_periode}' yang memiliki jenis usulan yang sama ({$jenisUsulan})"
+                ]
+            ]);
+        }
     }
 }

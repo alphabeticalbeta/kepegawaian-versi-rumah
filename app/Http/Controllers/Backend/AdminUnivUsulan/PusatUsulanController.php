@@ -4,14 +4,15 @@ namespace App\Http\Controllers\Backend\AdminUnivUsulan;
 
 use App\Http\Controllers\Controller;
 use App\Models\BackendUnivUsulan\PeriodeUsulan;
+use App\Models\BackendUnivUsulan\Usulan; // Pastikan ini ada
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth; // <-- TAMBAHKAN INI
+use Illuminate\Support\Facades\DB;   // <-- TAMBAHKAN INI
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class PusatUsulanController extends Controller
 {
-    /**
-     * Menampilkan halaman utama Pusat Usulan (daftar semua periode).
-     * (INI FUNGSI YANG BENAR UNTUK INDEX)
-     */
     public function index()
     {
         $periodeUsulans = PeriodeUsulan::withCount('usulans')
@@ -23,10 +24,6 @@ class PusatUsulanController extends Controller
         ]);
     }
 
-    /**
-     * Menampilkan daftar pendaftar untuk periode usulan tertentu.
-     * (INI FUNGSI BARU YANG KITA BUAT)
-     */
     public function showPendaftar(PeriodeUsulan $periodeUsulan)
     {
         $usulans = $periodeUsulan->usulans()
@@ -38,5 +35,183 @@ class PusatUsulanController extends Controller
             'periode' => $periodeUsulan,
             'usulans' => $usulans,
         ]);
+    }
+
+    public function show(Usulan $usulan)
+    {
+        // Eager load semua relasi yang dibutuhkan untuk halaman detail
+        $usulan->load([
+            'pegawai.pangkat',
+            'pegawai.jabatan',
+            'pegawai.unitKerja.subUnitKerja.unitKerja',
+            'jabatanLama',
+            'jabatanTujuan',
+            'periodeUsulan',
+            'dokumens',
+            'logs' => function ($query) {
+                $query->with('dilakukanOleh')->latest();
+            }
+        ]);
+
+        // UPDATED: Pass usulan object to get dynamic BKD fields
+        $validationFields = Usulan::getValidationFields($usulan);
+
+        // Get existing validation data if any
+        $existingValidation = $usulan->getValidasiByRole('admin_universitas');
+
+        // Determine if can edit based on status
+        $canEdit = $usulan->status_usulan === 'Diusulkan ke Universitas';
+
+        // Return view dengan data yang diperlukan
+        return view('backend.layouts.admin-univ-usulan.pusat-usulan.detail-usulan', [
+            'usulan' => $usulan,
+            'validationFields' => $validationFields,
+            'existingValidation' => $existingValidation,
+            'canEdit' => $canEdit,
+        ]);
+    }
+
+    public function showUsulanDocument(Usulan $usulan, $field)
+    {
+        // 1. Validasi field yang diizinkan
+        $allowedFields = [
+            'pakta_integritas',
+            'bukti_korespondensi',
+            'turnitin',
+            'upload_artikel',
+            'bukti_syarat_guru_besar',
+            // BKD documents (dynamic names)
+            'bkd_ganjil_2024_2025',
+            'bkd_genap_2023_2024',
+            'bkd_ganjil_2023_2024',
+            'bkd_genap_2022_2023',
+        ];
+
+        // Check if field is BKD document (starts with 'bkd_')
+        $isBkdDocument = str_starts_with($field, 'bkd_');
+
+        if (!$isBkdDocument && !in_array($field, $allowedFields)) {
+            abort(404, 'Jenis dokumen tidak valid.');
+        }
+
+        // 2. Get file path from usulan data using model method
+        $filePath = $usulan->getDocumentPath($field);
+
+        if (!$filePath) {
+            Log::warning('Document path not found in data_usulan', [
+                'usulan_id' => $usulan->id,
+                'field' => $field,
+                'data_usulan_keys' => array_keys($usulan->data_usulan ?? [])
+            ]);
+            abort(404, 'Path dokumen tidak ditemukan dalam data usulan.');
+        }
+
+        // 3. Check if file exists in storage
+        if (!Storage::disk('local')->exists($filePath)) {
+            Log::error('Document file not found in storage', [
+                'usulan_id' => $usulan->id,
+                'field' => $field,
+                'path' => $filePath,
+                'full_path' => Storage::disk('local')->path($filePath)
+            ]);
+            abort(404, 'File dokumen tidak ditemukan di storage.');
+        }
+
+        // 4. Log document access
+        Log::info('Document accessed', [
+            'usulan_id' => $usulan->id,
+            'field' => $field,
+            'accessed_by' => Auth::id(),
+            'user_role' => Auth::user()->getRoleNames()->first(),
+            'file_path' => $filePath
+        ]);
+
+        // 5. Get full path and serve file
+        $fullPath = Storage::disk('local')->path($filePath);
+
+        // Determine mime type
+        $mimeType = 'application/pdf'; // Default for PDF
+        if (str_ends_with($filePath, '.pdf')) {
+            $mimeType = 'application/pdf';
+        } elseif (str_ends_with($filePath, '.jpg') || str_ends_with($filePath, '.jpeg')) {
+            $mimeType = 'image/jpeg';
+        } elseif (str_ends_with($filePath, '.png')) {
+            $mimeType = 'image/png';
+        }
+
+        return response()->file($fullPath, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . basename($filePath) . '"',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0'
+        ]);
+    }
+
+    public function process(Request $request, Usulan $usulan)
+    {
+        // Guard Clause: Pastikan hanya usulan yang siap diproses yang bisa diubah.
+        if ($usulan->status_usulan !== 'Diusulkan ke Universitas') {
+            return redirect()->back()->with('error', 'Aksi tidak dapat dilakukan karena status usulan saat ini adalah: ' . $usulan->status_usulan);
+        }
+
+        // Validasi input dari form
+        $request->validate([
+            'action_type' => 'required|in:save_only,return_to_pegawai,reject_proposal,approve_proposal',
+            'catatan_umum' => 'required_if:action_type,return_to_pegawai|nullable|string|min:10|max:2000',
+        ], [
+            'catatan_umum.required_if' => 'Catatan wajib diisi jika Anda mengembalikan usulan ke pegawai.',
+        ]);
+
+        $adminId = Auth::id();
+        $statusLama = $usulan->status_usulan;
+        $actionType = $request->action_type;
+        $logMessage = '';
+
+        DB::beginTransaction();
+        try {
+            // Simpan data validasi (Sesuai/Tidak Sesuai) dari form
+            if ($request->has('validation')) {
+                $usulan->setValidasiByRole('admin_universitas', $request->validation, $adminId);
+            }
+            switch ($actionType) {
+                case 'return_to_pegawai': // Aturan #2: Revisi langsung ke Pegawai
+                    $usulan->status_usulan = 'Dikembalikan ke Pegawai';
+                    $usulan->catatan_verifikator = $request->catatan_umum;
+                    $logMessage = 'Usulan dikembalikan ke Pegawai untuk perbaikan oleh Admin Universitas.';
+                    break;
+
+                case 'reject_proposal': // Aturan #3: Penolakan
+                    $usulan->status_usulan = 'Ditolak Universitas';
+                    $logMessage = 'Usulan ditolak oleh Admin Universitas. Proses dihentikan.';
+                    break;
+
+                case 'approve_proposal':
+                    $usulan->status_usulan = 'Direkomendasikan'; // Atau 'Disetujui Universitas'
+                    $logMessage = 'Usulan disetujui dan direkomendasikan oleh Admin Universitas.';
+                    break;
+                case 'save_only': // <-- TAMBAHKAN KASUS INI
+                    // Jika status masih 'Diusulkan ke Universitas', ubah menjadi 'Sedang Direview Universitas'
+                    // untuk menandakan proses sudah berjalan.
+                    if ($usulan->status_usulan === 'Diusulkan ke Universitas') {
+                        $usulan->status_usulan = 'Sedang Direview Universitas';
+                    }
+                    $logMessage = 'Validasi dari Admin Universitas disimpan.';
+                    break;
+            }
+
+            $usulan->save();
+            $usulan->createLog($usulan->status_usulan, $statusLama, $logMessage, $adminId);
+
+            DB::commit();
+
+            return redirect()->route('backend.admin-univ-usulan.pusat-usulan.index')
+                            ->with('success', 'Usulan berhasil diproses.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error processing usulan by Admin Universitas: ' . $e->getMessage(), ['usulan_id' => $usulan->id]);
+            return redirect()->back()->with('error', 'Terjadi kesalahan sistem saat memproses usulan.');
+        }
     }
 }

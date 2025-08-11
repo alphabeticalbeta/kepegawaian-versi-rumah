@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\BackendUnivUsulan\UsulanDokumen;
 use Carbon\Carbon;
 
 class Usulan extends Model
@@ -21,6 +22,35 @@ class Usulan extends Model
     protected $table = 'usulans';
 
     /**
+     * PERBAIKAN 1: Definisi Primary Key Eksplisit
+     * The primary key for the model.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'id';
+
+    /**
+     * The "type" of the primary key ID.
+     *
+     * @var string
+     */
+    protected $keyType = 'int';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = true;
+
+    /**
+     * Indicates if the model should be timestamped.
+     *
+     * @var bool
+     */
+    public $timestamps = true;
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
@@ -33,6 +63,7 @@ class Usulan extends Model
         'jabatan_tujuan_id',
         'status_usulan',
         'data_usulan',
+        'validasi_data',
         'catatan_verifikator',
     ];
 
@@ -43,6 +74,7 @@ class Usulan extends Model
      */
     protected $casts = [
         'data_usulan' => 'array',
+        'validasi_data' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -192,42 +224,7 @@ class Usulan extends Model
     /**
      * Get karya ilmiah data from data_usulan
      */
-    public function getKaryaIlmiahAttribute(): ?array
-    {
-        return $this->data_usulan['karya_ilmiah'] ?? null;
-    }
 
-    /**
-     * Get dokumen usulan data from data_usulan
-     */
-    public function getDokumenUsulanAttribute(): ?array
-    {
-        return $this->data_usulan['dokumen_usulan'] ?? null;
-    }
-
-    /**
-     * Get syarat khusus data from data_usulan
-     */
-    public function getSyaratKhususAttribute(): ?array
-    {
-        return $this->data_usulan['syarat_khusus'] ?? null;
-    }
-
-    /**
-     * Get pegawai snapshot data from data_usulan
-     */
-    public function getPegawaiSnapshotAttribute(): ?array
-    {
-        return $this->data_usulan['pegawai_snapshot'] ?? null;
-    }
-
-    /**
-     * Get metadata from data_usulan
-     */
-    public function getMetadataAttribute(): ?array
-    {
-        return $this->data_usulan['metadata'] ?? null;
-    }
 
     // =====================================
     // DOCUMENT HELPER METHODS
@@ -368,10 +365,6 @@ class Usulan extends Model
         return $query->where('created_at', '>=', now()->subDays($days));
     }
 
-    // =====================================
-    // UTILITY METHODS
-    // =====================================
-
     /**
      * Check if usulan is for jabatan promotion
      */
@@ -459,10 +452,6 @@ class Usulan extends Model
         ];
     }
 
-    // =====================================
-    // BOOT METHOD
-    // =====================================
-
     /**
      * Boot the model
      */
@@ -470,32 +459,40 @@ class Usulan extends Model
     {
         parent::boot();
 
-        // HANYA auto-create initial log saat usulan dibuat
-        // Status change logging dilakukan manual di controller untuk kontrol yang lebih baik
+        // PERBAIKAN: Tambahkan pengecekan untuk memastikan model sudah persisted
         static::created(function ($usulan) {
-            UsulanLog::create([
-                'usulan_id' => $usulan->id,
-                'status_sebelumnya' => null,
-                'status_baru' => $usulan->status_usulan,
-                'catatan' => 'Usulan dibuat dengan status ' . $usulan->status_usulan,
-                'dilakukan_oleh_id' => $usulan->pegawai_id,
-            ]);
+            // Pastikan model sudah di-save dan memiliki ID sebelum membuat log
+            if ($usulan && $usulan->exists && $usulan->getKey()) {
+                try {
+                    UsulanLog::create([
+                        'usulan_id' => $usulan->getKey(), // Gunakan getKey() lebih aman
+                        'status_sebelumnya' => null,
+                        'status_baru' => $usulan->status_usulan,
+                        'catatan' => 'Usulan dibuat dengan status ' . $usulan->status_usulan,
+                        'dilakukan_oleh_id' => $usulan->pegawai_id,
+                    ]);
+                } catch (\Throwable $e) {
+                    // Log error tapi jangan stop proses utama
+                    \Log::error('Gagal membuat usulan log: ' . $e->getMessage(), [
+                        'usulan_id' => $usulan->getKey(),
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
         });
-
-    // HAPUS static::updating untuk menghindari masalah auth
-    // Manual logging di controller lebih reliable
     }
 
-// =====================================
-// HELPER METHOD untuk Manual Logging
-// =====================================
-
-/**
- * Create log entry for this usulan
- */
+    /**
+     * Create log entry for this usulan
+     */
     public function createLog(string $statusBaru, ?string $statusSebelumnya = null, ?string $catatan = null, ?int $userId = null): UsulanLog
     {
-        $userId = $userId ?? auth()->id() ?? $this->pegawai_id;
+        // PERBAIKAN: Pastikan model sudah memiliki ID
+        if (!$this->exists || !$this->getKey()) {
+            throw new \RuntimeException('Cannot create log for usulan that hasn\'t been saved yet');
+        }
+
+        $userId = $userId ?? optional(auth()->guard('pegawai')->user())->id ?? $this->pegawai_id;
 
         if (!$catatan) {
             if ($statusSebelumnya && $statusSebelumnya !== $statusBaru) {
@@ -506,11 +503,210 @@ class Usulan extends Model
         }
 
         return UsulanLog::create([
-            'usulan_id' => $this->id,
+            'usulan_id' => $this->getKey(), // Gunakan getKey() lebih aman daripada $this->id
             'status_sebelumnya' => $statusSebelumnya,
             'status_baru' => $statusBaru,
             'catatan' => $catatan,
             'dilakukan_oleh_id' => $userId,
         ]);
+    }
+
+    // =====================================
+    // DEBUG METHOD - PERBAIKAN 4
+    // =====================================
+
+    /**
+     * Debug method untuk membantu troubleshooting
+     */
+    public function debugModelState(): array
+    {
+        return [
+            'exists' => $this->exists,
+            'primary_key_name' => $this->getKeyName(),
+            'primary_key_value' => $this->getKey(),
+            'table_name' => $this->getTable(),
+            'attributes' => $this->getAttributes(),
+            'original' => $this->getOriginal(),
+            'dirty' => $this->getDirty(),
+            'was_recently_created' => $this->wasRecentlyCreated,
+        ];
+    }
+    // =====================================
+    // VALIDASI DATA HELPER METHODS
+    // =====================================
+
+    /**
+     * Mendapatkan data validasi untuk role tertentu
+     */
+    public function getValidasiByRole(string $role): array
+    {
+        return $this->validasi_data[$role] ?? [];
+    }
+
+    /**
+     * Set data validasi untuk role tertentu
+     */
+    public function setValidasiByRole(string $role, array $validasiData, int $validatedBy): void
+    {
+        $currentValidasi = $this->validasi_data ?? [];
+
+        $currentValidasi[$role] = array_merge($validasiData, [
+            'validated_by' => $validatedBy,
+            'validated_at' => now()->toISOString()
+        ]);
+
+        $this->validasi_data = $currentValidasi;
+    }
+
+    /**
+     * Cek apakah usulan sudah divalidasi oleh role tertentu
+     */
+    public function isValidatedByRole(string $role): bool
+    {
+        return !empty($this->validasi_data[$role]['validated_by']);
+    }
+
+    /**
+     * Mendapatkan status validasi untuk field tertentu dari role tertentu
+     */
+    public function getFieldValidationStatus(string $role, string $category, string $field): string
+    {
+        return $this->validasi_data[$role][$category][$field]['status'] ?? 'sesuai';
+    }
+
+    /**
+     * Mendapatkan keterangan validasi untuk field tertentu dari role tertentu
+     */
+    public function getFieldValidationKeterangan(string $role, string $category, string $field): string
+    {
+        return $this->validasi_data[$role][$category][$field]['keterangan'] ?? '';
+    }
+
+    /**
+     * Cek apakah ada field yang tidak sesuai dari role tertentu
+     */
+    public function hasInvalidFields(string $role): bool
+    {
+        $validasi = $this->getValidasiByRole($role);
+
+        foreach ($validasi as $category => $fields) {
+            if (in_array($category, ['validated_by', 'validated_at'])) {
+                continue;
+            }
+
+            foreach ($fields as $field => $data) {
+                if (($data['status'] ?? 'sesuai') === 'tidak_sesuai') {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Mendapatkan daftar field yang tidak sesuai dari role tertentu
+     */
+    public function getInvalidFields(string $role): array
+    {
+        $invalidFields = [];
+        $validasi = $this->getValidasiByRole($role);
+
+        foreach ($validasi as $category => $fields) {
+            if (in_array($category, ['validated_by', 'validated_at'])) {
+                continue;
+            }
+
+            foreach ($fields as $field => $data) {
+                if (($data['status'] ?? 'sesuai') === 'tidak_sesuai') {
+                    $invalidFields[] = [
+                        'category' => $category,
+                        'field' => $field,
+                        'keterangan' => $data['keterangan'] ?? ''
+                    ];
+                }
+            }
+        }
+
+        return $invalidFields;
+    }
+
+    /**
+     * Mendapatkan informasi validator dari role tertentu
+     */
+    public function getValidatorInfo(string $role): ?array
+    {
+        $validasi = $this->getValidasiByRole($role);
+
+        if (empty($validasi['validated_by'])) {
+            return null;
+        }
+
+        return [
+            'validated_by' => $validasi['validated_by'],
+            'validated_at' => $validasi['validated_at'] ?? null,
+            'validator_name' => null // Bisa ditambah query ke tabel pegawai jika perlu
+        ];
+    }
+
+    /**
+     * Reset validasi untuk role tertentu
+     */
+    public function resetValidasiByRole(string $role): void
+    {
+        $currentValidasi = $this->validasi_data ?? [];
+        unset($currentValidasi[$role]);
+        $this->validasi_data = $currentValidasi;
+    }
+
+    /**
+     * Mendapatkan semua kategori dan field yang perlu divalidasi
+     */
+    public static function getValidationFields(): array
+    {
+        return [
+            'data_pribadi' => [
+                'jenis_pegawai', 'status_kepegawaian', 'nip', 'nuptk', 'gelar_depan',
+                'nama_lengkap', 'gelar_belakang', 'email', 'tempat_lahir', 'tanggal_lahir',
+                'jenis_kelamin', 'nomor_handphone'
+            ],
+            'data_kepegawaian' => [
+                'pangkat_saat_usul', 'tmt_pangkat', 'jabatan_saat_usul', 'tmt_jabatan',
+                'tmt_cpns', 'tmt_pns', 'unit_kerja_saat_usul'
+            ],
+            'data_pendidikan' => [
+                'pendidikan_terakhir', 'mata_kuliah_diampu', 'ranting_ilmu_kepakaran', 'url_profil_sinta'
+            ],
+            'data_kinerja' => [
+                'predikat_kinerja_tahun_pertama', 'predikat_kinerja_tahun_kedua', 'nilai_konversi'
+            ],
+            'dokumen_profil' => [
+                'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_pangkat_terakhir',
+                'sk_jabatan_terakhir', 'skp_tahun_pertama', 'skp_tahun_kedua', 'pak_konversi',
+                'sk_cpns', 'sk_pns', 'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir'
+            ],
+            'karya_ilmiah' => [
+                'karya_ilmiah', 'nama_jurnal', 'judul_artikel', 'penerbit_artikel', 'volume_artikel',
+                'nomor_artikel', 'edisi_artikel', 'halaman_artikel', 'link_artikel', 'link_sinta',
+                'link_scopus', 'link_scimago', 'link_wos'
+            ],
+            'dokumen_usulan' => [
+                'pakta_integritas', 'bukti_korespondensi', 'turnitin', 'upload_artikel', 'bukti_syarat_guru_besar'
+            ],
+        ];
+
+        if ($usulan && isset($usulan->data_usulan['dokumen_usulan'])) {
+        $bkdFields = [];
+        foreach ($usulan->data_usulan['dokumen_usulan'] as $key => $value) {
+            if (str_starts_with($key, 'bkd_')) {
+                $bkdFields[] = $key;
+            }
+        }
+
+        if (!empty($bkdFields)) {
+            $fields['dokumen_bkd'] = $bkdFields;
+        }
+    }
+     return $fields;
     }
 }

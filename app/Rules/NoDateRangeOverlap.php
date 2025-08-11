@@ -2,42 +2,71 @@
 
 namespace App\Rules;
 
-use Closure;
-use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Http\Request;
+use Illuminate\Contracts\Validation\Rule;
+use App\Models\BackendUnivUsulan\PeriodeUsulan;
 
-class NoDateRangeOverlap implements ValidationRule
+class NoDateRangeOverlap implements Rule
 {
     protected $request;
+    protected $excludeId;
 
-    public function __construct(Request $request)
+    /**
+     * Create a new rule instance.
+     *
+     * @return void
+     */
+    public function __construct($request, $excludeId = null)
     {
         $this->request = $request;
+        $this->excludeId = $excludeId;
     }
 
     /**
-     * Run the validation rule.
+     * Determine if the validation rule passes.
+     *
+     * @param  string  $attribute
+     * @param  mixed  $value
+     * @return bool
      */
-    public function validate(string $attribute, mixed $value, Closure $fail): void
+    public function passes($attribute, $value)
     {
-        $startDate = $value; // Ini adalah tanggal_mulai
-        $endDate = $this->request->input('tanggal_selesai');
+        $jenisUsulan = $this->request->jenis_usulan;
+        $tanggalMulai = $this->request->tanggal_mulai;
+        $tanggalSelesai = $this->request->tanggal_selesai;
 
-        $query = DB::table('periode_usulans');
-
-        // Jika sedang dalam mode edit, kecualikan data yang sedang diedit
-        if ($this->request->route('periode_usulan')) {
-            $query->where('id', '!=', $this->request->route('periode_usulan')->id);
+        // Jika tanggal selesai belum diisi, skip validasi
+        if (!$tanggalSelesai) {
+            return true;
         }
 
-        $overlap = $query->where(function ($q) use ($startDate, $endDate) {
-            $q->where('tanggal_mulai', '<=', $endDate)
-              ->where('tanggal_selesai', '>=', $startDate);
-        })->exists();
+        $query = PeriodeUsulan::where('jenis_usulan', $jenisUsulan)
+            ->where(function ($q) use ($tanggalMulai, $tanggalSelesai) {
+                $q->whereBetween('tanggal_mulai', [$tanggalMulai, $tanggalSelesai])
+                  ->orWhereBetween('tanggal_selesai', [$tanggalMulai, $tanggalSelesai])
+                  ->orWhere(function ($subQ) use ($tanggalMulai, $tanggalSelesai) {
+                      $subQ->where('tanggal_mulai', '<=', $tanggalMulai)
+                           ->where('tanggal_selesai', '>=', $tanggalSelesai);
+                  });
+            });
 
-        if ($overlap) {
-            $fail('Rentang tanggal yang dipilih tumpang tindih dengan periode yang sudah ada.');
+        // Exclude periode yang sedang di-edit
+        if ($this->excludeId) {
+            $query->where('id', '!=', $this->excludeId);
         }
+
+        return !$query->exists();
+    }
+
+    /**
+     * Get the validation error message.
+     *
+     * @return string
+     */
+    public function message()
+    {
+        $jenisUsulan = $this->request->jenis_usulan;
+        $jenisUsulanText = ucwords(str_replace('-', ' ', $jenisUsulan));
+
+        return "Periode tanggal yang dipilih overlapping dengan periode {$jenisUsulanText} yang sudah ada.";
     }
 }
