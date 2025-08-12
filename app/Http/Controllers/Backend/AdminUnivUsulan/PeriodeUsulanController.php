@@ -45,43 +45,49 @@ class PeriodeUsulanController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'tanggal_mulai' => [
-                'required',
-                'date',
+        $validated = $request->validate([
+            'nama_periode'            => ['required', 'string', 'max:255'],
+            'jenis_usulan'            => ['required', 'string', 'max:255'],
+            'tanggal_mulai'           => [
+                'required', 'date',
                 new NoDateRangeOverlap(
-                    table: 'periode_usulans',          // ganti jika nama tabel berbeda
+                    table: 'periode_usulans',
                     startColumn: 'tanggal_mulai',
                     endColumn: 'tanggal_selesai',
-                    filters: ['jenis_usulan' => $request->input('jenis_usulan')], // hapus jika tak perlu filter
+                    filters: ['jenis_usulan' => $request->input('jenis_usulan')],
                     excludeId: null
                 ),
             ],
-            'tanggal_selesai'  => ['required', 'date', 'after_or_equal:tanggal_mulai'],
-            'jenis_usulan'     => ['required', 'string', 'max:255'],
-            'senat_min_setuju' => ['nullable', 'integer', 'min:0'],
+            'tanggal_selesai'         => ['required', 'date', 'after_or_equal:tanggal_mulai'],
+            'tanggal_mulai_perbaikan' => ['nullable', 'date', 'after_or_equal:tanggal_selesai'],
+            'tanggal_selesai_perbaikan' => ['nullable', 'date', 'after_or_equal:tanggal_mulai_perbaikan'],
+            'status'                  => ['required', 'in:Buka,Tutup'], // jika mau otomatis buka: hapus dari form dan set manual di bawah
+            'senat_min_setuju'        => ['nullable', 'integer', 'min:0'],
         ]);
 
+        // Hitung tahun_periode dari tanggal_mulai
+        $validated['tahun_periode'] = Carbon::parse($validated['tanggal_mulai'])->year;
+
+        // (Opsional) Jika ingin selalu buka saat buat:
+        // $validated['status'] = 'Buka';
+
+        // Defaultkan senat_min_setuju bila kosong
+        $validated['senat_min_setuju'] = (int) ($validated['senat_min_setuju'] ?? 0);
+
         try {
-            DB::transaction(function () use ($request) {
+            DB::transaction(function () use ($validated) {
                 $periode = new PeriodeUsulan();
-                $periode->tanggal_mulai     = $request->input('tanggal_mulai');
-                $periode->tanggal_selesai   = $request->input('tanggal_selesai');
-                $periode->jenis_usulan      = $request->input('jenis_usulan');
-                $periode->senat_min_setuju  = (int) $request->input('senat_min_setuju', 0);
-                // TODO: set field lain yang kamu punya di tabel ini
+                $periode->fill($validated);   // boleh fill karena kita kontrol $validated
                 $periode->save();
             });
 
-            // Opsional: ganti ke route index milikmu
-            // return redirect()->route('periode-usulan.index')->with('success', 'Periode usulan berhasil dibuat.');
             return back()->with('success', 'Periode usulan berhasil dibuat.');
         } catch (\Throwable $e) {
             report($e);
-            return back()->withInput()->with('error', 'Gagal membuat periode usulan. Coba lagi.');
+            // sementara untuk debug, boleh tampilkan pesan asli (hapus di produksi):
+            return back()->withInput()->with('error', 'Gagal membuat periode: '.$e->getMessage());
         }
     }
-
 
     /**
      * Menampilkan form untuk mengedit resource.

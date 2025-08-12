@@ -22,6 +22,7 @@
         </div>
 
         <div class="px-6 py-8">
+            @include('backend.components.flash')
             <form action="{{ isset($periode) ? route('backend.admin-univ-usulan.periode-usulan.update', $periode->id) : route('backend.admin-univ-usulan.periode-usulan.store') }}" method="POST" class="space-y-8">
                 @csrf
                 @if(isset($periode))
@@ -290,10 +291,32 @@
             </form>
         </div>
     </div>
-</div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
+        @if (session('success'))
+            <div class="mb-4 rounded-lg border-l-4 border-green-500 bg-green-50 p-4 text-green-800">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="mb-4 rounded-lg border-l-4 border-red-500 bg-red-50 p-4 text-red-800">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="mb-4 rounded-lg border-l-4 border-amber-500 bg-amber-50 p-4 text-amber-800">
+                <div class="font-semibold">Validasi gagal</div>
+                <ul class="list-disc pl-5 mt-2">
+                @foreach ($errors->all() as $e)
+                    <li>{{ $e }}</li>
+                @endforeach
+                </ul>
+            </div>
+        @endif
+
     // Update info berdasarkan jenis usulan saat halaman load
     updateJenisUsulanInfo();
 
@@ -349,18 +372,3 @@ function updateJenisUsulanInfo() {
 </script>
 @endsection
 
-{{-- Minimal Anggota Senat Direkomendasikan --}}
-<div class="mb-4">
-    <label for="senat_min_setuju" class="block text-sm font-medium text-gray-700">
-        Minimal Anggota Senat “Direkomendasikan”
-    </label>
-    <input type="number" min="1" step="1" id="senat_min_setuju" name="senat_min_setuju"
-           value="{{ old('senat_min_setuju', $periodeUsulan->senat_min_setuju ?? 1) }}"
-           class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
-    <p class="mt-1 text-xs text-gray-500">
-        Ambang minimal anggota Senat yang memilih <b>Direkomendasikan</b>.
-    </p>
-    @error('senat_min_setuju')
-        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-    @enderror
-</div>

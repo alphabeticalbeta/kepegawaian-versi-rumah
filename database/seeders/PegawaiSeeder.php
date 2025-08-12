@@ -3,13 +3,36 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\BackendUnivUsulan\Pegawai;
 use Illuminate\Support\Facades\Hash;
+use App\Models\BackendUnivUsulan\Pegawai;
+// --- TAMBAHKAN MODEL UNTUK RELASI ---
+// Sesuaikan path model ini jika berbeda di proyek Anda
+use App\Models\BackendUnivUsulan\Pangkat;
+use App\Models\BackendUnivUsulan\Jabatan;
+use App\Models\BackendUnivUsulan\UnitKerja;
 
 class PegawaiSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     *
+     * @return void
+     */
     public function run(): void
     {
+        // 1. Ambil data master yang relevan terlebih dahulu.
+        //    Ini akan mengambil baris pertama dari setiap tabel.
+        $pangkat = Pangkat::first();
+        $jabatan = Jabatan::first();
+        $unitKerja = UnitKerja::first();
+
+        // 2. Lakukan pengecekan untuk memastikan data master ada.
+        if (!$pangkat || !$jabatan || !$unitKerja) {
+            $this->command->error('❌ Seeder Pangkat/Jabatan/UnitKerja belum dijalankan atau tabel kosong.');
+            $this->command->error('❌ PegawaiSeeder dibatalkan.');
+            return; // Hentikan seeder jika data master tidak ditemukan.
+        }
+
         $pegawais = [
             ['nip' => '199001012015011001', 'nama_lengkap' => 'Budi Santoso', 'email' => 'budi.santoso@example.com', 'is_admin' => false],
             ['nip' => '199202022016022002', 'nama_lengkap' => 'Citra Lestari', 'email' => 'citra.lestari@example.com', 'is_admin' => false],
@@ -20,9 +43,10 @@ class PegawaiSeeder extends Seeder
             $pegawai = Pegawai::updateOrCreate(
                 ['nip' => $pegawaiData['nip']],
                 [
-                    'pangkat_terakhir_id' => 1,
-                    'jabatan_terakhir_id' => 1,
-                    'unit_kerja_terakhir_id' => 1,
+                    // 3. Gunakan ID dari data yang sudah diambil secara dinamis
+                    'pangkat_terakhir_id' => $pangkat->id,
+                    'jabatan_terakhir_id' => $jabatan->id,
+                    'unit_kerja_terakhir_id' => $unitKerja->id,
                     'jenis_pegawai' => 'Dosen',
                     'nama_lengkap' => $pegawaiData['nama_lengkap'],
                     'email' => $pegawaiData['email'],
@@ -30,9 +54,9 @@ class PegawaiSeeder extends Seeder
                     'tanggal_lahir' => '1990-01-01',
                     'jenis_kelamin' => 'Laki-Laki',
                     'nomor_handphone' => '081234567890',
-                    'tmt_pangkat' => now(),
+                    'tmt_pangkat' => '2025-08-12 11:15:45',
                     'sk_pangkat_terakhir' => 'path/to/dummy.pdf',
-                    'tmt_jabatan' => now(),
+                    'tmt_jabatan' => '2025-08-12 11:15:45',
                     'sk_jabatan_terakhir' => 'path/to/dummy.pdf',
                     'pendidikan_terakhir' => 'Sarjana (S1)',
                     'ijazah_terakhir' => 'path/to/dummy.pdf',
@@ -46,7 +70,7 @@ class PegawaiSeeder extends Seeder
                 ]
             );
 
-            // FIX: Ganti 'Pegawai' dengan 'Pegawai Unmul' sesuai RoleSeeder
+            // Menetapkan role, bagian ini sudah benar
             $pegawai->assignRole('Pegawai Unmul');
 
             if ($pegawaiData['is_admin']) {
