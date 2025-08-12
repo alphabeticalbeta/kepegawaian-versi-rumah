@@ -80,6 +80,17 @@ class NoDateRangeOverlap implements ValidationRule, DataAwareRule
             $query->where($this->excludeColumn, '!=', $this->excludeId);
         }
 
+        // // Tambahkan sebelum if ($query->exists())
+        // \Log::info('NoDateRangeOverlap Debug', [
+        //     'input_start' => $start,
+        //     'input_end' => $end,
+        //     'exclude_id' => $this->excludeId,
+        //     'exclude_column' => $this->excludeColumn,
+        //     'filters' => $this->filters,
+        //     'query_sql' => $query->toSql(),
+        //     'query_bindings' => $query->getBindings()
+        // ]);
+
         if ($query->exists()) {
             $fail('Rentang tanggal bertabrakan dengan periode lain.');
         }

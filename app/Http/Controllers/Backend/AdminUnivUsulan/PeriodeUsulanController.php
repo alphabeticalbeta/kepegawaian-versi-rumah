@@ -113,7 +113,7 @@ class PeriodeUsulanController extends Controller
                     startColumn: 'tanggal_mulai',
                     endColumn: 'tanggal_selesai',
                     filters: ['jenis_usulan' => $request->input('jenis_usulan')],
-                    excludeId: (int) $periode_usulan->id
+                    excludeId: $periode_usulan->id
                 ),
             ],
             'tanggal_selesai'  => ['required', 'date', 'after_or_equal:tanggal_mulai'],

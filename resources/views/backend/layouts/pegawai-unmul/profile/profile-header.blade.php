@@ -99,47 +99,5 @@
 
 @if($isEditing)
     @push('scripts')
-    <script>
-        function previewProfilePhoto(input) {
-            const file = input.files[0];
-            const previewElement = document.getElementById('preview-foto');
-            const profilePhoto = document.getElementById('profile-photo');
-
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    profilePhoto.src = e.target.result;
-                }
-                reader.readAsDataURL(file);
-
-                // Show file info
-                const fileSize = (file.size / 1024 / 1024).toFixed(2);
-                const fileName = file.name;
-
-                previewElement.innerHTML = `
-                    <div class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="file-check" class="w-4 h-4 text-blue-600"></i>
-                            <div class="flex-1">
-                                <p class="text-sm font-medium text-blue-800">${fileName}</p>
-                                <p class="text-xs text-blue-600">Ukuran: ${fileSize} MB</p>
-                            </div>
-                            <div class="text-green-600">
-                                <i data-lucide="check-circle" class="w-4 h-4"></i>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                previewElement.classList.remove('hidden');
-
-                // Re-initialize Lucide icons
-                if (typeof lucide !== 'undefined') {
-                    lucide.createIcons();
-                }
-            } else {
-                previewElement.classList.add('hidden');
-            }
-        }
-    </script>
     @endpush
 @endif

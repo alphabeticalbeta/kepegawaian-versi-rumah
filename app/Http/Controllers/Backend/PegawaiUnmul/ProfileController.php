@@ -94,10 +94,6 @@ class ProfileController extends Controller
             'predikat_kinerja_tahun_pertama' => 'required|string',
             'predikat_kinerja_tahun_kedua' => 'required|string',
             'nilai_konversi' => 'nullable|numeric',
-
-
-            // Dari Tab: Keamanan (untuk ganti password)
-            'current_password' => 'nullable|sometimes|required_with:new_password',
             'new_password' => 'nullable|sometimes|min:8|confirmed',
         ]);
 
@@ -106,9 +102,6 @@ class ProfileController extends Controller
 
         // 4. Handle update password
         if ($request->filled('new_password')) {
-            if (!\Illuminate\Support\Facades\Hash::check($request->current_password, $pegawai->password)) {
-                return back()->withErrors(['current_password' => 'Password saat ini tidak cocok.']);
-            }
             $validated['password'] = \Illuminate\Support\Facades\Hash::make($request->new_password);
         }
 
@@ -176,9 +169,15 @@ class ProfileController extends Controller
         foreach ($fileColumns as $column) {
             if ($request->hasFile($column)) {
                 // Validasi file
-                $request->validate([
-                    $column => ['required', File::types(['pdf'])->max(2 * 1024)]
-                ]);
+                if ($column === 'foto') {
+                    $request->validate([
+                        $column => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048']
+                    ]);
+                } else {
+                    $request->validate([
+                        $column => ['required', File::types(['pdf'])->max(1024)]
+                    ]);
+                }
 
                 // Hapus file lama jika ada
                 if ($pegawai->$column) {
@@ -186,7 +185,11 @@ class ProfileController extends Controller
                 }
 
                 // Upload file baru
-                $path = $request->file($column)->store('pegawai-files/' . $column, 'local');
+                if ($column === 'foto') {
+                $path = $request->file($column)->store('pegawai-files/foto', 'public');
+                } else {
+                    $path = $request->file($column)->store('pegawai-files/' . $column, 'local');
+                }
                 $validatedData[$column] = $path;
             }
         }

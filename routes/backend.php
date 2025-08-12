@@ -67,7 +67,7 @@ Route::middleware(['auth:pegawai'])->group(function () {
 
         // Route untuk Manajemen Periode Usulan
         Route::resource('/periode-usulan', PeriodeUsulanController::class)
-            ->parameters(['periode-usulan' => 'periodeUsulan']);
+            ->parameters(['periode-usulan' => 'periode_usulan']);
 
         // Route untuk Manajemen Role Pegawai
         Route::get('/role-pegawai', [RolePegawaiController::class, 'index'])->name('role-pegawai.index');

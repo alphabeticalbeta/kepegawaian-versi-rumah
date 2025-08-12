@@ -22,7 +22,6 @@
         </div>
 
         <div class="px-6 py-8">
-            @include('backend.components.flash')
             <form action="{{ isset($periode) ? route('backend.admin-univ-usulan.periode-usulan.update', $periode->id) : route('backend.admin-univ-usulan.periode-usulan.store') }}" method="POST" class="space-y-8">
                 @csrf
                 @if(isset($periode))
@@ -34,10 +33,10 @@
                         <label for="nama_periode" class="block text-sm font-semibold text-gray-800">
                             Nama Periode <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" name="nama_periode" id="nama_periode"
-                               class="block w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-xl shadow-sm placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent hover:border-gray-300"
-                               placeholder="Contoh: Periode Usulan Jabatan Semester Ganjil 2024"
-                               value="{{ old('nama_periode', $periode->nama_periode ?? '') }}" required>
+                            <input type="text" name="nama_periode" id="nama_periode"
+                                class="block w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-xl shadow-sm placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent hover:border-gray-300"
+                                placeholder="Contoh: Periode Usulan Jabatan Semester Ganjil 2024"
+                                value="{{ old('nama_periode', isset($periode) ? $periode->nama_periode : '') }}" required>
                         @error('nama_periode')
                             <p class="text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -50,10 +49,10 @@
                                 class="block w-full px-4 py-3 text-gray-900 border-2 border-gray-200 bg-white rounded-xl shadow-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                 required onchange="updateJenisUsulanInfo()">
                             <option value="">Pilih Jenis Usulan</option>
-                            <option value="usulan-jabatan-dosen" {{ old('jenis_usulan', $periode->jenis_usulan ?? '') == 'usulan-jabatan-dosen' ? 'selected' : '' }}>
+                            <option value="usulan-jabatan-dosen" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : '') == 'usulan-jabatan-dosen' ? 'selected' : '' }}>
                                 Usulan Jabatan Dosen
                             </option>
-                            <option value="usulan-jabatan-tendik" {{ old('jenis_usulan', $periode->jenis_usulan ?? '') == 'usulan-jabatan-tendik' ? 'selected' : '' }}>
+                            <option value="usulan-jabatan-tendik" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : '') == 'usulan-jabatan-tendik' ? 'selected' : '' }}>
                                 Usulan Jabatan Tenaga Kependidikan
                             </option>
                         </select>
@@ -220,9 +219,9 @@
                             <label for="tanggal_mulai_perbaikan" class="block text-sm font-semibold text-gray-800">
                                 Tanggal Mulai Perbaikan
                             </label>
-                            <input type="date" name="tanggal_mulai_perbaikan" id="tanggal_mulai_perbaikan"
-                                   class="block w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                   value="{{ old('tanggal_mulai_perbaikan', $periode->tanggal_mulai_perbaikan ?? '') }}">
+                                <input type="date" name="tanggal_mulai_perbaikan" id="tanggal_mulai_perbaikan"
+                                    class="block w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    value="{{ old('tanggal_mulai_perbaikan', isset($periode) && $periode->tanggal_mulai_perbaikan ? $periode->tanggal_mulai_perbaikan->format('Y-m-d') : '') }}">
                             @error('tanggal_mulai_perbaikan')
                                 <p class="text-xs text-red-600">{{ $message }}</p>
                             @enderror
@@ -232,8 +231,8 @@
                                 Tanggal Selesai Perbaikan
                             </label>
                             <input type="date" name="tanggal_selesai_perbaikan" id="tanggal_selesai_perbaikan"
-                                   class="block w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                   value="{{ old('tanggal_selesai_perbaikan', $periode->tanggal_selesai_perbaikan ?? '') }}">
+                                class="block w-full px-4 py-3 text-gray-900 border-2 border-gray-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                value="{{ old('tanggal_selesai_perbaikan', isset($periode) && $periode->tanggal_selesai_perbaikan ? $periode->tanggal_selesai_perbaikan->format('Y-m-d') : '') }}">
                             @error('tanggal_selesai_perbaikan')
                                 <p class="text-xs text-red-600">{{ $message }}</p>
                             @enderror
@@ -272,8 +271,8 @@
                         Status Periode <span class="text-red-500">*</span>
                     </label>
                     <select name="status" id="status" class="block w-full px-4 py-3 text-gray-900 border-2 border-gray-200 bg-white rounded-xl shadow-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                        <option value="Tutup" {{ old('status', $periode->status ?? 'Tutup') == 'Tutup' ? 'selected' : '' }}>Tutup</option>
-                        <option value="Buka" {{ old('status', $periode->status ?? '') == 'Buka' ? 'selected' : '' }}>Buka</option>
+                        <option value="Tutup" {{ old('status', isset($periode) ? $periode->status : 'Tutup') == 'Tutup' ? 'selected' : '' }}>Tutup</option>
+                        <option value="Buka" {{ old('status', isset($periode) ? $periode->status : 'Tutup') == 'Buka' ? 'selected' : '' }}>Buka</option>
                     </select>
                     @error('status')
                         <p class="text-xs text-red-600">{{ $message }}</p>
@@ -291,84 +290,6 @@
             </form>
         </div>
     </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        @if (session('success'))
-            <div class="mb-4 rounded-lg border-l-4 border-green-500 bg-green-50 p-4 text-green-800">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if (session('error'))
-            <div class="mb-4 rounded-lg border-l-4 border-red-500 bg-red-50 p-4 text-red-800">
-                {{ session('error') }}
-            </div>
-        @endif
-
-        @if ($errors->any())
-            <div class="mb-4 rounded-lg border-l-4 border-amber-500 bg-amber-50 p-4 text-amber-800">
-                <div class="font-semibold">Validasi gagal</div>
-                <ul class="list-disc pl-5 mt-2">
-                @foreach ($errors->all() as $e)
-                    <li>{{ $e }}</li>
-                @endforeach
-                </ul>
-            </div>
-        @endif
-
-    // Update info berdasarkan jenis usulan saat halaman load
-    updateJenisUsulanInfo();
-
-    // Validasi tanggal
-    const tanggalMulai = document.getElementById('tanggal_mulai');
-    const tanggalSelesai = document.getElementById('tanggal_selesai');
-    const tanggalMulaiPerbaikan = document.getElementById('tanggal_mulai_perbaikan');
-    const tanggalSelesaiPerbaikan = document.getElementById('tanggal_selesai_perbaikan');
-
-    // Validasi tanggal selesai harus setelah tanggal mulai
-    tanggalMulai.addEventListener('change', function() {
-        tanggalSelesai.min = this.value;
-        if (tanggalSelesai.value && tanggalSelesai.value < this.value) {
-            tanggalSelesai.value = this.value;
-        }
-    });
-
-    // Validasi tanggal perbaikan
-    tanggalSelesai.addEventListener('change', function() {
-        tanggalMulaiPerbaikan.min = this.value;
-        if (tanggalMulaiPerbaikan.value && tanggalMulaiPerbaikan.value < this.value) {
-            tanggalMulaiPerbaikan.value = this.value;
-        }
-    });
-
-    tanggalMulaiPerbaikan.addEventListener('change', function() {
-        tanggalSelesaiPerbaikan.min = this.value;
-        if (tanggalSelesaiPerbaikan.value && tanggalSelesaiPerbaikan.value < this.value) {
-            tanggalSelesaiPerbaikan.value = this.value;
-        }
-    });
-});
-
-function updateJenisUsulanInfo() {
-    const jenisUsulan = document.getElementById('jenis_usulan').value;
-    const infoBoxes = document.querySelectorAll('.info-box');
-
-    // Sembunyikan semua info box
-    infoBoxes.forEach(box => {
-        box.classList.add('hidden');
-    });
-
-    // Tampilkan info box yang sesuai
-    if (jenisUsulan === 'usulan-jabatan-dosen') {
-        document.getElementById('info-dosen').classList.remove('hidden');
-        document.getElementById('jenjang-dosen').classList.remove('hidden');
-    } else if (jenisUsulan === 'usulan-jabatan-tendik') {
-        document.getElementById('info-tendik').classList.remove('hidden');
-        document.getElementById('warning-tendik').classList.remove('hidden');
-        document.getElementById('jenjang-tendik').classList.remove('hidden');
-    }
-}
-</script>
+    @include('backend.components.scripts.script-periode')
 @endsection
 
