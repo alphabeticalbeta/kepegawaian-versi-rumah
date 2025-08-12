@@ -241,7 +241,21 @@ class PusatUsulanController extends Controller
                     // Jika status masih 'Diusulkan ke Universitas', ubah menjadi 'Sedang Direview Universitas'
                     // untuk menandakan proses sudah berjalan.
                     $logMessage = 'Validasi dari Admin Universitas disimpan.';
-                        break;
+                    break;
+                case 'recommend_proposal':
+                    // Validasi syarat
+                    $minSetuju = $usulan->getSenateMinSetuju();
+                    if (!$usulan->isRecommendedByReviewer()) {
+                        return back()->with('error', 'Belum dapat direkomendasikan: menunggu rekomendasi dari Tim Penilai.');
+                    }
+                    if (!$usulan->isSenateApproved($minSetuju)) {
+                        return back()->with('error', 'Belum dapat direkomendasikan: keputusan Senat belum memenuhi minimal setuju (' . $minSetuju . ').');
+                    }
+
+                    // Lolos: tetapkan status akhir
+                    $usulan->status_usulan = 'Direkomendasikan';
+                    $logMessage = 'Usulan direkomendasikan oleh Admin Universitas.';
+                    break;
             }
 
             $usulan->save();

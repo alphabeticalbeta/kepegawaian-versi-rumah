@@ -115,4 +115,63 @@
         </div>
         @endif
     </div>
+
+    @php
+        $counts = $usulan->getSenateDecisionCounts();
+        $minSetuju = $usulan->getSenateMinSetuju();
+        $isReviewerRecommended = $usulan->isRecommendedByReviewer();
+    @endphp
+
+    <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {{-- Status Rekomendasi Tim Penilai --}}
+        <div class="rounded-lg border border-gray-200 p-4 bg-white">
+            <p class="text-sm text-gray-500 mb-1">Status Tim Penilai</p>
+            @if($isReviewerRecommended)
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-sm font-semibold">
+                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Direkomendasikan
+                </div>
+            @else
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-sm font-semibold">
+                    <span class="inline-block w-2 h-2 rounded-full bg-amber-500"></span>
+                    Belum Direkomendasikan
+                </div>
+            @endif
+            <p class="mt-2 text-xs text-gray-500">Sumber: tabel <code>usulan_penilai</code></p>
+        </div>
+
+        {{-- Ringkasan Keputusan Tim Senat --}}
+        <div class="rounded-lg border border-gray-200 p-4 bg-white">
+            <p class="text-sm text-gray-500 mb-1">Keputusan Tim Senat</p>
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="px-2 py-1 rounded bg-emerald-50 text-emerald-700 text-sm">Setuju: <b>{{ $counts['setuju'] }}</b></span>
+                <span class="px-2 py-1 rounded bg-rose-50 text-rose-700 text-sm">Menolak: <b>{{ $counts['tolak'] }}</b></span>
+                <span class="px-2 py-1 rounded bg-gray-100 text-gray-700 text-sm">Total: <b>{{ $counts['total'] }}</b></span>
+            </div>
+            <p class="mt-2 text-xs text-gray-500">Threshold minimal setuju: <b>{{ $minSetuju }}</b></p>
+        </div>
+
+        {{-- Status Kelayakan Direkomendasikan (Admin Univ) --}}
+        <div class="rounded-lg border border-gray-200 p-4 bg-white">
+            <p class="text-sm text-gray-500 mb-1">Kelayakan Direkomendasikan</p>
+            @php
+                $senatePass = $counts['total'] > 0 && $counts['setuju'] >= $minSetuju;
+            @endphp
+            @if($isReviewerRecommended && $senatePass)
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm font-semibold">
+                    <span class="inline-block w-2 h-2 rounded-full bg-indigo-500"></span>
+                    Siap Direkomendasikan
+                </div>
+            @else
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm font-semibold">
+                    <span class="inline-block w-2 h-2 rounded-full bg-gray-500"></span>
+                    Belum Memenuhi Syarat
+                </div>
+            @endif
+            <ul class="mt-2 text-xs text-gray-500 list-disc list-inside space-y-0.5">
+                <li>Penilai direkomendasikan: <b>{{ $isReviewerRecommended ? 'Ya' : 'Tidak' }}</b></li>
+                <li>Senat setuju: <b>{{ $counts['setuju'] }}</b> / minimal <b>{{ $minSetuju }}</b></li>
+            </ul>
+        </div>
+    </div>
 </div>

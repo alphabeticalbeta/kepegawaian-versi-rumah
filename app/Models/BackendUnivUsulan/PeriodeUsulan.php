@@ -25,13 +25,14 @@ class PeriodeUsulan extends Model
      */
     protected $fillable = [
         'nama_periode',
-        'tahun_periode',
         'jenis_usulan',
         'tanggal_mulai',
         'tanggal_selesai',
         'tanggal_mulai_perbaikan',
         'tanggal_selesai_perbaikan',
+        'senat_min_setuju',
         'status',
+        'tahun_periode',
     ];
 
      /**

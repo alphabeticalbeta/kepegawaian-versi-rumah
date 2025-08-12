@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\BackendUnivUsulan\PeriodeUsulan;
 use Illuminate\Http\Request;
 use App\Rules\NoDateRangeOverlap;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class PeriodeUsulanController extends Controller
 {
@@ -43,26 +45,43 @@ class PeriodeUsulanController extends Controller
      */
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            'nama_periode'              => 'required|string|max:255',
-            'jenis_usulan'              => 'required|string|in:usulan-jabatan-dosen,usulan-jabatan-tendik',
-            'tanggal_mulai'             => ['required', 'date', new NoDateRangeOverlap($request)],
-            'tanggal_selesai'           => 'required|date|after_or_equal:tanggal_mulai',
-            'tanggal_mulai_perbaikan'   => 'nullable|date|after_or_equal:tanggal_selesai',
-            'tanggal_selesai_perbaikan' => 'nullable|date|after_or_equal:tanggal_mulai_perbaikan',
-            'status'                    => 'required|in:Buka,Tutup',
+        $request->validate([
+            'tanggal_mulai' => [
+                'required',
+                'date',
+                new NoDateRangeOverlap(
+                    table: 'periode_usulans',          // ganti jika nama tabel berbeda
+                    startColumn: 'tanggal_mulai',
+                    endColumn: 'tanggal_selesai',
+                    filters: ['jenis_usulan' => $request->input('jenis_usulan')], // hapus jika tak perlu filter
+                    excludeId: null
+                ),
+            ],
+            'tanggal_selesai'  => ['required', 'date', 'after_or_equal:tanggal_mulai'],
+            'jenis_usulan'     => ['required', 'string', 'max:255'],
+            'senat_min_setuju' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        // Validasi tambahan: cek overlap berdasarkan jenis usulan yang sama
-        $this->validateOverlapByJenisUsulan($request);
+        try {
+            DB::transaction(function () use ($request) {
+                $periode = new PeriodeUsulan();
+                $periode->tanggal_mulai     = $request->input('tanggal_mulai');
+                $periode->tanggal_selesai   = $request->input('tanggal_selesai');
+                $periode->jenis_usulan      = $request->input('jenis_usulan');
+                $periode->senat_min_setuju  = (int) $request->input('senat_min_setuju', 0);
+                // TODO: set field lain yang kamu punya di tabel ini
+                $periode->save();
+            });
 
-        $validatedData['tahun_periode'] = \Carbon\Carbon::parse($validatedData['tanggal_mulai'])->year;
-
-        PeriodeUsulan::create($validatedData);
-
-        return redirect()->route('backend.admin-univ-usulan.pusat-usulan.index')
-                         ->with('success', 'Periode Usulan berhasil ditambahkan!');
+            // Opsional: ganti ke route index milikmu
+            // return redirect()->route('periode-usulan.index')->with('success', 'Periode usulan berhasil dibuat.');
+            return back()->with('success', 'Periode usulan berhasil dibuat.');
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->withInput()->with('error', 'Gagal membuat periode usulan. Coba lagi.');
+        }
     }
+
 
     /**
      * Menampilkan form untuk mengedit resource.
@@ -77,27 +96,41 @@ class PeriodeUsulanController extends Controller
     /**
      * Memperbarui resource yang ada di storage.
      */
-    public function update(Request $request, PeriodeUsulan $periodeUsulan)
+    public function update(Request $request, PeriodeUsulan $periode_usulan)
     {
-        $validatedData = $request->validate([
-            'nama_periode'              => 'required|string|max:255',
-            'jenis_usulan'              => 'required|string|in:usulan-jabatan-dosen,usulan-jabatan-tendik',
-            'tanggal_mulai'             => 'required|date',
-            'tanggal_selesai'           => 'required|date|after_or_equal:tanggal_mulai',
-            'tanggal_mulai_perbaikan'   => 'nullable|date|after_or_equal:tanggal_selesai',
-            'tanggal_selesai_perbaikan' => 'nullable|date|after_or_equal:tanggal_mulai_perbaikan',
-            'status'                    => 'required|in:Buka,Tutup',
+        $request->validate([
+            'tanggal_mulai' => [
+                'required',
+                'date',
+                new NoDateRangeOverlap(
+                    table: 'periode_usulans',
+                    startColumn: 'tanggal_mulai',
+                    endColumn: 'tanggal_selesai',
+                    filters: ['jenis_usulan' => $request->input('jenis_usulan')],
+                    excludeId: (int) $periode_usulan->id
+                ),
+            ],
+            'tanggal_selesai'  => ['required', 'date', 'after_or_equal:tanggal_mulai'],
+            'jenis_usulan'     => ['required', 'string', 'max:255'],
+            'senat_min_setuju' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        // Validasi tambahan: cek overlap berdasarkan jenis usulan yang sama (kecuali periode yang sedang di-edit)
-        $this->validateOverlapByJenisUsulan($request, $periodeUsulan->id);
+        try {
+            DB::transaction(function () use ($request, $periode_usulan) {
+                $periode_usulan->tanggal_mulai     = $request->input('tanggal_mulai');
+                $periode_usulan->tanggal_selesai   = $request->input('tanggal_selesai');
+                $periode_usulan->jenis_usulan      = $request->input('jenis_usulan');
+                $periode_usulan->senat_min_setuju  = (int) $request->input('senat_min_setuju', $periode_usulan->senat_min_setuju ?? 0);
+                // TODO: set field lain yang kamu punya
+                $periode_usulan->save();
+            });
 
-        $validatedData['tahun_periode'] = \Carbon\Carbon::parse($validatedData['tanggal_mulai'])->year;
-
-        $periodeUsulan->update($validatedData);
-
-        return redirect()->route('backend.admin-univ-usulan.pusat-usulan.index')
-                         ->with('success', 'Periode Usulan berhasil diperbarui!');
+            // return redirect()->route('periode-usulan.index')->with('success', 'Periode usulan berhasil diperbarui.');
+            return back()->with('success', 'Periode usulan berhasil diperbarui.');
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->withInput()->with('error', 'Gagal memperbarui periode usulan. Coba lagi.');
+        }
     }
 
     /**

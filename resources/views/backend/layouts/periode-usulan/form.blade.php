@@ -240,6 +240,32 @@
                     </div>
                 </div>
 
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label for="senat_min_setuju" class="block text-sm font-semibold text-gray-800">
+                            Minimal Anggota Senat “Direkomendasikan”
+                        </label>
+                        <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            id="senat_min_setuju"
+                            name="senat_min_setuju"
+                            value="{{ old('senat_min_setuju', isset($periode) ? $periode->senat_min_setuju : 1) }}"
+                            class="block w-40 px-3 py-2 rounded-md border border-gray-300 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                            required
+                        >
+                        <p class="text-xs text-gray-500">
+                            Jumlah minimal anggota Senat yang harus memilih <b>Direkomendasikan</b>
+                            agar usulan bisa direkomendasikan oleh Admin Universitas.
+                        </p>
+                        @error('senat_min_setuju')
+                            <p class="text-xs text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+
                 <div class="space-y-2">
                     <label for="status" class="block text-sm font-semibold text-gray-800">
                         Status Periode <span class="text-red-500">*</span>
@@ -322,3 +348,19 @@ function updateJenisUsulanInfo() {
 }
 </script>
 @endsection
+
+{{-- Minimal Anggota Senat Direkomendasikan --}}
+<div class="mb-4">
+    <label for="senat_min_setuju" class="block text-sm font-medium text-gray-700">
+        Minimal Anggota Senat “Direkomendasikan”
+    </label>
+    <input type="number" min="1" step="1" id="senat_min_setuju" name="senat_min_setuju"
+           value="{{ old('senat_min_setuju', $periodeUsulan->senat_min_setuju ?? 1) }}"
+           class="mt-1 block w-40 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+    <p class="mt-1 text-xs text-gray-500">
+        Ambang minimal anggota Senat yang memilih <b>Direkomendasikan</b>.
+    </p>
+    @error('senat_min_setuju')
+        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+    @enderror
+</div>

@@ -6,6 +6,32 @@
         </h3>
     </div>
 
+    @php
+        $counts = $usulan->getSenateDecisionCounts();
+        $minSetuju = $usulan->getSenateMinSetuju();
+    @endphp
+
+    {{-- Banner ringkas keputusan Senat --}}
+    <div class="mb-3">
+        <div class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                Setuju: <b>{{ $counts['setuju'] }}</b>
+            </span>
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rose-50 text-rose-700">
+                <span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>
+                Menolak: <b>{{ $counts['tolak'] }}</b>
+            </span>
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-gray-100 text-gray-700">
+                Total: <b>{{ $counts['total'] }}</b>
+            </span>
+
+            <span class="ml-3 text-gray-500">
+                Minimal setuju yang dibutuhkan: <b>{{ $minSetuju }}</b>
+            </span>
+        </div>
+    </div>
+
     <table class="w-full table-fixed">
         <thead class="bg-gray-50">
             <tr>

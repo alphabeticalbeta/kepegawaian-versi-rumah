@@ -845,38 +845,41 @@ class Usulan extends Model
     return $this->hasMany(UsulanJabatanSenat::class, 'usulan_id');
 }
 
-/** Ambil ambang minimal setuju dari periode (fallback 1) */
+/** Ambang minimal setuju dari periode (fallback 1) */
 public function getSenateMinSetuju(): int
 {
-    return (int)($this->periodeUsulan->senat_min_setuju ?? 1);
+    return (int) ($this->periodeUsulan->senat_min_setuju ?? 1);
 }
 
-/** Hitung keputusan Senat */
+/** Hitung keputusan Senat (direkomendasikan = setuju, belum_direkomendasikan = tolak) */
 public function getSenateDecisionCounts(): array
 {
     $total = $this->senatDecisions()->count();
     $setuju = $this->senatDecisions()->where('keputusan', 'direkomendasikan')->count();
     $tolak  = $this->senatDecisions()->where('keputusan', 'belum_direkomendasikan')->count();
+
     return [
         'total' => $total,
         'setuju' => $setuju,
-        'tolak' => $tolak,
-        'belum' => max(0, $total - $setuju - $tolak),
+        'tolak'  => $tolak,
+        'belum'  => max(0, $total - $setuju - $tolak),
     ];
 }
 
-    /** Lulus Senat berdasarkan minimal setuju (default pakai periode) */
+    /** Lulus Senat berdasarkan minimal setuju (default ambil dari periode) */
     public function isSenateApproved(?int $minSetuju = null): bool
     {
         $min = $minSetuju ?? $this->getSenateMinSetuju();
         $counts = $this->getSenateDecisionCounts();
-        return $counts['setuju'] >= $min && $counts['total'] > 0;
+
+        // Wajib ada data senat terlebih dulu (total > 0), lalu cek ambang setuju
+        return $counts['total'] > 0 && $counts['setuju'] >= $min;
     }
 
-    /** Sudah direkomendasikan oleh penilai? (pakai tabel usulan_penilai) */
+    /** Sudah direkomendasikan oleh tim penilai? (cek di tabel usulan_penilai) */
     public function isRecommendedByReviewer(): bool
     {
-        // Sesuaikan kolom 'status' bila namanya berbeda
+        // Sesuaikan nama kolom jika berbeda (status / rekomendasi)
         return DB::table('usulan_penilai')
             ->where('usulan_id', $this->id)
             ->whereIn('status', ['Direkomendasikan', 'direkomendasikan'])

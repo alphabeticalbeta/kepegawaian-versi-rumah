@@ -1,5 +1,13 @@
 {{-- Action Buttons Component --}}
 @php
+    // Baca syarat dari model
+    $minSetuju = $usulan->getSenateMinSetuju();
+    $isReviewerRecommended = $usulan->isRecommendedByReviewer();
+    $senatePass = $usulan->isSenateApproved($minSetuju);
+
+    // Tombol Direkomendasikan hanya aktif jika dua-duanya terpenuhi
+    $canRecommend = $isReviewerRecommended && $senatePass;
+
     // Determine if usulan can be edited
      $canEdit = $canEdit ?? in_array($usulan->status_usulan, [
         'Diusulkan ke Universitas',
@@ -43,14 +51,17 @@
                         onclick="return confirm('Apakah Anda yakin ingin MENOLAK usulan ini? Aksi ini tidak dapat dibatalkan.')"
                         class="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    Tolak Usulan
+                    Belum Direkomendasikan
                 </button>
 
-                <button type="submit" name="action_type" value="approve_proposal"
-                        onclick="return confirm('Apakah Anda yakin ingin MENYETUJUI & MEREKOMENDASIKAN usulan ini?')"
-                        class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-2 transition-colors">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    Setujui & Rekomendasikan
+                <button type="submit"
+                        name="action_type"
+                        value="recommend_proposal"
+                        class="px-6 py-2 rounded-md text-white transition-colors
+                            {{ $canEdit && $canRecommend ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-gray-300 cursor-not-allowed' }}"
+                        {{ $canEdit && $canRecommend ? '' : 'disabled' }}
+                        title="{{ $canRecommend ? '' : 'Menunggu rekomendasi penilai & keputusan Senat memenuhi ambang' }}">
+                    Direkomendasikan
                 </button>
 
                 <button type="button"
@@ -64,6 +75,15 @@
                     </svg>
                     Kirim Usulan Ke Tim Penilai
                 </button>
+
+                @if(!$canRecommend)
+                    <p class="text-xs text-gray-500 mt-2">
+                        Syarat belum terpenuhi:
+                        Penilai direkomendasikan: <b>{{ $isReviewerRecommended ? 'Ya' : 'Tidak' }}</b>,
+                        Senat setuju: <b>{{ $usulan->getSenateDecisionCounts()['setuju'] }}</b> / minimal <b>{{ $minSetuju }}</b>.
+                    </p>
+                @endif
+
             @else
                 {{-- Read-only Status Indicators --}}
                 @if($usulan->status_usulan === 'Perlu Perbaikan')

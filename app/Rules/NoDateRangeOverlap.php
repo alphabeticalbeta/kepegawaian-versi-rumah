@@ -2,71 +2,86 @@
 
 namespace App\Rules;
 
-use Illuminate\Contracts\Validation\Rule;
-use App\Models\BackendUnivUsulan\PeriodeUsulan;
+use Closure;
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\DataAwareRule;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
 
-class NoDateRangeOverlap implements Rule
+class NoDateRangeOverlap implements ValidationRule, DataAwareRule
 {
-    protected $request;
-    protected $excludeId;
+    protected string $table;
+    protected string $startColumn;
+    protected string $endColumn;
+    protected array $filters;
+    protected ?int $excludeId;
+    protected string $excludeColumn;
 
-    /**
-     * Create a new rule instance.
-     *
-     * @return void
-     */
-    public function __construct($request, $excludeId = null)
-    {
-        $this->request = $request;
+    protected array $data = [];
+
+    public function __construct(
+        string $table,
+        string $startColumn = 'tanggal_mulai',
+        string $endColumn = 'tanggal_selesai',
+        array $filters = [],
+        ?int $excludeId = null,
+        string $excludeColumn = 'id',
+    ) {
+        $this->table = $table;
+        $this->startColumn = $startColumn;
+        $this->endColumn = $endColumn;
+        $this->filters = $filters;
         $this->excludeId = $excludeId;
+        $this->excludeColumn = $excludeColumn;
     }
 
-    /**
-     * Determine if the validation rule passes.
-     *
-     * @param  string  $attribute
-     * @param  mixed  $value
-     * @return bool
-     */
-    public function passes($attribute, $value)
+    public function setData(array $data): static
     {
-        $jenisUsulan = $this->request->jenis_usulan;
-        $tanggalMulai = $this->request->tanggal_mulai;
-        $tanggalSelesai = $this->request->tanggal_selesai;
-
-        // Jika tanggal selesai belum diisi, skip validasi
-        if (!$tanggalSelesai) {
-            return true;
-        }
-
-        $query = PeriodeUsulan::where('jenis_usulan', $jenisUsulan)
-            ->where(function ($q) use ($tanggalMulai, $tanggalSelesai) {
-                $q->whereBetween('tanggal_mulai', [$tanggalMulai, $tanggalSelesai])
-                  ->orWhereBetween('tanggal_selesai', [$tanggalMulai, $tanggalSelesai])
-                  ->orWhere(function ($subQ) use ($tanggalMulai, $tanggalSelesai) {
-                      $subQ->where('tanggal_mulai', '<=', $tanggalMulai)
-                           ->where('tanggal_selesai', '>=', $tanggalSelesai);
-                  });
-            });
-
-        // Exclude periode yang sedang di-edit
-        if ($this->excludeId) {
-            $query->where('id', '!=', $this->excludeId);
-        }
-
-        return !$query->exists();
+        $this->data = $data;
+        return $this;
     }
 
-    /**
-     * Get the validation error message.
-     *
-     * @return string
-     */
-    public function message()
+    public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        $jenisUsulan = $this->request->jenis_usulan;
-        $jenisUsulanText = ucwords(str_replace('-', ' ', $jenisUsulan));
+        $inputStart = $this->data[$this->startColumn] ?? null;
+        $inputEnd   = $this->data[$this->endColumn] ?? null;
 
-        return "Periode tanggal yang dipilih overlapping dengan periode {$jenisUsulanText} yang sudah ada.";
+        if ($attribute === $this->startColumn) {
+            $inputStart = $value;
+        } elseif ($attribute === $this->endColumn) {
+            $inputEnd = $value;
+        }
+
+        if (blank($inputStart) || blank($inputEnd)) {
+            return;
+        }
+
+        try {
+            $start = Carbon::parse($inputStart)->startOfDay();
+            $end   = Carbon::parse($inputEnd)->endOfDay();
+        } catch (\Throwable $e) {
+            return; // biar rule 'date' / format lain yang nembak error
+        }
+
+        if ($end->lt($start)) {
+            $fail('Tanggal selesai harus sesudah atau sama dengan tanggal mulai.');
+            return;
+        }
+
+        $query = DB::table($this->table)
+            ->where($this->startColumn, '<=', $end)
+            ->where($this->endColumn, '>=', $start);
+
+        foreach ($this->filters as $col => $val) {
+            $query->where($col, $val);
+        }
+
+        if (!is_null($this->excludeId)) {
+            $query->where($this->excludeColumn, '!=', $this->excludeId);
+        }
+
+        if ($query->exists()) {
+            $fail('Rentang tanggal bertabrakan dengan periode lain.');
+        }
     }
 }

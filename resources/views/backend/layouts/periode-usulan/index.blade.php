@@ -39,6 +39,7 @@
                     <th scope="col" class="px-6 py-3">Tahun</th>
                     <th scope="col" class="px-6 py-3">Tanggal Mulai</th>
                     <th scope="col" class="px-6 py-3">Tanggal Selesai</th>
+                    <th scope="col" class="px-6 py-3">Min Setuju Senat</th>
                     <th scope="col" class="px-6 py-3">Status</th>
                     <th scope="col" class="px-6 py-3">Pendaftar</th>
                     <th scope="col" class="px-6 py-3">Aksi</th>
@@ -56,10 +57,11 @@
                                 {{ ucwords(str_replace('-', ' ', $periode->jenis_usulan)) }}
                             </span>
                         </td>
-                        <td class="px-6 py-4">{{ $periode->tahun_periode }}</td>
-                        <td class="px-6 py-4">{{ \Carbon\Carbon::parse($periode->tanggal_mulai)->isoFormat('D MMM YYYY') }}</td>
-                        <td class="px-6 py-4">{{ \Carbon\Carbon::parse($periode->tanggal_selesai)->isoFormat('D MMM YYYY') }}</td>
-                        <td class="px-6 py-4">
+                            <td class="px-6 py-4">{{ $periode->tahun_periode }}</td>
+                            <td class="px-6 py-4">{{ \Carbon\Carbon::parse($periode->tanggal_mulai)->isoFormat('D MMM YYYY') }}</td>
+                            <td class="px-6 py-4">{{ \Carbon\Carbon::parse($periode->tanggal_selesai)->isoFormat('D MMM YYYY') }}</td>
+                            <td class="px-6 py-4">{{ $periode->senat_min_setuju }}</td>
+                            <td class="px-6 py-4">
                             @if($periode->status == 'Buka')
                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Buka</span>
                             @else
@@ -85,7 +87,7 @@
                     </tr>
                 @empty
                     <tr class="bg-white border-b">
-                        <td colspan="8" class="px-6 py-4 text-center text-gray-500">
+                        <td colspan="9" class="px-6 py-4 text-center text-gray-500">
                             Data periode usulan belum tersedia.
                         </td>
                     </tr>
