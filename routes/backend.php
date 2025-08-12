@@ -25,6 +25,9 @@ use App\Http\Controllers\Backend\PegawaiUnmul\UsulanJabatanController; // Jabata
 
 use App\Http\Controllers\Backend\AdminFakultas\AdminFakultasController;
 
+use App\Http\Controllers\Backend\PenilaiUniversitas\PusatUsulanController as PenilaiPusatUsulanController;
+
+
 // ------ RUTE HALAMAN LOGIN & LOGOUT ------//
 Route::get('/login', [LoginController::class, 'showLoginForm'])->middleware('guest:pegawai')->name('login');
 Route::post('/login', [LoginController::class, 'login'])->middleware('guest:pegawai');
@@ -168,10 +171,25 @@ Route::middleware(['auth:pegawai'])->group(function () {
     });
 
     // ------ RUTE HALAMAN BACKEND PENILAI UNIVERSITAS ------//
-    Route::prefix('penilai-universitas')->name('penilai-universitas.')->group(function () {
-        Route::get('/dashboard', [PenilaiUniversitasDashboardController::class, 'index'])->name('dashboard-penilai-universitas');
-    });
+    Route::prefix('penilai-universitas')
+        ->name('penilai-universitas.')
+        ->middleware(['auth:pegawai', 'role:Penilai Universitas'])
+        ->group(function () {
 
+            // Dashboard Penilai
+            Route::get('/dashboard', [PenilaiUniversitasDashboardController::class, 'index'])
+                ->name('dashboard-penilai-universitas');
+
+            // Pusat Usulan (khusus Penilai)
+            Route::get('/pusat-usulan', [PenilaiPusatUsulanController::class, 'index'])
+                ->name('pusat-usulan.index');
+
+            Route::get('/pusat-usulan/{usulan}', [PenilaiPusatUsulanController::class, 'show'])
+                ->name('pusat-usulan.show');
+
+            Route::post('/pusat-usulan/{usulan}/process', [PenilaiPusatUsulanController::class, 'process'])
+                ->name('pusat-usulan.process');
+        });
 }); // Penutup untuk middleware group
 
 // =====================================================

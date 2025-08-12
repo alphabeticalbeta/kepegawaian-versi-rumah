@@ -879,10 +879,29 @@ public function getSenateDecisionCounts(): array
     /** Sudah direkomendasikan oleh tim penilai? (cek di tabel usulan_penilai) */
     public function isRecommendedByReviewer(): bool
     {
-        // Sesuaikan nama kolom jika berbeda (status / rekomendasi)
-        return DB::table('usulan_penilai')
+        // Ambil total penilai yang ditugaskan
+        $total = \DB::table('usulan_penilai')
             ->where('usulan_id', $this->id)
-            ->whereIn('status', ['Direkomendasikan', 'direkomendasikan'])
-            ->exists();
+            ->count();
+
+        // Ambil jumlah penilai yang memberi rekomendasi (status_penilaian = 'Sesuai')
+        $setuju = \DB::table('usulan_penilai')
+            ->where('usulan_id', $this->id)
+            ->where('status_penilaian', 'Sesuai')
+            ->count();
+
+        // Jika tidak ada penilai sama sekali, otomatis tidak direkomendasikan
+        if ($total === 0) {
+            return false;
+        }
+
+        // Hitung ambang minimal:
+        // 1 penilai -> min 1 setuju
+        // 2 penilai -> min 2 setuju
+        // 3 penilai -> min 2 setuju
+        $threshold = (int) ceil(($total + 1) / 2);
+
+        return $setuju >= $threshold;
     }
+
 }

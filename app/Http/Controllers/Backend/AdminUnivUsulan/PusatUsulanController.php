@@ -195,81 +195,91 @@ class PusatUsulanController extends Controller
 
     public function process(Request $request, Usulan $usulan)
     {
-        // Guard Clause: Pastikan hanya usulan yang siap diproses yang bisa diubah.
+        // 1) Guard status
         if (!in_array($usulan->status_usulan, ['Diusulkan ke Universitas', 'Sedang Direview Universitas'])) {
             return redirect()->back()->with('error', 'Aksi tidak dapat dilakukan karena status usulan saat ini adalah: ' . $usulan->status_usulan);
         }
 
-        // Validasi input dari form
+        // 2) Validasi input (tambahkan recommend_proposal)
         $request->validate([
-            'action_type' => 'required|in:save_only,return_to_pegawai,reject_proposal,approve_proposal',
+            'action_type'  => 'required|in:save_only,return_to_pegawai,reject_proposal,approve_proposal,recommend_proposal',
             'catatan_umum' => 'required_if:action_type,return_to_pegawai|nullable|string|min:10|max:2000',
         ], [
             'catatan_umum.required_if' => 'Catatan wajib diisi jika Anda mengembalikan usulan ke pegawai.',
         ]);
 
-        $adminId = Auth::id();
-        $statusLama = $usulan->status_usulan;
+        // 3) Cek prasyarat rekomendasi SENAT & PENILAI lebih dulu (hindari early-return dalam transaksi)
         $actionType = $request->action_type;
+        if ($actionType === 'recommend_proposal') {
+            $minSetuju = $usulan->getSenateMinSetuju();
+            if (!$usulan->isRecommendedByReviewer()) {
+                return back()->with('error', 'Belum dapat direkomendasikan: menunggu rekomendasi dari Tim Penilai.');
+            }
+            if (!$usulan->isSenateApproved($minSetuju)) {
+                return back()->with('error', 'Belum dapat direkomendasikan: keputusan Senat belum memenuhi minimal setuju (' . $minSetuju . ').');
+            }
+        }
+
+        $adminId    = Auth::id();
+        $statusLama = $usulan->status_usulan;
         $logMessage = '';
 
         DB::beginTransaction();
         try {
-            // Simpan data validasi (Sesuai/Tidak Sesuai) dari form
+            // 4) Simpan data validasi by role (pastikan method ini aman)
             if ($request->has('validation')) {
                 $usulan->setValidasiByRole('admin_universitas', $request->validation, $adminId);
             }
-            $usulan->save();
 
+            // 5) Mutasi status berdasarkan action
             switch ($actionType) {
-                case 'return_to_pegawai': // Aturan #2: Revisi langsung ke Pegawai
+                case 'return_to_pegawai':
                     $usulan->status_usulan = 'Dikembalikan ke Pegawai';
+                    // Pastikan kolom ini ada; jika tidak, pindahkan ke log/validasi
                     $usulan->catatan_verifikator = $request->catatan_umum;
                     $logMessage = 'Usulan dikembalikan ke Pegawai untuk perbaikan oleh Admin Universitas.';
                     break;
 
-                case 'reject_proposal': // Aturan #3: Penolakan
+                case 'reject_proposal':
                     $usulan->status_usulan = 'Ditolak Universitas';
                     $logMessage = 'Usulan ditolak oleh Admin Universitas. Proses dihentikan.';
                     break;
 
                 case 'approve_proposal':
-                    $usulan->status_usulan = 'Direkomendasikan'; // Atau 'Disetujui Universitas'
+                    $usulan->status_usulan = 'Direkomendasikan'; // atau 'Disetujui Universitas' sesuai kebijakanmu
                     $logMessage = 'Usulan disetujui dan direkomendasikan oleh Admin Universitas.';
                     break;
-                case 'save_only': // <-- TAMBAHKAN KASUS INI
-                    // Jika status masih 'Diusulkan ke Universitas', ubah menjadi 'Sedang Direview Universitas'
-                    // untuk menandakan proses sudah berjalan.
+
+                case 'save_only':
+                    // Jika masih awal, ubah ke "Sedang Direview Universitas" sesuai komentarmu
+                    if ($statusLama === 'Diusulkan ke Universitas') {
+                        $usulan->status_usulan = 'Sedang Direview Universitas';
+                    }
                     $logMessage = 'Validasi dari Admin Universitas disimpan.';
                     break;
-                case 'recommend_proposal':
-                    // Validasi syarat
-                    $minSetuju = $usulan->getSenateMinSetuju();
-                    if (!$usulan->isRecommendedByReviewer()) {
-                        return back()->with('error', 'Belum dapat direkomendasikan: menunggu rekomendasi dari Tim Penilai.');
-                    }
-                    if (!$usulan->isSenateApproved($minSetuju)) {
-                        return back()->with('error', 'Belum dapat direkomendasikan: keputusan Senat belum memenuhi minimal setuju (' . $minSetuju . ').');
-                    }
 
-                    // Lolos: tetapkan status akhir
+                case 'recommend_proposal':
+                    // Sudah lulus prasyarat di atas
                     $usulan->status_usulan = 'Direkomendasikan';
                     $logMessage = 'Usulan direkomendasikan oleh Admin Universitas.';
                     break;
             }
 
             $usulan->save();
+
+            // 6) Tulis log
             $usulan->createLog($usulan->status_usulan, $statusLama, $logMessage, $adminId);
 
             DB::commit();
 
-            return redirect()->route('backend.admin-univ-usulan.pusat-usulan.index')
-                            ->with('success', 'Usulan berhasil diproses.');
-
-        } catch (\Exception $e) {
+            return redirect()
+                ->route('backend.admin-univ-usulan.pusat-usulan.index')
+                ->with('success', 'Usulan berhasil diproses.');
+        } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Error processing usulan by Admin Universitas: ' . $e->getMessage(), ['usulan_id' => $usulan->id]);
             return redirect()->back()->with('error', 'Terjadi kesalahan sistem saat memproses usulan.');
         }
     }
+
 }

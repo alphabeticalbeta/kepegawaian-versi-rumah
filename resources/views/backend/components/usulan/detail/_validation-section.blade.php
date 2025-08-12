@@ -48,7 +48,7 @@
         </thead>
         <tbody class="divide-y divide-gray-200">
             @foreach($fields as $field)
-                @include('backend.layouts.admin-univ-usulan.pusat-usulan.partials.validation-row', [
+                @include('Backend.components.usulan.detail._validation-row', [
                     'category' => $category,
                     'field' => $field,
                     'usulan' => $usulan,

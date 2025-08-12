@@ -122,7 +122,7 @@
         $isReviewerRecommended = $usulan->isRecommendedByReviewer();
     @endphp
 
-    <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4 p-5">
         {{-- Status Rekomendasi Tim Penilai --}}
         <div class="rounded-lg border border-gray-200 p-4 bg-white">
             <p class="text-sm text-gray-500 mb-1">Status Tim Penilai</p>
