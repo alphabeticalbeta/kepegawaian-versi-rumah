@@ -40,7 +40,33 @@ class UsulanJabatanController extends BaseUsulanController
     {
         /** @var \App\Models\BackendUnivUsulan\Pegawai $pegawai */
         $pegawai = Pegawai::with(['jabatan', 'pangkat', 'unitKerja'])
-                        ->findOrFail(Auth::id());
+                ->findOrFail(Auth::id());
+
+        // Load dokumen profil pegawai
+        $documentFields = [
+            'sk_pangkat_terakhir' => ['label' => 'SK Pangkat Terakhir', 'icon' => 'file-text'],
+            'sk_jabatan_terakhir' => ['label' => 'SK Jabatan Terakhir', 'icon' => 'file-text'],
+            'ijazah_terakhir' => ['label' => 'Ijazah Terakhir', 'icon' => 'award'],
+            'transkrip_nilai_terakhir' => ['label' => 'Transkrip Nilai Terakhir', 'icon' => 'file-text'],
+            'sk_cpns' => ['label' => 'SK CPNS', 'icon' => 'file-text'],
+            'sk_pns' => ['label' => 'SK PNS', 'icon' => 'file-text'],
+            'skp_tahun_pertama' => ['label' => 'SKP Tahun Pertama', 'icon' => 'clipboard'],
+            'skp_tahun_kedua' => ['label' => 'SKP Tahun Kedua', 'icon' => 'clipboard'],
+        ];
+        // Add dosen-specific documents
+        if ($pegawai->jenis_pegawai === 'Dosen') {
+            $documentFields['pak_konversi'] = ['label' => 'PAK Konversi', 'icon' => 'file-check'];
+            $documentFields['sk_penyetaraan_ijazah'] = ['label' => 'SK Penyetaraan Ijazah', 'icon' => 'file-text'];
+            $documentFields['disertasi_thesis_terakhir'] = ['label' => 'Disertasi/Thesis Terakhir', 'icon' => 'book'];
+        }
+
+        Log::info('Create usulan jabatan accessed', [
+            'user_id' => Auth::id(),
+            'pegawai_id' => $pegawai->id,
+            'jenis_pegawai' => $pegawai->jenis_pegawai,
+            'status_kepegawaian' => $pegawai->status_kepegawaian
+        ]);
+
 
         // =============================================================
         // BLOK PENGECEKAN AKSES BARU
@@ -119,6 +145,7 @@ class UsulanJabatanController extends BaseUsulanController
             'formConfig' => $formConfig,
             'jenisUsulanPeriode' => $jenisUsulanPeriode,
             'bkdSemesters' => $bkdSemesters,
+            'documentFields' => $documentFields, // ADD THIS
         ]);
     }
 
