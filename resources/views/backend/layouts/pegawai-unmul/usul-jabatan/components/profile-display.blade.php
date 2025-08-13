@@ -1,6 +1,20 @@
 {{-- components/profile-display.blade.php --}}
 {{-- Enhanced component dengan sistem validasi untuk semua field --}}
+@php
+    // Safety check untuk variabel yang mungkin tidak ada
+    $catatanPerbaikan = $catatanPerbaikan ?? [];
 
+    // Ensure all required array keys exist
+    $catatanPerbaikan = array_merge([
+        'data_pribadi' => [],
+        'data_kepegawaian' => [],
+        'data_pendidikan' => [],
+        'data_kinerja' => [],
+        'dokumen_profil' => [],
+        'dokumen_usulan' => [],
+        'dokumen_bkd' => [],
+    ], $catatanPerbaikan);
+@endphp
 <div class="bg-white p-8 rounded-xl shadow-lg mb-6 border border-gray-100">
     <!-- Header Section -->
     <div class="border-b border-slate-200 pb-6 mb-8">
@@ -233,9 +247,9 @@
             <div class="p-6 space-y-4">
                 @php
                     $dataKinerja = [
-                        'predikat_kinerja_tahun_pertama' => ['Predikat Kinerja Thn. 1', $pegawai->predikat_kinerja_tahun_pertama, 'target'],
-                        'predikat_kinerja_tahun_kedua'   => ['Predikat Kinerja Thn. 2', $pegawai->predikat_kinerja_tahun_kedua, 'target'],
-                        'nilai_konversi'                 => ['Nilai Konversi',          $pegawai->nilai_konversi, 'calculator'],
+                        'predikat_kinerja_tahun_pertama' => ['Predikat SKP Tahun '. (date('Y') - 1), $pegawai->predikat_kinerja_tahun_pertama, 'target'],
+                        'predikat_kinerja_tahun_kedua'   => ['Predikat SKP Tahun '. (date('Y') - 2), $pegawai->predikat_kinerja_tahun_kedua, 'target'],
+                        'nilai_konversi'                 => ['Nilai Konversi '. (date('Y') - 1), $pegawai->nilai_konversi, 'calculator'],
                     ];
                 @endphp
 
@@ -306,9 +320,9 @@
                             'transkrip_nilai_terakhir'  => ['Transkrip Nilai Terakhir', 'file-text'],
                             'sk_pangkat_terakhir'       => ['SK Pangkat Terakhir', 'award'],
                             'sk_jabatan_terakhir'       => ['SK Jabatan Terakhir', 'briefcase'],
-                            'skp_tahun_pertama'         => ['SKP Tahun Pertama', 'target'],
-                            'skp_tahun_kedua'           => ['SKP Tahun Kedua', 'target'],
-                            'pak_konversi'              => ['PAK Konversi', 'refresh-cw'],
+                            'skp_tahun_pertama'         => ['SKP Tahun ' . (date('Y') - 1), 'target'],
+                            'skp_tahun_kedua'           => ['SKP Tahun ' . (date('Y') - 2), 'target'],
+                            'pak_konversi'              => ['PAK Konversi ' . (date('Y') - 1), 'refresh-cw'],
                             'sk_cpns'                   => ['SK CPNS', 'user-plus'],
                             'sk_pns'                    => ['SK PNS', 'user-check'],
                             'sk_penyetaraan_ijazah'     => ['SK Penyetaraan Ijazah', 'scale'],
@@ -362,7 +376,7 @@
                                 @if ($pegawai->{$key})
                                     <div class="flex items-center gap-1">
                                         <div class="w-2 h-2 {{ $isFieldInvalid ? 'bg-red-400' : 'bg-green-400' }} rounded-full"></div>
-                                        <a href="{{ asset('storage/' . $pegawai->{$key}) }}" target="_blank"
+                                        <a href="{{ route('pegawai-unmul.profile.show-document', $key) }}" target="_blank"
                                         class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white {{ $isFieldInvalid ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700' }} rounded-lg transition-colors duration-200">
                                             <i data-lucide="eye" class="w-3 h-3"></i>
                                             Lihat

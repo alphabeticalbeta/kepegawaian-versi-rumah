@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Backend\AdminFakultas\DashboardController as AdminFakultasDashboardController;
 use App\Http\Controllers\Backend\AdminUniversitas\DashboardController as AdminUniversitasDashboardController;
@@ -18,13 +19,9 @@ use App\Http\Controllers\Backend\PenilaiUniversitas\DashboardController as Penil
 use App\Http\Controllers\Backend\PegawaiUnmul\ProfileController as ProfileController;
 use App\Http\Controllers\Backend\AdminUnivUsulan\PeriodeUsulanController;
 use App\Http\Controllers\Backend\AdminUnivUsulan\PusatUsulanController;
-
-// NEW CONTROLLERS - Separated Architecture
 use App\Http\Controllers\Backend\PegawaiUnmul\UsulanPegawaiController; // Pusat Controller
 use App\Http\Controllers\Backend\PegawaiUnmul\UsulanJabatanController; // Jabatan Controller
-
 use App\Http\Controllers\Backend\AdminFakultas\AdminFakultasController;
-
 use App\Http\Controllers\Backend\PenilaiUniversitas\PusatUsulanController as PenilaiPusatUsulanController;
 
 
@@ -130,11 +127,16 @@ Route::middleware(['auth:pegawai'])->group(function () {
             // API routes
             Route::get('/{usulanJabatan}/logs', [UsulanJabatanController::class, 'getLogs'])->name('logs');
 
-            // ADDED: Debug route untuk development
-            Route::get('/{usulanJabatan}/debug', [UsulanJabatanController::class, 'debugUpdate'])
-                ->name('debug')
-                ->middleware('can:debug-usulan'); // Optional permission check
+            // DEBUG: Test controller method
+            Route::get('/{usulanJabatan}/debug-doc/{field}', function($usulanJabatan, $field) {
+                return response()->json([
+                    'usulan_id' => $usulanJabatan->id,
+                    'field' => $field,
+                    'message' => 'Controller parameters work'
+                ]);
+            })->name('debug-doc');
         });
+
 
         // =====================================================
         // LEGACY COMPATIBILITY - Redirect old routes

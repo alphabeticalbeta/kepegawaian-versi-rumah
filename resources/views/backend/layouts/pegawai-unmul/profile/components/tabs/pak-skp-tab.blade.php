@@ -31,14 +31,14 @@
                     <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
                         <h4 class="font-semibold text-blue-800 mb-3 flex items-center gap-2">
                             <i data-lucide="calendar" class="w-4 h-4"></i>
-                            Tahun Pertama
+                            SKP Tahun {{ date('Y') - 1 }}
                         </h4>
 
                         {{-- Predikat Kinerja Tahun Pertama --}}
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 <i data-lucide="award" class="w-4 h-4 inline mr-1"></i>
-                                Predikat Kinerja Tahun Pertama
+                                Predikat Kinerja SKP Tahun {{ date('Y') - 1 }}
                             </label>
                             @if($isEditing)
                                 <select name="predikat_kinerja_tahun_pertama"
@@ -83,14 +83,14 @@
                     <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
                         <h4 class="font-semibold text-green-800 mb-3 flex items-center gap-2">
                             <i data-lucide="calendar" class="w-4 h-4"></i>
-                            Tahun Kedua
+                            SKP Tahun {{ date('Y') - 1 }}
                         </h4>
 
                         {{-- Predikat Kinerja Tahun Kedua --}}
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 <i data-lucide="award" class="w-4 h-4 inline mr-1"></i>
-                                Predikat Kinerja Tahun Kedua
+                                Predikat Kinerja SKP Tahun {{ date('Y') - 1 }}
                             </label>
                             @if($isEditing)
                                 <select name="predikat_kinerja_tahun_kedua"
@@ -157,7 +157,7 @@
                     <div class="bg-gradient-to-r from-purple-50 to-violet-50 border border-purple-200 rounded-lg p-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             <i data-lucide="hash" class="w-4 h-4 inline mr-1"></i>
-                            Nilai Konversi
+                            Nilai Konversi Tahun {{ date('Y') - 1 }}
                         </label>
                         @if($isEditing)
                             <input type="number" name="nilai_konversi"
@@ -165,7 +165,7 @@
                                    step="0.01"
                                    placeholder="Contoh: 150.25"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                            <p class="text-xs text-gray-500 mt-1">Masukkan nilai konversi angka kredit</p>
+                            <p class="text-xs text-gray-500 mt-1">Masukkan nilai konversi angka kredit Tahun {{ date('Y') - 1 }}</p>
                         @else
                             <div class="flex items-center gap-2">
                                 @if($pegawai->nilai_konversi)

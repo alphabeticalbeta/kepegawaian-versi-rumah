@@ -124,29 +124,27 @@ class ProfileController extends Controller
 
         // 1. Validasi field yang diizinkan
         $allowedFields = array_keys($this->getDocumentFields());
-
         if (!in_array($field, $allowedFields)) {
             abort(404, 'Jenis dokumen tidak valid.');
         }
 
-        // 2. Cek apakah file ada
+        // 2. Cek apakah file path ada di database
         $filePath = $pegawai->$field;
-        if (!$filePath || !Storage::disk('local')->exists($filePath)) {
+        if (!$filePath) {
             abort(404, 'File tidak ditemukan');
         }
 
-        // 3. **ACCESS CONTROL** - Pegawai hanya bisa akses dokumen sendiri
-        // Untuk sementara skip permission check atau buat logic sederhana
-        // if (!$pegawai->can('view_own_documents')) {
-        //     abort(403, 'Anda tidak memiliki akses untuk halaman atau dokumen ini.');
-        // }
+        // 3. Determine correct disk and check file existence
+        $disk = $this->getFileDisk($field);
+        if (!Storage::disk($disk)->exists($filePath)) {
+            abort(404, 'File tidak ditemukan di storage');
+        }
 
-        // 4. **LOGGING** - Catat akses dokumen
+        // 4. LOGGING - Catat akses dokumen
         $this->logDocumentAccess($pegawai->id, $pegawai->id, $field, request());
 
         // 5. Serve file
-        $fullPath = Storage::disk('local')->path($filePath);
-
+        $fullPath = Storage::disk($disk)->path($filePath);
         if (!file_exists($fullPath)) {
             abort(404, 'File tidak ditemukan di storage');
         }
@@ -156,6 +154,9 @@ class ProfileController extends Controller
         return response()->file($fullPath, [
             'Content-Type' => $mimeType,
             'Content-Disposition' => 'inline; filename="' . basename($fullPath) . '"',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0'
         ]);
     }
 
@@ -181,15 +182,11 @@ class ProfileController extends Controller
 
                 // Hapus file lama jika ada
                 if ($pegawai->$column) {
-                    Storage::disk('local')->delete($pegawai->$column);
+                    $this->deleteOldFile($pegawai->$column, $column);
                 }
 
-                // Upload file baru
-                if ($column === 'foto') {
-                $path = $request->file($column)->store('pegawai-files/foto', 'public');
-                } else {
-                    $path = $request->file($column)->store('pegawai-files/' . $column, 'local');
-                }
+                // Upload file baru dengan hybrid strategy
+                $path = $this->storeFileByType($request->file($column), $column);
                 $validatedData[$column] = $path;
             }
         }
@@ -208,6 +205,58 @@ class ProfileController extends Controller
             'user_agent' => $request->header('User-Agent', ''),
             'accessed_at' => now(),
         ]);
+    }
+
+    private function storeFileByType($file, $column): string
+    {
+        // Define sensitive vs public files
+        $sensitiveFiles = [
+            'sk_pangkat_terakhir',
+            'sk_jabatan_terakhir',
+            'ijazah_terakhir',
+            'transkrip_nilai_terakhir',
+            'sk_penyetaraan_ijazah',
+            'disertasi_thesis_terakhir',
+            'pak_konversi',
+            'skp_tahun_pertama',
+            'skp_tahun_kedua',
+            'sk_cpns',
+            'sk_pns'
+        ];
+
+        if (in_array($column, $sensitiveFiles)) {
+            // Sensitive files -> local disk (protected access)
+            return $file->store('pegawai-files/' . $column, 'local');
+        } else {
+            // Public files (foto) -> public disk
+            return $file->store('pegawai-files/' . $column, 'public');
+        }
+    }
+
+    /**
+     * Delete old file from appropriate disk
+     */
+    private function deleteOldFile($filePath, $column): void
+    {
+        $sensitiveFiles = [
+            'sk_pangkat_terakhir', 'sk_jabatan_terakhir', 'ijazah_terakhir',
+            'transkrip_nilai_terakhir', 'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir',
+            'pak_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua', 'sk_cpns', 'sk_pns'
+        ];
+
+        $disk = in_array($column, $sensitiveFiles) ? 'local' : 'public';
+        Storage::disk($disk)->delete($filePath);
+    }
+
+    private function getFileDisk($field): string
+    {
+        $sensitiveFiles = [
+            'sk_pangkat_terakhir', 'sk_jabatan_terakhir', 'ijazah_terakhir',
+            'transkrip_nilai_terakhir', 'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir',
+            'pak_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua', 'sk_cpns', 'sk_pns'
+        ];
+
+        return in_array($field, $sensitiveFiles) ? 'local' : 'public';
     }
 
     /**
@@ -241,15 +290,15 @@ class ProfileController extends Controller
                 'icon' => 'book-open'
             ],
             'pak_konversi' => [
-                'label' => 'PAK Konversi',
+                'label' => 'PAK Konversi' . (date('Y') - 1),
                 'icon' => 'calculator'
             ],
             'skp_tahun_pertama' => [
-                'label' => 'SKP Tahun Pertama',
+                'label' => 'SKP'. (date('Y') - 1),
                 'icon' => 'clipboard-check'
             ],
             'skp_tahun_kedua' => [
-                'label' => 'SKP Tahun Kedua',
+                'label' => 'SKP'. (date('Y') - 2),
                 'icon' => 'clipboard-check'
             ],
             'sk_cpns' => [

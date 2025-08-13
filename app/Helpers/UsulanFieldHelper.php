@@ -133,7 +133,11 @@ class UsulanFieldHelper
 
         // 3) Jika ada path → buat link; kalau tidak → info belum diunggah
         if (!empty($docPath)) {
-            $route = route('backend.admin-univ-usulan.pusat-usulan.show-document', [$this->usulan->id, $field]);
+            if (request()->is('pegawai-unmul/*')) {
+                $route = route('pegawai-unmul.usulan-jabatan.show-document', [$this->usulan->id, $field]);
+            } else {
+                $route = route('backend.admin-univ-usulan.pusat-usulan.show-document', [$this->usulan->id, $field]);
+            }
             // Judul baris sudah menampilkan label semesternya, jadi link cukup "Lihat Dokumen"
             $label = '✓ Lihat Dokumen';
             return '<a href="' . $route . '" target="_blank" class="text-blue-600 hover:text-blue-800 underline inline-flex items-center gap-1">' . $label . '</a>';

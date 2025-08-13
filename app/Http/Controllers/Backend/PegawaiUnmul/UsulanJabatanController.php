@@ -303,25 +303,25 @@ class UsulanJabatanController extends BaseUsulanController
      * Show the form for editing the specified usulan jabatan
      * SIMPLIFIED: Back to standard {usulan} parameter
      */
-    public function edit(Usulan $usulan)
+    public function edit(Usulan $usulanJabatan)
     {
 
-        if ($usulan->pegawai_id !== Auth::id()) {
+        if ($usulanJabatan->pegawai_id !== Auth::id()) {
             abort(403, 'AKSES DITOLAK');
         }
 
         $pegawai = Auth::user();
 
-        $isReadOnly = in_array($usulan->status_usulan, [
+        $isReadOnly = in_array($usulanJabatan->status_usulan, [
             'Diajukan', 'Sedang Direview', 'Disetujui', 'Direkomendasikan'
         ]);
 
-        $canEdit = in_array($usulan->status_usulan, [
+        $canEdit = in_array($usulanJabatan->status_usulan, [
             'Draft', 'Perlu Perbaikan', 'Dikembalikan'
         ]);
 
         // Get periode usulan
-        $jenisUsulanPeriode = $usulan->jenis_usulan;
+        $jenisUsulanPeriode = $usulanJabatan->jenis_usulan;
         $daftarPeriode = $this->getActivePeriode($jenisUsulanPeriode);
 
         // Get jabatan info
@@ -332,15 +332,15 @@ class UsulanJabatanController extends BaseUsulanController
         $jenjangType = $this->determineJenjangType($pegawai, $jabatanLama, $jabatanTujuan);
         $formConfig = $this->getFormConfigByJenjang($jenjangType);
 
-        $catatanPerbaikan = $usulan->getValidasiByRole('admin_fakultas');
+        $catatanPerbaikan = $usulanJabatan->getValidasiByRole('admin_fakultas');
 
-        $bkdSemesters = $this->generateBkdSemesterLabels($usulan->periodeUsulan);
+        $bkdSemesters = $this->generateBkdSemesterLabels($usulanJabatan->periodeUsulan);
 
         return view('backend.layouts.pegawai-unmul.usul-jabatan.create-jabatan', [
             'pegawai' => $pegawai,
             'daftarPeriode' => $daftarPeriode,
             'jabatanTujuan' => $jabatanTujuan,
-            'usulan' => $usulan,
+            'usulan' => $usulanJabatan,
             'jenjangType' => $jenjangType,
             'formConfig' => $formConfig,
             'jenisUsulanPeriode' => $jenisUsulanPeriode,
@@ -353,32 +353,32 @@ class UsulanJabatanController extends BaseUsulanController
      * Update the specified usulan jabatan
      * SIMPLIFIED: Back to standard {usulan} parameter
      */
-    public function update(StoreJabatanUsulanRequest $request, Usulan $usulan)
+    public function update(StoreJabatanUsulanRequest $request, Usulan $usulanJabatan)
     {
 
         // Authorization check
-        if ($usulan->pegawai_id !== Auth::id()) {
+        if ($usulanJabatan->pegawai_id !== Auth::id()) {
             Log::warning('Unauthorized update attempt', [
-                'usulan_id' => $usulan->id,
+                'usulan_id' => $usulanJabatan->id,
                 'user_id' => Auth::id(),
-                'owner_id' => $usulan->pegawai_id
+                'owner_id' => $usulanJabatan->pegawai_id
             ]);
             abort(403, 'AKSES DITOLAK: Anda tidak memiliki akses untuk mengubah usulan ini.');
         }
 
         // Status validation
-        if ($usulan->is_read_only) {
+        if ($usulanJabatan->is_read_only) {
             return redirect()->back()
-                ->with('error', 'Usulan dengan status "' . $usulan->status_usulan . '" tidak dapat diubah.');
+                ->with('error', 'Usulan dengan status "' . $usulanJabatan->status_usulan . '" tidak dapat diubah.');
         }
 
         $validatedData = $request->validated();
         $pegawai = Auth::user();
-        $oldStatus = $usulan->status_usulan;
+        $oldStatus = $usulanJabatan->status_usulan;
         $statusUsulan = ($request->input('action') === 'submit_final') ? 'Diajukan' : 'Draft';
 
         Log::info('Starting usulan update', [
-            'usulan_id' => $usulan->id,
+            'usulan_id' => $usulanJabatan->id,
             'old_status' => $oldStatus,
             'new_status' => $statusUsulan,
             'user_id' => $pegawai->id,
@@ -388,7 +388,7 @@ class UsulanJabatanController extends BaseUsulanController
         try {
             $updatedUsulan = null;
 
-            DB::transaction(function () use ($request, $usulan, $pegawai, $statusUsulan, $validatedData, $oldStatus, &$updatedUsulan) {
+            DB::transaction(function () use ($request, $usulanJabatan, $pegawai, $statusUsulan, $validatedData, $oldStatus, &$updatedUsulan) {
 
                 // Get existing data
                 $dataUsulanLama = $usulan->data_usulan ?? [];
@@ -415,11 +415,11 @@ class UsulanJabatanController extends BaseUsulanController
 
                 // Handle document updates
                 try {
-                    $this->updateDocuments($request, $usulan, $pegawai, $dataUsulanLama);
-                    Log::info('Documents updated successfully', ['usulan_id' => $usulan->id]);
+                    $this->updateDocuments($request, $usulanJabatan, $pegawai, $dataUsulanLama);
+                    Log::info('Documents updated successfully', ['usulan_id' => $usulanJabatan->id]);
                 } catch (\Throwable $e) {
                     Log::error('Document update failed', [
-                        'usulan_id' => $usulan->id,
+                        'usulan_id' => $usulanJabatan->id,
                         'error' => $e->getMessage()
                     ]);
                     throw $e;
@@ -436,14 +436,14 @@ class UsulanJabatanController extends BaseUsulanController
                     $updateData['catatan_verifikator'] = null;
                 }
 
-                $usulan->update($updateData);
+                $usulanJabatan->update($updateData);
 
                 // Create log entry
                 if ($oldStatus !== $statusUsulan) {
-                    $this->createUsulanLog($usulan, $oldStatus, $statusUsulan, $pegawai, $validatedData);
+                    $this->createUsulanLog($usulanJabatan, $oldStatus, $statusUsulan, $pegawai, $validatedData);
                 }
 
-                $updatedUsulan = $usulan->fresh();
+                $updatedUsulan = $usulanJabatan->fresh();
             });
 
             // Dispatch background jobs (outside transaction)
@@ -464,7 +464,7 @@ class UsulanJabatanController extends BaseUsulanController
                 : 'Perubahan pada usulan Anda berhasil disimpan sebagai Draft.';
 
             Log::info('Usulan update completed successfully', [
-                'usulan_id' => $usulan->id,
+                'usulan_id' => $usulanJabatan->id,
                 'final_status' => $statusUsulan
             ]);
 
@@ -473,7 +473,7 @@ class UsulanJabatanController extends BaseUsulanController
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::warning('Validation failed during update', [
-                'usulan_id' => $usulan->id,
+                'usulan_id' => $usulanJabatan->id,
                 'errors' => $e->errors()
             ]);
             return redirect()->back()
@@ -482,7 +482,7 @@ class UsulanJabatanController extends BaseUsulanController
 
         } catch (\Throwable $e) {
             Log::error('Failed to update usulan', [
-                'usulan_id' => $usulan->id,
+                'usulan_id' => $usulanJabatan->id,
                 'error_message' => $e->getMessage(),
                 'error_file' => $e->getFile(),
                 'error_line' => $e->getLine(),
@@ -499,10 +499,10 @@ class UsulanJabatanController extends BaseUsulanController
      * Show usulan document
      * SIMPLIFIED: Back to standard {usulan} parameter
      */
-    public function showUsulanDocument(Usulan $usulan, $field)
+    public function showUsulanDocument(Usulan $usulanJabatan, $field)
     {
 
-        if ($usulan->pegawai_id !== Auth::id()) {
+        if ($usulanJabatan->pegawai_id !== Auth::id()) {
             abort(403, 'Anda tidak punya akses ke dokumen ini');
         }
 
@@ -512,8 +512,14 @@ class UsulanJabatanController extends BaseUsulanController
             'bukti_korespondensi',
             'turnitin',
             'upload_artikel',
-            'bukti_syarat_guru_besar'
+            'bukti_syarat_guru_besar',
+            // BKD fields - pattern matching
         ];
+
+        // Allow BKD fields dynamically
+        if (str_starts_with($field, 'bkd_')) {
+            $allowedFields[] = $field;
+        }
 
         if (!in_array($field, $allowedFields)) {
             abort(404, 'Jenis dokumen tidak valid.');
@@ -521,12 +527,12 @@ class UsulanJabatanController extends BaseUsulanController
 
         // Coba struktur baru dulu
         $filePath = null;
-        if (isset($usulan->data_usulan['dokumen_usulan'][$field]['path'])) {
-            $filePath = $usulan->data_usulan['dokumen_usulan'][$field]['path'];
+        if (isset($usulanJabatan->data_usulan['dokumen_usulan'][$field]['path'])) {
+            $filePath = $usulanJabatan->data_usulan['dokumen_usulan'][$field]['path'];
         }
         // Fallback ke struktur lama
-        elseif (isset($usulan->data_usulan[$field])) {
-            $filePath = $usulan->data_usulan[$field];
+        elseif (isset($usulanJabatan->data_usulan[$field])) {
+            $filePath = $usulanJabatan->data_usulan[$field];
         }
 
         if (!$filePath || !Storage::disk('local')->exists($filePath)) {
@@ -535,7 +541,7 @@ class UsulanJabatanController extends BaseUsulanController
 
         // Log document access
         Log::info('Document accessed', [
-            'usulan_id' => $usulan->id,
+            'usulan_id' => $usulanJabatan->id,
             'field' => $field,
             'user_id' => Auth::id(),
             'file_path' => $filePath
@@ -562,21 +568,21 @@ class UsulanJabatanController extends BaseUsulanController
      * Debug method untuk development
      * SIMPLIFIED: Back to standard {usulan} parameter
      */
-    public function debugUpdate(Request $request, Usulan $usulan)
+    public function debugUpdate(Request $request, Usulan $usulanJabatan)
     {
         if (!app()->environment('local')) {
             abort(404);
         }
 
         return response()->json([
-            'usulan_id' => $usulan->id,
-            'current_status' => $usulan->status_usulan,
-            'can_edit' => $usulan->can_edit,
-            'is_read_only' => $usulan->is_read_only,
-            'owner_id' => $usulan->pegawai_id,
+            'usulan_id' => $usulanJabatan->id,
+            'current_status' => $usulanJabatan->status_usulan,
+            'can_edit' => $usulanJabatan->can_edit,
+            'is_read_only' => $usulanJabatan->is_read_only,
+            'owner_id' => $usulanJabatan->pegawai_id,
             'current_user_id' => Auth::id(),
-            'data_usulan_structure' => array_keys($usulan->data_usulan ?? []),
-            'existing_documents' => $usulan->getExistingDocuments(),
+            'data_usulan_structure' => array_keys($usulanJabatan->data_usulan ?? []),
+            'existing_documents' => $usulanJabatan->getExistingDocuments(),
             'form_data' => $request->all(),
             'validation_errors' => session()->get('errors')?->all(),
         ]);
@@ -812,51 +818,6 @@ class UsulanJabatanController extends BaseUsulanController
      * @param PeriodeUsulan $periode
      * @return array
      */
-    protected function generateBkdSemesterLabels(PeriodeUsulan $periode): array
-    {
-        $startDate = Carbon::parse($periode->tanggal_mulai);
-        $month = $startDate->month;
-        $year = $startDate->year;
-
-        $currentSemester = '';
-        $currentYear = 0;
-
-        if ($month >= 1 && $month <= 2) {
-            // Jan-Feb -> Start from Genap of the previous academic year
-            $currentSemester = 'Genap';
-            $currentYear = $year - 1;
-        } elseif ($month >= 3 && $month <= 9) {
-            // Mar-Sep -> Start from Ganjil of the current academic year
-            $currentSemester = 'Ganjil';
-            $currentYear = $year;
-        } elseif ($month >= 10 && $month <= 12) {
-            // Oct-Dec -> Start from Ganjil of the next academic year
-            $currentSemester = 'Ganjil';
-            $currentYear = $year; // Aturan baru: Ganjil 2025/2026 dimulai di Oktober 2025 (tahun akademik 2025)
-        }
-
-        $semesters = [];
-        for ($i = 0; $i < 4; $i++) {
-            $academicYear = $currentYear . '/' . ($currentYear + 1);
-            $label = "BKD Semester {$currentSemester} {$academicYear}";
-            $slug = 'bkd_' . strtolower($currentSemester) . '_' . str_replace('/', '_', $academicYear);
-
-            $semesters[] = [
-                'label' => $label,
-                'slug' => $slug,
-            ];
-
-            // Move to the previous semester
-            if ($currentSemester === 'Ganjil') {
-                $currentSemester = 'Genap';
-                $currentYear--;
-            } else { // Genap
-                $currentSemester = 'Ganjil';
-            }
-        }
-
-        return $semesters;
-    }
 
     /**
      * Get document keys berdasarkan jenis pegawai
@@ -1002,5 +963,73 @@ class UsulanJabatanController extends BaseUsulanController
                 // Don't throw exception, just log warning
             }
         }
+    }
+
+    /**
+     * Generate 4 BKD semester labels based on the proposal period start date.
+     * NEW LOGIC: Mulai dari 2 semester sebelumnya, hitung mundur untuk 4 semester
+     *
+     * @param PeriodeUsulan $periode
+     * @return array
+     */
+    protected function generateBkdSemesterLabels(PeriodeUsulan $periode): array
+    {
+        $startDate = Carbon::parse($periode->tanggal_mulai);
+        $month = $startDate->month;
+        $year = $startDate->year;
+
+        // Determine current semester based on month
+        $currentSemester = '';
+        $currentYear = 0;
+
+        if ($month >= 1 && $month <= 6) {
+            // Januari - Juni: Semester Genap sedang berjalan
+            $currentSemester = 'Genap';
+            $currentYear = $year - 1; // Tahun akademik dimulai tahun sebelumnya
+        } elseif ($month >= 7 && $month <= 12) {
+            // Juli - Desember: Semester Ganjil sedang berjalan
+            $currentSemester = 'Ganjil';
+            $currentYear = $year;
+        }
+
+        // NEW LOGIC: Mundur 2 semester dari periode saat ini untuk titik awal BKD
+        $bkdStartSemester = $currentSemester;
+        $bkdStartYear = $currentYear;
+
+        // Mundur 2 semester
+        for ($i = 0; $i < 2; $i++) {
+            if ($bkdStartSemester === 'Ganjil') {
+                $bkdStartSemester = 'Genap';
+                $bkdStartYear--;
+            } else {
+                $bkdStartSemester = 'Ganjil';
+            }
+        }
+
+        // Generate 4 semester BKD mulai dari titik awal (mundur)
+        $semesters = [];
+        $tempSemester = $bkdStartSemester;
+        $tempYear = $bkdStartYear;
+
+        for ($i = 0; $i < 4; $i++) {
+            $academicYear = $tempYear . '/' . ($tempYear + 1);
+            $label = "BKD Semester {$tempSemester} {$academicYear}";
+            $slug = 'bkd_' . strtolower($tempSemester) . '_' . str_replace('/', '_', $academicYear);
+
+            $semesters[] = [
+                'label' => $label,
+                'slug' => $slug,
+            ];
+
+            // Move to previous semester (mundur)
+            if ($tempSemester === 'Ganjil') {
+                $tempSemester = 'Genap';
+                $tempYear--;
+            } else {
+                $tempSemester = 'Ganjil';
+            }
+        }
+
+        return $semesters;
     }
 }
