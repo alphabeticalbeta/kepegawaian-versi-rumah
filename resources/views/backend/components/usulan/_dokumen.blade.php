@@ -21,12 +21,31 @@
 
     // Helper untuk ambil path & url lihat dokumen
     $docRow = function(string $field, string $label) use ($usulan) {
-        $path = $usulan->getDocumentPath($field); // dukung struktur lama/baru (sudah ada di model)
+        $path = $usulan->getDocumentPath($field);
         $exists = !empty($path);
 
-        $url = $exists
-            ? route('backend.admin-univ-usulan.pusat-usulan.show-document', ['usulan' => $usulan->id, 'field' => $field])
-            : '#';
+        if ($exists) {
+            // DETECT DOCUMENT TYPE untuk menentukan route yang tepat
+            $profilFields = [
+                'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_pangkat_terakhir',
+                'sk_jabatan_terakhir', 'skp_tahun_pertama', 'skp_tahun_kedua',
+                'pak_konversi', 'sk_cpns', 'sk_pns', 'sk_penyetaraan_ijazah',
+                'disertasi_thesis_terakhir'
+            ];
+
+            if (in_array($field, $profilFields)) {
+                // DOKUMEN PROFIL PEGAWAI: gunakan route data-pegawai
+                $url = route('backend.admin-univ-usulan.data-pegawai.show-document', ['pegawai' => $usulan->pegawai_id, 'field' => $field]);
+            } elseif (str_starts_with($field, 'bkd_') || in_array($field, ['pakta_integritas', 'bukti_korespondensi', 'turnitin', 'upload_artikel', 'bukti_syarat_guru_besar'])) {
+                // DOKUMEN USULAN: gunakan route pusat-usulan
+                $url = route('backend.admin-univ-usulan.pusat-usulan.show-document', ['usulan' => $usulan->id, 'field' => $field]);
+            } else {
+                // FALLBACK
+                $url = route('backend.admin-univ-usulan.pusat-usulan.show-document', ['usulan' => $usulan->id, 'field' => $field]);
+            }
+        } else {
+            $url = '#';
+        }
 
         return [
             'label'  => $label,

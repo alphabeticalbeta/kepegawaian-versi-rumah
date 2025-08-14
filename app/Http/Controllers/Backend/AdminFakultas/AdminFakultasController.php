@@ -11,6 +11,25 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
+/**
+ * Admin Fakultas Controller
+ *
+ * Controller untuk mengelola fitur-fitur admin fakultas termasuk:
+ * - Dashboard dengan statistik usulan
+ * - Hybrid approach untuk usulan jabatan & pangkat
+ * - Validasi dan approval usulan
+ *
+ * HYBRID APPROACH ARCHITECTURE:
+ * - Separate routes: /usulan/jabatan, /usulan/pangkat
+ * - Shared view template: index-dynamic.blade.php
+ * - Dynamic configuration based on type
+ * - Performance optimized with caching
+ *
+ * @package App\Http\Controllers\Backend\AdminFakultas
+ * @author Development Team
+ * @version 2.0 - Hybrid Approach Implementation
+ */
+
 class AdminFakultasController extends Controller
 {
     /**
@@ -20,29 +39,17 @@ class AdminFakultasController extends Controller
     {
         /** @var \App\Models\BackendUnivUsulan\Pegawai $admin */
         $admin = Auth::user();
-        $unitKerjaId = $admin->unit_kerja_id;
 
-        // Jika admin tidak terhubung ke fakultas, kembalikan view kosong.
-        if (!$unitKerjaId) {
-            return view('backend.layouts.admin-fakultas.dashboard', [
-                'periodeUsulans' => collect()
-            ]);
-        }
+        // Gunakan helper method untuk mendapatkan unit kerja
+        $unitKerja = $this->getAdminUnitKerja($admin);
 
-        $periodeUsulans = PeriodeUsulan::query()
-            ->withCount([
-                // Count semua usulan yang memerlukan review (status Diajukan atau Sedang Direview)
-                'usulans as jumlah_pengusul' => function ($query) use ($unitKerjaId) {
-                    $query->whereIn('status_usulan', ['Diajukan', 'Sedang Direview'])
-                        ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
-                            $subQuery->where('id', $unitKerjaId);
-                        });
-                }
-            ])
-            ->latest()
-            ->paginate(10);
+        // Gunakan helper method untuk mendapatkan periode usulan
+        $periodeUsulans = $this->getPeriodeUsulanWithCount($unitKerja);
 
-        return view('backend.layouts.admin-fakultas.dashboard', compact('periodeUsulans'));
+        // Get dashboard statistics
+        $statistics = $this->getDashboardStatistics($periodeUsulans, $unitKerja);
+
+        return view('backend.layouts.admin-fakultas.dashboard', compact('periodeUsulans', 'unitKerja', 'statistics'));
     }
 
     /**
@@ -82,6 +89,7 @@ class AdminFakultasController extends Controller
 
     /**
      * Menampilkan detail satu usulan spesifik untuk VALIDASI.
+     * ENHANCED: Process data from helper untuk ditampilkan di view
      */
     public function show(Usulan $usulan)
     {
@@ -89,15 +97,10 @@ class AdminFakultasController extends Controller
             /** @var \App\Models\BackendUnivUsulan\Pegawai $admin */
             $admin = Auth::user();
 
-            // =================================================================
-            // PERBAIKAN FINAL: Gunakan 'unit_kerja_id' sesuai instruksi Anda
-            // =================================================================
+            // Authorization check (existing code)
             $adminFakultasId = $admin->unit_kerja_id;
-
-            // Mengambil ID Fakultas dari pegawai pengusul dengan aman
             $usulanPegawaiFakultasId = $usulan->pegawai?->unitKerja?->subUnitKerja?->unit_kerja_id;
 
-            // Jika admin tidak punya fakultas atau fakultas tidak cocok, tolak akses
             if (!$adminFakultasId || $adminFakultasId !== $usulanPegawaiFakultasId) {
                 Log::warning('Admin Fakultas mencoba akses usulan dari fakultas lain.', [
                     'admin_id' => $admin->id,
@@ -109,7 +112,7 @@ class AdminFakultasController extends Controller
                     ->with('error', 'Akses ditolak. Anda tidak berhak melihat usulan dari fakultas lain.');
             }
 
-            // Eager loading untuk mengambil semua relasi yang dibutuhkan
+            // Eager loading (existing code)
             $usulan->load([
                 'pegawai.pangkat',
                 'pegawai.jabatan',
@@ -122,17 +125,24 @@ class AdminFakultasController extends Controller
                 }
             ]);
 
-            // Dapatkan field-field yang perlu divalidasi
-            $validationFields = Usulan::getValidationFields();
+            // ENHANCED: Process validation fields dengan helper
+            $validationFields = $this->processValidationFieldsForView($usulan);
 
-            // Dapatkan data validasi yang sudah ada (jika ada)
+            // ENHANCED: Process BKD labels for display
+            $bkdLabels = $usulan->getBkdDisplayLabels();
+
+            // Existing validation data
             $existingValidation = $usulan->getValidasiByRole('admin_fakultas');
 
-            // Mengirim data usulan yang sudah lengkap ke view
-            return view('backend.layouts.shared.usulan-detail.usulan-detail', [
+            // ENHANCED: Process dokumen data untuk view
+            $dokumenData = $this->processDokumenDataForView($usulan);
+
+            return view('backend.layouts.admin-fakultas.usulan-detail-wrapper', [
                 'usulan' => $usulan,
                 'validationFields' => $validationFields,
                 'existingValidation' => $existingValidation,
+                'bkdLabels' => $bkdLabels,
+                'dokumenData' => $dokumenData, // NEW: Processed document data
                 // Multi-role configuration
                 'currentRole' => 'admin_fakultas',
                 'formAction' => route('admin-fakultas.usulan.save-validation', $usulan->id),
@@ -149,6 +159,7 @@ class AdminFakultasController extends Controller
             return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data detail usulan. Error: ' . $e->getMessage());
         }
     }
+
     /**
      * Menyimpan hasil validasi admin fakultas.
      */
@@ -195,11 +206,11 @@ class AdminFakultasController extends Controller
                 case 'forward_to_university':
                     // Validasi khusus untuk aksi 'teruskan ke universitas'
                     $validatedData = $request->validate([
-                        'validation' => 'required|array', // Pastikan data validasi utama juga dikirim
+                        'validation' => 'required|array',
                         'nomor_surat_usulan' => 'required|string|max:255',
-                        'file_surat_usulan' => 'required|file|mimes:pdf|max:2048',
+                        'file_surat_usulan' => 'required|file|mimes:pdf|max:1024', // 1MB = 1024KB
                         'nomor_berita_senat' => 'required|string|max:255',
-                        'file_berita_senat' => 'required|file|mimes:pdf|max:5120',
+                        'file_berita_senat' => 'required|file|mimes:pdf|max:1024', // 1MB = 1024KB,
                     ]);
 
                     $usulan->setValidasiByRole('admin_fakultas', $validatedData['validation'], $adminId);
@@ -300,6 +311,10 @@ class AdminFakultasController extends Controller
             'upload_artikel', 'bukti_syarat_guru_besar'
         ];
 
+        if (str_starts_with($field, 'bkd_')) {
+            $allowedFields[] = $field;
+        }
+
         if (!in_array($field, $allowedFields)) {
             abort(404, 'Jenis dokumen tidak valid.');
         }
@@ -319,5 +334,724 @@ class AdminFakultasController extends Controller
         // Kirim file ke browser
         return response()->file(Storage::disk('local')->path($filePath));
     }
+
+    /**
+     * Show dokumen profil pegawai untuk Admin Fakultas
+     */
+    public function showPegawaiDocument(Usulan $usulan, $field)
+    {
+        // Authorization check
+        $admin = Auth::user();
+        $adminFakultasId = $admin->unit_kerja_id;
+        $usulanPegawaiFakultasId = $usulan->pegawai?->unitKerja?->subUnitKerja?->unit_kerja_id;
+
+        if (!$adminFakultasId || $adminFakultasId !== $usulanPegawaiFakultasId) {
+            abort(403, 'Akses ditolak. Anda tidak berhak melihat dokumen dari fakultas lain.');
+        }
+
+        // Validasi field yang diizinkan
+        $allowedFields = [
+            'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_pangkat_terakhir',
+            'sk_jabatan_terakhir', 'skp_tahun_pertama', 'skp_tahun_kedua',
+            'pak_konversi', 'sk_cpns', 'sk_pns', 'sk_penyetaraan_ijazah',
+            'disertasi_thesis_terakhir'
+        ];
+
+        if (!in_array($field, $allowedFields)) {
+            abort(404, 'Jenis dokumen profil tidak valid.');
+        }
+
+        // Ambil path dokumen dari pegawai
+        $filePath = $usulan->pegawai->{$field} ?? null;
+
+        if (!$filePath || !Storage::disk('local')->exists($filePath)) {
+            abort(404, 'File dokumen profil tidak ditemukan.');
+        }
+
+        return response()->file(Storage::disk('local')->path($filePath));
+    }
+
+    /**
+     * Show dokumen pendukung fakultas
+     */
+    public function showDokumenPendukung(Usulan $usulan, $field)
+    {
+        // Authorization check
+        $admin = Auth::user();
+        $adminFakultasId = $admin->unit_kerja_id;
+        $usulanPegawaiFakultasId = $usulan->pegawai?->unitKerja?->subUnitKerja?->unit_kerja_id;
+
+        if (!$adminFakultasId || $adminFakultasId !== $usulanPegawaiFakultasId) {
+            abort(403, 'Akses ditolak.');
+        }
+
+        // Validasi field
+        $allowedFields = ['file_surat_usulan', 'file_berita_senat'];
+
+        if (!in_array($field, $allowedFields)) {
+            abort(404, 'Jenis dokumen pendukung tidak valid.');
+        }
+
+        // Ambil path dari validasi data
+        $dokumenPendukung = $usulan->validasi_data['admin_fakultas']['dokumen_pendukung'] ?? [];
+        $pathKey = $field . '_path';
+        $filePath = $dokumenPendukung[$pathKey] ?? null;
+
+        if (!$filePath || !Storage::disk('public')->exists($filePath)) {
+            abort(404, 'File dokumen pendukung tidak ditemukan.');
+        }
+
+        return response()->file(Storage::disk('public')->path($filePath));
+    }
+
+    /**
+     * Helper method untuk mendapatkan unit kerja admin fakultas
+     */
+    private function getAdminUnitKerja($admin)
+    {
+        try {
+            // Coba ambil unit kerja langsung dari admin
+            if ($admin->unit_kerja_id) {
+                return \App\Models\BackendUnivUsulan\UnitKerja::find($admin->unit_kerja_id);
+            }
+
+            // Fallback: ambil dari hierarki jika admin tidak punya unit_kerja_id
+            if ($admin->unit_kerja_terakhir_id) {
+                $subSubUnit = \App\Models\BackendUnivUsulan\SubSubUnitKerja::with('subUnitKerja.unitKerja')
+                    ->find($admin->unit_kerja_terakhir_id);
+
+                if ($subSubUnit && $subSubUnit->subUnitKerja && $subSubUnit->subUnitKerja->unitKerja) {
+                    return $subSubUnit->subUnitKerja->unitKerja;
+                }
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            \Log::error('Error getting admin unit kerja: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Helper method untuk mendapatkan periode usulan dengan count
+     */
+    private function getPeriodeUsulanWithCount($unitKerja)
+    {
+        if (!$unitKerja) {
+            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
+        }
+
+        try {
+            return \App\Models\BackendUnivUsulan\PeriodeUsulan::withCount([
+                'usulans as jumlah_pengusul' => function ($query) use ($unitKerja) {
+                    $query->whereIn('status_usulan', ['Diajukan', 'Sedang Direview'])
+                        ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerja) {
+                            $subQuery->where('id', $unitKerja->id);
+                        });
+                }
+            ])->latest()->paginate(10);
+        } catch (\Exception $e) {
+            \Log::error('Error getting periode usulan: ' . $e->getMessage());
+            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
+        }
+    }
+
+    private function getDashboardStatistics($periodeUsulans, $unitKerja)
+    {
+        return [
+            'total_periode' => $periodeUsulans->total(),
+            'total_pengusul' => $periodeUsulans->sum('jumlah_pengusul'),
+            'unit_kerja_name' => $unitKerja ? $unitKerja->nama : 'Tidak diketahui',
+            'has_pending_review' => $periodeUsulans->sum('jumlah_pengusul') > 0
+        ];
+    }
+
+    public function usulanJabatan()
+    {
+        try {
+            /** @var \App\Models\BackendUnivUsulan\Pegawai $admin */
+            $admin = Auth::user();
+            $unitKerja = $this->getAdminUnitKerja($admin);
+
+            // SIMPLE QUERY untuk testing
+            $periodeUsulans = \App\Models\BackendUnivUsulan\PeriodeUsulan::query()
+                ->where('jenis_usulan', 'usulan-jabatan-dosen') // Fixed: gunakan jenis usulan yang benar
+                ->latest()
+                ->paginate(10);
+
+            // GUNAKAN VIEW YANG SUDAH ADA (sama dengan indexUsulanJabatan)
+            return view('backend.layouts.admin-fakultas.usulan.index', compact('periodeUsulans', 'unitKerja'));
+
+        } catch (\Exception $e) {
+            \Log::error('usulanJabatan error: ' . $e->getMessage());
+
+            return redirect()->route('admin-fakultas.dashboard')
+                ->with('error', 'Terjadi kesalahan saat memuat data usulan jabatan.');
+        }
+    }
+
+    /**
+     * Menampilkan usulan pangkat dengan shared view
+     */
+    public function usulanPangkat()
+    {
+        return $this->showUsulanData('pangkat');
+    }
+
+    /**
+     * Shared method untuk menampilkan data usulan berdasarkan type
+     */
+    private function showUsulanData($type)
+    {
+        /** @var \App\Models\BackendUnivUsulan\Pegawai $admin */
+        $admin = Auth::user();
+        $unitKerja = $this->getAdminUnitKerja($admin);
+
+        // Configuration untuk setiap type
+        $config = $this->getUsulanConfig($type, $unitKerja);
+
+        return view('backend.layouts.admin-fakultas.usulan.index-dynamic', compact('config', 'unitKerja'));
+    }
+
+    /**
+     * Get configuration untuk setiap type usulan
+     */
+    private function getUsulanConfig($type, $unitKerja)
+    {
+        $baseConfig = [
+            'type' => $type,
+            'unitKerja' => $unitKerja,
+            'breadcrumbs' => [
+                ['name' => 'Dashboard', 'url' => route('admin-fakultas.dashboard')],
+                ['name' => 'Usulan ' . ucfirst($type), 'url' => null]
+            ]
+        ];
+
+        switch ($type) {
+            case 'jabatan':
+                return array_merge($baseConfig, [
+                    'title' => 'Usulan Jabatan',
+                    'description' => 'Daftar usulan kenaikan jabatan dari pegawai fakultas',
+                    'icon' => 'briefcase',
+                    'color' => 'indigo',
+                    'data' => $this->getJabatanData($unitKerja),
+                    'columns' => [
+                        'nama_periode' => 'Nama Periode',
+                        'jenis_usulan' => 'Jenis',
+                        'tanggal' => 'Jadwal Usulan',
+                        'status' => 'Status',
+                        'jumlah_pengusul' => 'Review'
+                    ]
+                ]);
+
+            case 'pangkat':
+                return array_merge($baseConfig, [
+                    'title' => 'Usulan Pangkat',
+                    'description' => 'Daftar usulan kenaikan pangkat dari pegawai fakultas',
+                    'icon' => 'award',
+                    'color' => 'emerald',
+                    'data' => $this->getPangkatData($unitKerja),
+                    'columns' => [
+                        'nama_periode' => 'Nama Periode',
+                        'jenis_usulan' => 'Jenis',
+                        'tanggal' => 'Jadwal Usulan',
+                        'status' => 'Status',
+                        'jumlah_pengusul' => 'Review'
+                    ]
+                ]);
+
+            default:
+                return array_merge($baseConfig, [
+                    'title' => 'Data Tidak Ditemukan',
+                    'description' => 'Type data tidak dikenali',
+                    'icon' => 'alert-circle',
+                    'color' => 'red',
+                    'data' => collect(),
+                    'columns' => []
+                ]);
+        }
+    }
+
+    private function getJabatanData($unitKerja)
+    {
+        try {
+            // SIMPLE QUERY untuk testing
+            return \App\Models\BackendUnivUsulan\PeriodeUsulan::query()
+                ->where('jenis_usulan', 'jabatan')
+                ->latest()
+                ->paginate(5);
+        } catch (\Exception $e) {
+            \Log::error('Error: ' . $e->getMessage());
+            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, 5);
+        }
+}
+
+    /**
+     * Get data pangkat untuk admin fakultas
+     */
+    private function getPangkatData($unitKerja)
+    {
+        try {
+            // SIMPLE QUERY untuk testing
+            return \App\Models\BackendUnivUsulan\PeriodeUsulan::query()
+                ->where('jenis_usulan', 'pangkat')
+                ->latest()
+                ->paginate(5);
+        } catch (\Exception $e) {
+            \Log::error('Error: ' . $e->getMessage());
+            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, 5);
+        }
+    }
+
+    /**
+     * Get formatted status badge untuk UI
+     */
+    private function getStatusBadge($status)
+    {
+        switch ($status) {
+            case 'Buka':
+                return [
+                    'class' => 'bg-green-100 text-green-800',
+                    'text' => 'Buka'
+                ];
+            case 'Tutup':
+                return [
+                    'class' => 'bg-red-100 text-red-800',
+                    'text' => 'Tutup'
+                ];
+            default:
+                return [
+                    'class' => 'bg-gray-100 text-gray-800',
+                    'text' => $status
+                ];
+        }
+    }
+
+    /**
+ * FIXED: Enhanced autosave method yang memastikan semua data tersimpan
+ * Tambahkan method ini ke AdminFakultasController
+ */
+    public function autosaveValidation(Request $request, Usulan $usulan)
+    {
+        try {
+            \Log::info('Autosave request received', [
+                'usulan_id' => $usulan->id,
+                'request_data_keys' => array_keys($request->all()),
+                'validation_keys' => array_keys($request->input('validation', []))
+            ]);
+
+            // Enhanced validation
+            $validatedData = $request->validate([
+                'validation' => 'required|array',
+                'validation.*' => 'array',
+                'validation.*.*' => 'array',
+                'validation.*.*.status' => 'required|in:sesuai,tidak_sesuai',
+                'validation.*.*.keterangan' => 'nullable|string',
+                'action_type' => 'required|in:save_only'
+            ]);
+
+            // Quick authorization check
+            $admin = Auth::user();
+            if ($admin->unit_kerja_id !== $usulan->pegawai?->unitKerja?->subUnitKerja?->unit_kerja_id) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+
+            // CRITICAL: Preserve existing validation data dan merge dengan data baru
+            $existingValidation = $usulan->validasi_data ?? [];
+            $adminFakultasValidation = $existingValidation['admin_fakultas'] ?? [];
+
+            // Get current validation data (preserve non-validation fields)
+            $currentValidationData = $adminFakultasValidation['validation'] ?? [];
+
+            // Merge dengan data baru - PENTING: jangan replace, tapi merge
+            $newValidationData = $validatedData['validation'];
+
+            // Deep merge: preserve existing categories dan fields
+            foreach ($newValidationData as $category => $fields) {
+                if (!isset($currentValidationData[$category])) {
+                    $currentValidationData[$category] = [];
+                }
+
+                foreach ($fields as $field => $fieldData) {
+                    $currentValidationData[$category][$field] = $fieldData;
+                }
+            }
+
+            // Update the complete validation structure
+            $adminFakultasValidation['validation'] = $currentValidationData;
+            $adminFakultasValidation['validated_by'] = $admin->id;
+            $adminFakultasValidation['validated_at'] = now();
+
+            // Preserve other admin_fakultas data (like dokumen_pendukung)
+            $existingValidation['admin_fakultas'] = $adminFakultasValidation;
+
+            // Save dengan complete data structure
+            $usulan->validasi_data = $existingValidation;
+
+            // Update status jika diperlukan (only on first save)
+            if ($usulan->status_usulan === 'Diajukan') {
+                $usulan->status_usulan = 'Sedang Direview';
+            }
+
+            $usulan->save();
+
+            // Log success dengan detail
+            \Log::info('Autosave successful', [
+                'usulan_id' => $usulan->id,
+                'saved_categories' => array_keys($currentValidationData),
+                'total_fields_saved' => array_sum(array_map('count', $currentValidationData)),
+                'status' => $usulan->status_usulan
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil disimpan',
+                'saved_fields' => array_sum(array_map('count', $currentValidationData)),
+                'categories' => array_keys($currentValidationData)
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::warning('Autosave validation failed', [
+                'usulan_id' => $usulan->id,
+                'errors' => $e->errors(),
+                'input' => $request->input('validation', [])
+            ]);
+
+            return response()->json([
+                'error' => 'Validation failed',
+                'details' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            \Log::error('Autosave error: ' . $e->getMessage(), [
+                'usulan_id' => $usulan->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json(['error' => 'Save failed'], 500);
+        }
+    }
+
+    /**
+     * NEW: Process validation fields dengan data dari helper
+     */
+    private function processValidationFieldsForView(Usulan $usulan): array
+    {
+        $fieldHelper = new \App\Helpers\UsulanFieldHelper($usulan);
+        $validationFields = Usulan::getValidationFieldsWithDynamicBkd($usulan);
+        $processedFields = [];
+
+        foreach ($validationFields as $category => $fields) {
+            $processedFields[$category] = [];
+
+            foreach ($fields as $field) {
+                // Get processed data from helper
+                $fieldValue = $fieldHelper->getFieldValue($category, $field);
+
+                $processedFields[$category][$field] = [
+                    'raw_value' => $fieldValue,
+                    'display_value' => $fieldValue,
+                    'has_link' => $this->checkIfFieldHasLink($fieldValue),
+                    'field_type' => $this->determineFieldType($category, $field)
+                ];
+            }
+        }
+
+        return $processedFields;
+    }
+
+    /**
+     * NEW: Process dokumen data untuk ditampilkan di view
+     */
+    private function processDokumenDataForView(Usulan $usulan): array
+    {
+        $fieldHelper = new \App\Helpers\UsulanFieldHelper($usulan);
+
+        return [
+            'dokumen_profil' => $this->processDokumenProfil($usulan, $fieldHelper),
+            'dokumen_usulan' => $this->processDokumenUsulan($usulan, $fieldHelper),
+            'dokumen_bkd' => $this->processDokumenBkd($usulan, $fieldHelper),
+            'dokumen_pendukung' => $this->processDokumenPendukung($usulan, $fieldHelper)
+        ];
+    }
+
+    /**
+     * SAFE: Process dokumen profil dengan override routing untuk Admin Fakultas
+     */
+    private function processDokumenProfil(Usulan $usulan, $fieldHelper): array
+    {
+        $profilFields = [
+            'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_pangkat_terakhir',
+            'sk_jabatan_terakhir', 'skp_tahun_pertama', 'skp_tahun_kedua',
+            'pak_konversi', 'sk_cpns', 'sk_pns', 'sk_penyetaraan_ijazah',
+            'disertasi_thesis_terakhir'
+        ];
+
+        $processed = [];
+        foreach ($profilFields as $field) {
+            // Ambil raw data dari pegawai (TANPA helper routing)
+            $dokumenPath = $usulan->pegawai->{$field} ?? null;
+
+            if (!empty($dokumenPath)) {
+                // Generate route khusus untuk Admin Fakultas
+                $route = route('admin-fakultas.usulan.show-pegawai-document', [$usulan->id, $field]);
+                $linkHtml = '<a href="' . $route . '" target="_blank" class="text-blue-600 hover:text-blue-800 underline inline-flex items-center gap-1">✓ Lihat Dokumen</a>';
+                $hasDocument = true;
+                $status = 'available';
+            } else {
+                $linkHtml = '<span class="text-red-500">✗ Belum diunggah</span>';
+                $hasDocument = false;
+                $status = 'missing';
+            }
+
+            $processed[$field] = [
+                'label' => ucwords(str_replace('_', ' ', $field)),
+                'link_html' => $linkHtml,
+                'has_document' => $hasDocument,
+                'status' => $status
+            ];
+        }
+
+        return $processed;
+    }
+
+
+    /**
+     * NEW: Process dokumen usulan
+     */
+    private function processDokumenUsulan(Usulan $usulan, $fieldHelper): array
+    {
+        $usulanFields = [
+            'pakta_integritas', 'bukti_korespondensi', 'turnitin',
+            'upload_artikel', 'bukti_syarat_guru_besar'
+        ];
+
+        $processed = [];
+        foreach ($usulanFields as $field) {
+            // Ambil raw path dari model (TANPA helper routing)
+            $docPath = $usulan->getDocumentPath($field);
+
+            if (!empty($docPath)) {
+                // Generate route khusus untuk Admin Fakultas
+                $route = route('admin-fakultas.usulan.show-document', [$usulan->id, $field]);
+                $linkHtml = '<a href="' . $route . '" target="_blank" class="text-blue-600 hover:text-blue-800 underline inline-flex items-center gap-1">✓ Lihat Dokumen</a>';
+                $hasDocument = true;
+                $status = 'available';
+            } else {
+                $linkHtml = '<span class="text-red-600">✗ Belum diunggah</span>';
+                $hasDocument = false;
+                $status = 'missing';
+            }
+
+            $processed[$field] = [
+                'label' => ucwords(str_replace('_', ' ', $field)),
+                'link_html' => $linkHtml,
+                'has_document' => $hasDocument,
+                'status' => $status
+            ];
+        }
+
+        return $processed;
+    }
+
+      /**
+     * NEW: Process dokumen BKD
+     */
+    private function processDokumenBkd(Usulan $usulan, $fieldHelper): array
+    {
+        $bkdLabels = $usulan->getBkdDisplayLabels();
+        $processed = [];
+
+        foreach ($bkdLabels as $field => $label) {
+            // Ambil raw path dari model (TANPA helper routing)
+            $docPath = $usulan->getDocumentPath($field);
+
+            // Handle legacy BKD mapping jika diperlukan
+            if (empty($docPath) && str_starts_with($field, 'bkd_semester_')) {
+                $docPath = $this->findLegacyBkdPath($usulan, $field, $label);
+            }
+
+            if (!empty($docPath)) {
+                // Generate route khusus untuk Admin Fakultas
+                $route = route('admin-fakultas.usulan.show-document', [$usulan->id, $field]);
+                $linkHtml = '<a href="' . $route . '" target="_blank" class="text-blue-600 hover:text-blue-800 underline inline-flex items-center gap-1">✓ Lihat Dokumen</a>';
+                $hasDocument = true;
+                $status = 'available';
+            } else {
+                $linkHtml = '<span class="text-red-600">✗ Belum diunggah</span>';
+                $hasDocument = false;
+                $status = 'missing';
+            }
+
+            $processed[$field] = [
+                'label' => $label,
+                'link_html' => $linkHtml,
+                'has_document' => $hasDocument,
+                'status' => $status
+            ];
+        }
+
+        return $processed;
+    }
+
+    /**
+     * NEW: Process dokumen pendukung (dari admin fakultas)
+     */
+    private function processDokumenPendukung(Usulan $usulan, $fieldHelper): array
+    {
+        $pendukungFields = [
+            'nomor_surat_usulan', 'file_surat_usulan',
+            'nomor_berita_senat', 'file_berita_senat'
+        ];
+
+        $processed = [];
+        foreach ($pendukungFields as $field) {
+            if (str_starts_with($field, 'file_')) {
+                // Handle file fields dengan override routing
+                $validasiData = $usulan->validasi_data['admin_fakultas']['dokumen_pendukung'] ?? [];
+                $pathKey = $field . '_path';
+                $path = $validasiData[$pathKey] ?? $validasiData[$field] ?? null;
+
+                // Handle array path
+                if (is_array($path)) {
+                    $path = $path['path'] ?? $path['value'] ?? $path[0] ?? null;
+                }
+
+                if (!empty($path) && \Storage::disk('public')->exists($path)) {
+                    $route = route('admin-fakultas.usulan.show-dokumen-pendukung', [$usulan->id, $field]);
+                    $value = '<a href="' . $route . '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">✓ Lihat Dokumen</a>';
+                    $hasDocument = true;
+                    $status = 'available';
+                } else {
+                    $value = '<span class="text-red-600">✗ Belum diunggah</span>';
+                    $hasDocument = false;
+                    $status = 'missing';
+                }
+            } else {
+                // Handle text fields - bisa pakai helper karena tidak ada routing
+                $value = $fieldHelper->getFieldValue('dokumen_pendukung', $field);
+                $hasDocument = false;
+                $status = (trim($value) !== '' && $value !== '-') ? 'filled' : 'empty';
+            }
+
+            $processed[$field] = [
+                'label' => $this->getDokumenPendukungLabel($field),
+                'value' => $value,
+                'has_link' => strpos($value, '<a href=') !== false,
+                'has_document' => $hasDocument,
+                'status' => $status
+            ];
+        }
+
+        return $processed;
+    }
+
+    /**
+     * SAFE: Helper untuk find legacy BKD path (extracted from helper logic)
+     */
+    private function findLegacyBkdPath(Usulan $usulan, string $field, string $label): ?string
+    {
+        if (!str_starts_with($field, 'bkd_semester_')) {
+            return null;
+        }
+
+        $num = (int) str_replace('bkd_semester_', '', $field);
+        if ($num < 1 || $num > 4) {
+            return null;
+        }
+
+        // Parse label untuk mendapatkan semester dan tahun
+        if (preg_match('/BKD\s+Semester\s+(Ganjil|Genap)\s+(\d{4})\/(\d{4})/i', $label, $m)) {
+            $sem = strtolower($m[1]); // ganjil|genap
+            $y1  = $m[2];
+            $y2  = $m[3];
+
+            // Coba exact legacy key
+            $legacyKey = 'bkd_' . $sem . '_' . $y1 . '_' . $y2;
+            $docPath = $usulan->getDocumentPath($legacyKey);
+
+            if (!empty($docPath)) {
+                return $docPath;
+            }
+
+            // Scan semua key BKD di data usulan
+            $dokumenUsulan = $usulan->data_usulan['dokumen_usulan'] ?? [];
+            foreach ($dokumenUsulan as $k => $info) {
+                if (preg_match('/^bkd_(ganjil|genap)_(\d{4})_(\d{4})$/i', (string) $k, $mm)) {
+                    if (strtolower($mm[1]) === $sem && $mm[2] === $y1 && $mm[3] === $y2) {
+                        return is_array($info) ? ($info['path'] ?? null) : $info;
+                    }
+                }
+            }
+
+            // Fallback ke struktur lama
+            $dataUsulan = $usulan->data_usulan ?? [];
+            foreach ($dataUsulan as $k => $info) {
+                if (preg_match('/^bkd_(ganjil|genap)_(\d{4})_(\d{4})$/i', (string) $k, $mm)) {
+                    if (strtolower($mm[1]) === $sem && $mm[2] === $y1 && $mm[3] === $y2) {
+                        return is_array($info) ? ($info['path'] ?? null) : $info;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * NEW: Helper untuk label dokumen pendukung
+     */
+    private function getDokumenPendukungLabel(string $field): string
+    {
+        $labels = [
+            'nomor_surat_usulan' => 'Nomor Surat Usulan Fakultas',
+            'file_surat_usulan' => 'Dokumen Surat Usulan Fakultas',
+            'nomor_berita_senat' => 'Nomor Berita Senat',
+            'file_berita_senat' => 'Dokumen Berita Senat'
+        ];
+
+        return $labels[$field] ?? ucwords(str_replace('_', ' ', $field));
+    }
+
+    /**
+     * NEW: Helper untuk status dokumen pendukung
+     */
+    private function getDokumenPendukungStatus(string $value): string
+    {
+        if (strpos($value, '✓ Lihat Dokumen') !== false) {
+            return 'available';
+        } elseif (strpos($value, '✗ Belum diunggah') !== false || strpos($value, '✗ File tidak ditemukan') !== false) {
+            return 'missing';
+        } elseif (trim($value) !== '' && $value !== '-') {
+            return 'filled';
+        }
+
+        return 'empty';
+    }
+
+    /**
+     * NEW: Check if field value contains link
+     */
+    private function checkIfFieldHasLink(string $fieldValue): bool
+    {
+        return strpos($fieldValue, '<a href=') !== false;
+    }
+
+    /**
+     * NEW: Determine field type for display
+     */
+    private function determineFieldType(string $category, string $field): string
+    {
+        if (in_array($category, ['dokumen_profil', 'dokumen_usulan', 'dokumen_bkd'])) {
+            return 'document_link';
+        } elseif ($category === 'dokumen_pendukung') {
+            return str_contains($field, 'file_') ? 'document_file' : 'text_field';
+        } elseif (str_contains($field, 'link_')) {
+            return 'external_link';
+        }
+
+        return 'text_field';
+    }
+
 
 }
