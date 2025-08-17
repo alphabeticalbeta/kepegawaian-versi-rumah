@@ -67,9 +67,11 @@ class PeriodeUsulanController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validationRules = [
             'nama_periode'            => ['required', 'string', 'max:255'],
             'jenis_usulan'            => ['required', 'string', 'max:255'],
+            'status_kepegawaian'      => ['required', 'array', 'min:1'],
+            'status_kepegawaian.*'    => ['string', 'in:Dosen PNS,Dosen PPPK,Dosen Non ASN,Tenaga Kependidikan PNS,Tenaga Kependidikan PPPK,Tenaga Kependidikan Non ASN'],
             'tanggal_mulai'           => [
                 'required', 'date',
                 new NoDateRangeOverlap(
@@ -81,10 +83,28 @@ class PeriodeUsulanController extends Controller
                 ),
             ],
             'tanggal_selesai'         => ['required', 'date', 'after_or_equal:tanggal_mulai'],
-            'tanggal_mulai_perbaikan' => ['nullable', 'date', 'after_or_equal:tanggal_selesai'],
-            'tanggal_selesai_perbaikan' => ['nullable', 'date', 'after_or_equal:tanggal_mulai_perbaikan'],
-            'status'                  => ['required', 'in:Buka,Tutup'], // jika mau otomatis buka: hapus dari form dan set manual di bawah
+            'tanggal_mulai_perbaikan' => ['nullable', 'date'],
+            'tanggal_selesai_perbaikan' => ['nullable', 'date'],
+            'status'                  => ['required', 'in:Buka,Tutup'],
             'senat_min_setuju'        => ['nullable', 'integer', 'min:0'],
+        ];
+
+        // Conditional validation untuk tanggal perbaikan
+        if ($request->filled('tanggal_mulai_perbaikan')) {
+            $validationRules['tanggal_mulai_perbaikan'][] = 'after_or_equal:tanggal_selesai';
+        }
+
+        if ($request->filled('tanggal_selesai_perbaikan')) {
+            $validationRules['tanggal_selesai_perbaikan'][] = 'after_or_equal:tanggal_mulai_perbaikan';
+        }
+
+        $validated = $request->validate($validationRules);
+
+        // Log untuk debugging
+        \Log::info('Periode Usulan Store Request', [
+            'request_data' => $request->all(),
+            'validated_data' => $validated,
+            'jenis_usulan' => $request->input('jenis_usulan')
         ]);
 
         // Hitung tahun_periode dari tanggal_mulai
@@ -126,11 +146,15 @@ class PeriodeUsulanController extends Controller
             $jenisKey = $jenisMapping[$validated['jenis_usulan']] ?? 'jabatan';
 
             return redirect()->route('backend.admin-univ-usulan.dashboard-periode.index', ['jenis' => $jenisKey])
-                ->with('success', 'Periode usulan berhasil dibuat!');
+                ->with('success', '✅ Periode usulan "' . $validated['nama_periode'] . '" berhasil dibuat!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withInput()->withErrors($e->errors())->with('error', '❌ Validasi gagal. Silakan periksa kembali data yang dimasukkan.');
+        } catch (\Illuminate\Database\QueryException $e) {
+            report($e);
+            return back()->withInput()->with('error', '❌ Gagal menyimpan periode usulan. Silakan coba lagi.');
         } catch (\Throwable $e) {
             report($e);
-            // sementara untuk debug, boleh tampilkan pesan asli (hapus di produksi):
-            return back()->withInput()->with('error', 'Gagal membuat periode: '.$e->getMessage());
+            return back()->withInput()->with('error', '❌ Terjadi kesalahan sistem. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -150,7 +174,11 @@ class PeriodeUsulanController extends Controller
      */
     public function update(Request $request, PeriodeUsulan $periode_usulan)
     {
-        $request->validate([
+        $validationRules = [
+            'nama_periode'            => ['required', 'string', 'max:255'],
+            'jenis_usulan'            => ['required', 'string', 'max:255'],
+            'status_kepegawaian'      => ['required', 'array', 'min:1'],
+            'status_kepegawaian.*'    => ['string', 'in:Dosen PNS,Dosen PPPK,Dosen Non ASN,Tenaga Kependidikan PNS,Tenaga Kependidikan PPPK,Tenaga Kependidikan Non ASN'],
             'tanggal_mulai' => [
                 'required',
                 'date',
@@ -162,18 +190,35 @@ class PeriodeUsulanController extends Controller
                     excludeId: $periode_usulan->id
                 ),
             ],
-            'tanggal_selesai'  => ['required', 'date', 'after_or_equal:tanggal_mulai'],
-            'jenis_usulan'     => ['required', 'string', 'max:255'],
+            'tanggal_selesai'         => ['required', 'date', 'after_or_equal:tanggal_mulai'],
+            'tanggal_mulai_perbaikan' => ['nullable', 'date'],
+            'tanggal_selesai_perbaikan' => ['nullable', 'date'],
+            'status'                  => ['required', 'in:Buka,Tutup'],
             'senat_min_setuju' => ['nullable', 'integer', 'min:0'],
-        ]);
+        ];
+
+        // Conditional validation untuk tanggal perbaikan
+        if ($request->filled('tanggal_mulai_perbaikan')) {
+            $validationRules['tanggal_mulai_perbaikan'][] = 'after_or_equal:tanggal_selesai';
+        }
+
+        if ($request->filled('tanggal_selesai_perbaikan')) {
+            $validationRules['tanggal_selesai_perbaikan'][] = 'after_or_equal:tanggal_mulai_perbaikan';
+        }
+
+        $request->validate($validationRules);
 
         try {
             DB::transaction(function () use ($request, $periode_usulan) {
+                $periode_usulan->nama_periode      = $request->input('nama_periode');
+                $periode_usulan->jenis_usulan      = $request->input('jenis_usulan');
+                $periode_usulan->status_kepegawaian = $request->input('status_kepegawaian');
                 $periode_usulan->tanggal_mulai     = $request->input('tanggal_mulai');
                 $periode_usulan->tanggal_selesai   = $request->input('tanggal_selesai');
-                $periode_usulan->jenis_usulan      = $request->input('jenis_usulan');
+                $periode_usulan->tanggal_mulai_perbaikan = $request->input('tanggal_mulai_perbaikan');
+                $periode_usulan->tanggal_selesai_perbaikan = $request->input('tanggal_selesai_perbaikan');
+                $periode_usulan->status            = $request->input('status');
                 $periode_usulan->senat_min_setuju  = (int) $request->input('senat_min_setuju', $periode_usulan->senat_min_setuju ?? 0);
-                // TODO: set field lain yang kamu punya
                 $periode_usulan->save();
             });
 
@@ -200,10 +245,15 @@ class PeriodeUsulanController extends Controller
             $jenisKey = $jenisMapping[$periode_usulan->jenis_usulan] ?? 'jabatan';
 
             return redirect()->route('backend.admin-univ-usulan.dashboard-periode.index', ['jenis' => $jenisKey])
-                ->with('success', 'Periode usulan berhasil diperbarui!');
+                ->with('success', '✅ Periode usulan "' . $request->input('nama_periode') . '" berhasil diperbarui!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withInput()->withErrors($e->errors())->with('error', '❌ Validasi gagal. Silakan periksa kembali data yang dimasukkan.');
+        } catch (\Illuminate\Database\QueryException $e) {
+            report($e);
+            return back()->withInput()->with('error', '❌ Gagal memperbarui periode usulan. Silakan coba lagi.');
         } catch (\Throwable $e) {
             report($e);
-            return back()->withInput()->with('error', 'Gagal memperbarui periode usulan. Coba lagi.');
+            return back()->withInput()->with('error', '❌ Terjadi kesalahan sistem. Silakan coba lagi atau hubungi administrator.');
         }
     }
 
@@ -212,39 +262,45 @@ class PeriodeUsulanController extends Controller
      */
     public function destroy(PeriodeUsulan $periodeUsulan)
     {
-        if ($periodeUsulan->usulans()->count() > 0) {
-            return back()->with('error', 'Gagal menghapus! Periode ini sudah memiliki pendaftar.');
+        try {
+            if ($periodeUsulan->usulans()->count() > 0) {
+                return back()->with('error', '❌ Gagal menghapus! Periode "' . $periodeUsulan->nama_periode . '" sudah memiliki pendaftar.');
+            }
+
+            // Simpan jenis usulan sebelum dihapus untuk redirect
+            $jenisUsulan = $periodeUsulan->jenis_usulan;
+            $namaPeriode = $periodeUsulan->nama_periode;
+
+            $periodeUsulan->delete();
+
+            // Redirect ke dashboard periode dengan jenis usulan yang sesuai
+            $jenisMapping = [
+                'Usulan Jabatan' => 'jabatan',
+                'usulan-jabatan-dosen' => 'jabatan',
+                'usulan-jabatan-tendik' => 'jabatan',
+                'Usulan NUPTK' => 'nuptk',
+                'Usulan Laporan LKD' => 'laporan-lkd',
+                'Usulan Presensi' => 'presensi',
+                'Usulan Penyesuaian Masa Kerja' => 'penyesuaian-masa-kerja',
+                'Usulan Ujian Dinas & Ijazah' => 'ujian-dinas-ijazah',
+                'Usulan Laporan Serdos' => 'laporan-serdos',
+                'Usulan Pensiun' => 'pensiun',
+                'Usulan Kepangkatan' => 'kepangkatan',
+                'Usulan Pencantuman Gelar' => 'pencantuman-gelar',
+                'Usulan ID SINTA ke SISTER' => 'id-sinta-sister',
+                'Usulan Satyalancana' => 'satyalancana',
+                'Usulan Tugas Belajar' => 'tugas-belajar',
+                'Usulan Pengaktifan Kembali' => 'pengaktifan-kembali'
+            ];
+
+            $jenisKey = $jenisMapping[$jenisUsulan] ?? 'jabatan';
+
+            return redirect()->route('backend.admin-univ-usulan.dashboard-periode.index', ['jenis' => $jenisKey])
+                ->with('success', '✅ Periode usulan "' . $namaPeriode . '" berhasil dihapus!');
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->with('error', '❌ Terjadi kesalahan saat menghapus periode usulan. Silakan coba lagi.');
         }
-
-        // Simpan jenis usulan sebelum dihapus untuk redirect
-        $jenisUsulan = $periodeUsulan->jenis_usulan;
-
-        $periodeUsulan->delete();
-
-        // Redirect ke dashboard periode dengan jenis usulan yang sesuai
-        $jenisMapping = [
-            'Usulan Jabatan' => 'jabatan',
-            'usulan-jabatan-dosen' => 'jabatan',
-            'usulan-jabatan-tendik' => 'jabatan',
-            'Usulan NUPTK' => 'nuptk',
-            'Usulan Laporan LKD' => 'laporan-lkd',
-            'Usulan Presensi' => 'presensi',
-            'Usulan Penyesuaian Masa Kerja' => 'penyesuaian-masa-kerja',
-            'Usulan Ujian Dinas & Ijazah' => 'ujian-dinas-ijazah',
-            'Usulan Laporan Serdos' => 'laporan-serdos',
-            'Usulan Pensiun' => 'pensiun',
-            'Usulan Kepangkatan' => 'kepangkatan',
-            'Usulan Pencantuman Gelar' => 'pencantuman-gelar',
-            'Usulan ID SINTA ke SISTER' => 'id-sinta-sister',
-            'Usulan Satyalancana' => 'satyalancana',
-            'Usulan Tugas Belajar' => 'tugas-belajar',
-            'Usulan Pengaktifan Kembali' => 'pengaktifan-kembali'
-        ];
-
-        $jenisKey = $jenisMapping[$jenisUsulan] ?? 'jabatan';
-
-        return redirect()->route('backend.admin-univ-usulan.dashboard-periode.index', ['jenis' => $jenisKey])
-            ->with('success', 'Periode Usulan berhasil dihapus!');
     }
 
     /**

@@ -18,21 +18,38 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        // Get statistics for dashboard
-        $statistics = $this->getDashboardStatistics();
+        try {
+            // Get statistics for dashboard
+            $statistics = $this->getDashboardStatistics();
 
-        // Get recent activities
-        $recentActivities = $this->getRecentActivities();
+            // Get recent activities
+            $recentActivities = $this->getRecentActivities();
 
-        // Get chart data
-        $chartData = $this->getChartData();
+            // Get chart data
+            $chartData = $this->getChartData();
 
-        return view('backend.layouts.views.admin-universitas.dashboard', [
-            'statistics' => $statistics,
-            'recentActivities' => $recentActivities,
-            'chartData' => $chartData,
-            'user' => Auth::user()
-        ]);
+            return view('backend.layouts.views.admin-universitas.dashboard', [
+                'statistics' => $statistics,
+                'recentActivities' => $recentActivities,
+                'chartData' => $chartData,
+                'user' => Auth::user()
+            ]);
+        } catch (\Exception $e) {
+            // Log error for debugging
+            \Log::error('AdminUniversitas Dashboard Error: ' . $e->getMessage(), [
+                'user_id' => Auth::id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // Return safe fallback view
+            return view('backend.layouts.views.admin-universitas.dashboard', [
+                'statistics' => $this->getDefaultStatistics(),
+                'recentActivities' => collect(),
+                'chartData' => $this->getDefaultChartData(),
+                'user' => Auth::user(),
+                'error' => 'Terjadi kesalahan saat memuat dashboard. Silakan coba lagi.'
+            ]);
+        }
     }
 
     /**
@@ -49,6 +66,23 @@ class DashboardController extends Controller
             'usulan_approved' => Usulan::where('status_usulan', 'Direkomendasikan')->count(),
             'usulan_rejected' => Usulan::where('status_usulan', 'Ditolak')->count(),
             'periode_aktif' => PeriodeUsulan::where('status', 'Buka')->count(),
+        ];
+    }
+
+    /**
+     * Get default statistics when database is not available.
+     *
+     * @return array
+     */
+    private function getDefaultStatistics()
+    {
+        return [
+            'total_pegawai' => 0,
+            'total_usulan' => 0,
+            'usulan_pending' => 0,
+            'usulan_approved' => 0,
+            'usulan_rejected' => 0,
+            'periode_aktif' => 0,
         ];
     }
 
@@ -90,6 +124,19 @@ class DashboardController extends Controller
         return [
             'monthly_submissions' => $monthlyData,
             'status_distribution' => $statusData,
+        ];
+    }
+
+    /**
+     * Get default chart data when database is not available.
+     *
+     * @return array
+     */
+    private function getDefaultChartData()
+    {
+        return [
+            'monthly_submissions' => [],
+            'status_distribution' => [],
         ];
     }
 }

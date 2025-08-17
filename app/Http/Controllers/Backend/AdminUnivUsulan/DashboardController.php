@@ -16,12 +16,20 @@ class DashboardController extends Controller
     public function index()
     {
         try {
+            \Log::info('AdminUnivUsulan Dashboard accessed successfully', ['user_id' => Auth::id()]);
+            
             // Return a minimal dashboard without any database queries
             return view('backend.layouts.views.admin-univ-usulan.dashboard', [
                 'recentUsulans' => collect(),
                 'user' => Auth::user()
             ]);
         } catch (\Exception $e) {
+            // Log the specific error
+            \Log::error('AdminUnivUsulan Dashboard Error: ' . $e->getMessage(), [
+                'user_id' => Auth::id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             // If even the minimal version fails, return a basic error page
             return response()->view('backend.layouts.views.admin-univ-usulan.dashboard', [
                 'recentUsulans' => collect(),

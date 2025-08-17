@@ -55,10 +55,30 @@ class PangkatController extends Controller
             'hierarchy_level.unique' => 'Level hirarki ini sudah digunakan untuk status kepegawaian yang dipilih.',
         ]);
 
-        Pangkat::create($request->all());
+        try {
+            Pangkat::create($request->all());
 
-        return redirect()->route('backend.admin-univ-usulan.pangkat.index')
-                            ->with('success', 'Data Pangkat berhasil ditambahkan.');
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data Pangkat berhasil ditambahkan.'
+                ]);
+            }
+
+            return redirect()->route('backend.admin-univ-usulan.pangkat.index')
+                                ->with('success', 'Data Pangkat berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()
+                            ->withInput()
+                            ->with('error', 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage());
+        }
     }
 
     public function edit(Pangkat $pangkat)
@@ -99,24 +119,70 @@ class PangkatController extends Controller
             'hierarchy_level.unique' => 'Level hirarki ini sudah digunakan untuk status kepegawaian yang dipilih.',
         ]);
 
-        $pangkat->update($request->all());
+        try {
+            $pangkat->update($request->all());
 
-        return redirect()->route('backend.admin-univ-usulan.pangkat.index')
-                            ->with('success', 'Data Pangkat berhasil diperbarui.');
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data Pangkat berhasil diperbarui.'
+                ]);
+            }
+
+            return redirect()->route('backend.admin-univ-usulan.pangkat.index')
+                                ->with('success', 'Data Pangkat berhasil diperbarui.');
+        } catch (\Exception $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat memperbarui data: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->back()
+                            ->withInput()
+                            ->with('error', 'Terjadi kesalahan saat memperbarui data: ' . $e->getMessage());
+        }
     }
 
     public function destroy(Pangkat $pangkat)
     {
-        // Cek apakah pangkat sedang digunakan oleh pegawai
-        if ($pangkat->pegawais()->count() > 0) {
+        try {
+            // Cek apakah pangkat sedang digunakan oleh pegawai
+            if ($pangkat->pegawais()->count() > 0) {
+                if (request()->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Pangkat tidak dapat dihapus karena masih digunakan oleh pegawai.'
+                    ], 400);
+                }
+
+                return redirect()->route('backend.admin-univ-usulan.pangkat.index')
+                                 ->with('error', 'Pangkat tidak dapat dihapus karena masih digunakan oleh pegawai.');
+            }
+
+            $pangkat->delete();
+
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data Pangkat berhasil dihapus.'
+                ]);
+            }
+
             return redirect()->route('backend.admin-univ-usulan.pangkat.index')
-                             ->with('error', 'Pangkat tidak dapat dihapus karena masih digunakan oleh pegawai.');
+                             ->with('success', 'Data Pangkat berhasil dihapus.');
+        } catch (\Exception $e) {
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage()
+                ], 500);
+            }
+
+            return redirect()->route('backend.admin-univ-usulan.pangkat.index')
+                            ->with('error', 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage());
         }
-
-        $pangkat->delete();
-
-        return redirect()->route('backend.admin-univ-usulan.pangkat.index')
-                         ->with('success', 'Data Pangkat berhasil dihapus.');
     }
 
     /**

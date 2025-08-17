@@ -163,7 +163,11 @@
                                                 Saat ini tidak ada periode usulan untuk fakultas <strong>{{ $unitKerja->nama }}</strong>.
                                             </p>
                                             <p class="mt-1 text-xs text-gray-400">
-                                                Total periode ditemukan: {{ $periodeUsulans->total() }}
+                                                @if($periodeUsulans instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator)
+                                                    Total periode ditemukan: {{ $periodeUsulans->total() }}
+                                                @else
+                                                    Total periode ditemukan: {{ $periodeUsulans->count() }}
+                                                @endif
                                             </p>
                                         @endif
                                     </div>
@@ -175,7 +179,7 @@
             </div>
 
             <!-- Pagination -->
-            @if ($periodeUsulans->hasPages())
+            @if ($periodeUsulans instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator && $periodeUsulans->hasPages())
                 <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
                     {{ $periodeUsulans->links() }}
                 </div>

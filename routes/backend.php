@@ -329,7 +329,7 @@ Route::middleware(['auth:pegawai'])->group(function () {
         ->group(function () {
 
             // Dashboard
-            Route::get('/dashboard', [App\Http\Controllers\Backend\AdminFakultas\AdminFakultasController::class, 'dashboard'])
+            Route::get('/dashboard', [App\Http\Controllers\Backend\AdminFakultas\DashboardController::class, 'index'])
                 ->name('dashboard');
 
             // =====================================================
