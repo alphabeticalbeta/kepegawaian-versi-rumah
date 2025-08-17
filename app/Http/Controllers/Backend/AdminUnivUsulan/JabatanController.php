@@ -71,7 +71,7 @@ class JabatanController extends Controller
             'dapat_usulan' => Jabatan::where('jenis_jabatan', '!=', 'Tenaga Kependidikan Struktural')->count(),
         ];
 
-        return view('backend.layouts.admin-univ-usulan.jabatan.master-data-jabatan', compact('jabatans', 'filterData', 'stats'));
+        return view('backend.layouts.views.admin-univ-usulan.jabatan.master-data-jabatan', compact('jabatans', 'filterData', 'stats'));
     }
 
     /**
@@ -79,7 +79,7 @@ class JabatanController extends Controller
      */
     public function create()
     {
-        return view('backend.layouts.admin-univ-usulan.jabatan.form-jabatan');
+        return view('backend.layouts.views.admin-univ-usulan.jabatan.form-jabatan');
     }
 
     /**
@@ -114,7 +114,7 @@ class JabatanController extends Controller
      */
     public function show(Jabatan $jabatan)
     {
-        return view('backend.layouts.admin-univ-usulan.jabatan.show', compact('jabatan'));
+        return view('backend.layouts.views.admin-univ-usulan.jabatan.show', compact('jabatan'));
     }
 
     /**
@@ -122,7 +122,7 @@ class JabatanController extends Controller
      */
     public function edit(Jabatan $jabatan)
     {
-        return view('backend.layouts.admin-univ-usulan.jabatan.form-jabatan', compact('jabatan'));
+        return view('backend.layouts.views.admin-univ-usulan.jabatan.form-jabatan', compact('jabatan'));
     }
 
     /**

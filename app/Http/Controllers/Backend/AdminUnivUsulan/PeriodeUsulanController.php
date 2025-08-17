@@ -27,16 +27,38 @@ class PeriodeUsulanController extends Controller
     {
         $jenisUsulan = $request->query('jenis', 'jabatan');
 
-        // Tentukan view berdasarkan jenis usulan
-        $viewMapping = [
-            'usulan-jabatan-dosen' => 'backend.layouts.periode-usulan.form-jabatan-dosen',
-            'usulan-jabatan-tendik' => 'backend.layouts.periode-usulan.form-jabatan-tendik',
+        // Mapping dari parameter URL ke jenis usulan yang benar
+        $jenisMapping = [
+            'jabatan' => 'Usulan Jabatan',
+            'nuptk' => 'Usulan NUPTK',
+            'laporan-lkd' => 'Usulan Laporan LKD',
+            'presensi' => 'Usulan Presensi',
+            'penyesuaian-masa-kerja' => 'Usulan Penyesuaian Masa Kerja',
+            'ujian-dinas-ijazah' => 'Usulan Ujian Dinas & Ijazah',
+            'laporan-serdos' => 'Usulan Laporan Serdos',
+            'pensiun' => 'Usulan Pensiun',
+            'kepangkatan' => 'Usulan Kepangkatan',
+            'pencantuman-gelar' => 'Usulan Pencantuman Gelar',
+            'id-sinta-sister' => 'Usulan ID SINTA ke SISTER',
+            'satyalancana' => 'Usulan Satyalancana',
+            'tugas-belajar' => 'Usulan Tugas Belajar',
+            'pengaktifan-kembali' => 'Usulan Pengaktifan Kembali'
         ];
 
-        $view = $viewMapping[$jenisUsulan] ?? 'backend.layouts.periode-usulan.form';
+        $jenisUsulanOtomatis = $jenisMapping[$jenisUsulan] ?? 'Usulan Jabatan';
+
+        // Tentukan view berdasarkan jenis usulan
+        $viewMapping = [
+            'usulan-jabatan-dosen' => 'backend.layouts.views.periode-usulan.form-jabatan-dosen',
+            'usulan-jabatan-tendik' => 'backend.layouts.views.periode-usulan.form-jabatan-tendik',
+        ];
+
+        $view = $viewMapping[$jenisUsulan] ?? 'backend.layouts.views.periode-usulan.form';
 
         return view($view, [
-            'jenis_usulan_otomatis' => $jenisUsulan
+            'jenis_usulan_otomatis' => $jenisUsulanOtomatis,
+            'jenis_usulan_key' => $jenisUsulan,
+            'nama_usulan' => $jenisUsulanOtomatis
         ]);
     }
 
@@ -81,7 +103,30 @@ class PeriodeUsulanController extends Controller
                 $periode->save();
             });
 
-            return back()->with('success', 'Periode usulan berhasil dibuat.');
+            // Redirect ke dashboard periode dengan jenis usulan yang sesuai
+            $jenisMapping = [
+                'Usulan Jabatan' => 'jabatan',
+                'usulan-jabatan-dosen' => 'jabatan',
+                'usulan-jabatan-tendik' => 'jabatan',
+                'Usulan NUPTK' => 'nuptk',
+                'Usulan Laporan LKD' => 'laporan-lkd',
+                'Usulan Presensi' => 'presensi',
+                'Usulan Penyesuaian Masa Kerja' => 'penyesuaian-masa-kerja',
+                'Usulan Ujian Dinas & Ijazah' => 'ujian-dinas-ijazah',
+                'Usulan Laporan Serdos' => 'laporan-serdos',
+                'Usulan Pensiun' => 'pensiun',
+                'Usulan Kepangkatan' => 'kepangkatan',
+                'Usulan Pencantuman Gelar' => 'pencantuman-gelar',
+                'Usulan ID SINTA ke SISTER' => 'id-sinta-sister',
+                'Usulan Satyalancana' => 'satyalancana',
+                'Usulan Tugas Belajar' => 'tugas-belajar',
+                'Usulan Pengaktifan Kembali' => 'pengaktifan-kembali'
+            ];
+
+            $jenisKey = $jenisMapping[$validated['jenis_usulan']] ?? 'jabatan';
+
+            return redirect()->route('backend.admin-univ-usulan.dashboard-periode.index', ['jenis' => $jenisKey])
+                ->with('success', 'Periode usulan berhasil dibuat!');
         } catch (\Throwable $e) {
             report($e);
             // sementara untuk debug, boleh tampilkan pesan asli (hapus di produksi):
@@ -94,8 +139,9 @@ class PeriodeUsulanController extends Controller
      */
     public function edit(PeriodeUsulan $periodeUsulan)
     {
-        return view('backend.layouts.periode-usulan.form', [
-            'periode' => $periodeUsulan
+        return view('backend.layouts.views.periode-usulan.form', [
+            'periode' => $periodeUsulan,
+            'nama_usulan' => $periodeUsulan->jenis_usulan
         ]);
     }
 
@@ -131,8 +177,30 @@ class PeriodeUsulanController extends Controller
                 $periode_usulan->save();
             });
 
-            // return redirect()->route('periode-usulan.index')->with('success', 'Periode usulan berhasil diperbarui.');
-            return back()->with('success', 'Periode usulan berhasil diperbarui.');
+            // Redirect ke dashboard periode dengan jenis usulan yang sesuai
+            $jenisMapping = [
+                'Usulan Jabatan' => 'jabatan',
+                'usulan-jabatan-dosen' => 'jabatan',
+                'usulan-jabatan-tendik' => 'jabatan',
+                'Usulan NUPTK' => 'nuptk',
+                'Usulan Laporan LKD' => 'laporan-lkd',
+                'Usulan Presensi' => 'presensi',
+                'Usulan Penyesuaian Masa Kerja' => 'penyesuaian-masa-kerja',
+                'Usulan Ujian Dinas & Ijazah' => 'ujian-dinas-ijazah',
+                'Usulan Laporan Serdos' => 'laporan-serdos',
+                'Usulan Pensiun' => 'pensiun',
+                'Usulan Kepangkatan' => 'kepangkatan',
+                'Usulan Pencantuman Gelar' => 'pencantuman-gelar',
+                'Usulan ID SINTA ke SISTER' => 'id-sinta-sister',
+                'Usulan Satyalancana' => 'satyalancana',
+                'Usulan Tugas Belajar' => 'tugas-belajar',
+                'Usulan Pengaktifan Kembali' => 'pengaktifan-kembali'
+            ];
+
+            $jenisKey = $jenisMapping[$periode_usulan->jenis_usulan] ?? 'jabatan';
+
+            return redirect()->route('backend.admin-univ-usulan.dashboard-periode.index', ['jenis' => $jenisKey])
+                ->with('success', 'Periode usulan berhasil diperbarui!');
         } catch (\Throwable $e) {
             report($e);
             return back()->withInput()->with('error', 'Gagal memperbarui periode usulan. Coba lagi.');
@@ -148,9 +216,35 @@ class PeriodeUsulanController extends Controller
             return back()->with('error', 'Gagal menghapus! Periode ini sudah memiliki pendaftar.');
         }
 
+        // Simpan jenis usulan sebelum dihapus untuk redirect
+        $jenisUsulan = $periodeUsulan->jenis_usulan;
+
         $periodeUsulan->delete();
 
-        return back()->with('success', 'Periode Usulan berhasil dihapus.');
+        // Redirect ke dashboard periode dengan jenis usulan yang sesuai
+        $jenisMapping = [
+            'Usulan Jabatan' => 'jabatan',
+            'usulan-jabatan-dosen' => 'jabatan',
+            'usulan-jabatan-tendik' => 'jabatan',
+            'Usulan NUPTK' => 'nuptk',
+            'Usulan Laporan LKD' => 'laporan-lkd',
+            'Usulan Presensi' => 'presensi',
+            'Usulan Penyesuaian Masa Kerja' => 'penyesuaian-masa-kerja',
+            'Usulan Ujian Dinas & Ijazah' => 'ujian-dinas-ijazah',
+            'Usulan Laporan Serdos' => 'laporan-serdos',
+            'Usulan Pensiun' => 'pensiun',
+            'Usulan Kepangkatan' => 'kepangkatan',
+            'Usulan Pencantuman Gelar' => 'pencantuman-gelar',
+            'Usulan ID SINTA ke SISTER' => 'id-sinta-sister',
+            'Usulan Satyalancana' => 'satyalancana',
+            'Usulan Tugas Belajar' => 'tugas-belajar',
+            'Usulan Pengaktifan Kembali' => 'pengaktifan-kembali'
+        ];
+
+        $jenisKey = $jenisMapping[$jenisUsulan] ?? 'jabatan';
+
+        return redirect()->route('backend.admin-univ-usulan.dashboard-periode.index', ['jenis' => $jenisKey])
+            ->with('success', 'Periode Usulan berhasil dihapus!');
     }
 
     /**

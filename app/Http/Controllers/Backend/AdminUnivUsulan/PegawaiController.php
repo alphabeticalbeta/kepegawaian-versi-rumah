@@ -22,7 +22,7 @@ class PegawaiController extends Controller
     public function index()
     {
         $pegawais = Pegawai::orderBy('nama_lengkap')->paginate(15);
-        return view('backend.layouts.admin-univ-usulan.pegawai.index', compact('pegawais'));
+        return view('backend.layouts.views.admin-univ-usulan.pegawai.index', compact('pegawais'));
     }
 
     /**
@@ -30,7 +30,7 @@ class PegawaiController extends Controller
      */
     public function edit(Pegawai $pegawai)
     {
-        return view('backend.layouts.admin-univ-usulan.pegawai.edit', compact('pegawai'));
+        return view('backend.layouts.views.admin-univ-usulan.pegawai.edit', compact('pegawai'));
     }
 
     /**

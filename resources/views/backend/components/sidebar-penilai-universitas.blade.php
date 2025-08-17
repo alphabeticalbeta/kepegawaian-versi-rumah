@@ -1,4 +1,4 @@
-<aside id="sidebar" class="w-64 bg-white shadow-sm fixed top-0 left-0 h-full z-30 group">
+<aside id="sidebar" class="sidebar w-64 bg-white shadow-sm fixed top-0 left-0 h-full z-30 group">
     {{-- Header Sidebar --}}
     <div class="flex items-center justify-center p-4 h-16 shadow">
         <div class="flex items-center gap-3 justify-center">

@@ -15,7 +15,7 @@ class SubUnitKerjaController extends Controller
     public function index()
     {
         $subUnitKerjas = SubUnitKerja::with('unitKerja')->orderBy('nama')->paginate(10);
-        return view('backend.layouts.admin-univ-usulan.sub-unitkerja.master-data-sub-unitkerja', compact('subUnitKerjas'));
+        return view('backend.layouts.views.admin-univ-usulan.sub-unitkerja.master-data-sub-unitkerja', compact('subUnitKerjas'));
     }
 
     /**
@@ -24,7 +24,7 @@ class SubUnitKerjaController extends Controller
     public function create()
     {
         $unitKerjas = UnitKerja::orderBy('nama')->get();
-        return view('backend.layouts.admin-univ-usulan.sub-unitkerja.form-sub-unitkerja', compact('unitKerjas'));
+        return view('backend.layouts.views.admin-univ-usulan.sub-unitkerja.form-sub-unitkerja', compact('unitKerjas'));
     }
 
     /**
@@ -49,7 +49,7 @@ class SubUnitKerjaController extends Controller
     public function edit(SubUnitKerja $subUnitKerja)
     {
         $unitKerjas = UnitKerja::orderBy('nama')->get();
-        return view('backend.layouts.admin-univ-usulan.sub-unitkerja.form-sub-unitkerja', compact('subUnitKerja', 'unitKerjas'));
+        return view('backend.layouts.views.admin-univ-usulan.sub-unitkerja.form-sub-unitkerja', compact('subUnitKerja', 'unitKerjas'));
     }
 
     /**

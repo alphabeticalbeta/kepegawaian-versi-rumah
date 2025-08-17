@@ -25,41 +25,90 @@ class DataPegawaiController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request) // PERUBAHAN 1: Tambahkan Request $request
+    public function index(Request $request)
     {
-        // PERUBAHAN 2: Ganti logika pengambilan data dengan query builder
-        $query = Pegawai::with(['pangkat', 'jabatan', 'unitKerja'])->latest();
+        // OPTIMASI: Gunakan query builder dengan eager loading yang optimal
+        $query = Pegawai::withOptimalRelations()
+            ->when($request->filter_jenis_pegawai, function ($q, $jenis_pegawai) {
+                return $q->byJenisPegawai($jenis_pegawai);
+            })
+            ->when($request->search, function ($q, $search) {
+                return $q->searchByNameOrNip($search);
+            })
+            ->latest();
 
-        // Terapkan filter berdasarkan jenis pegawai jika ada
-        $query->when($request->filter_jenis_pegawai, function ($q, $jenis_pegawai) {
-            return $q->where('jenis_pegawai', $jenis_pegawai);
-        });
-
-        // Terapkan filter pencarian berdasarkan nama atau NIP jika ada
-        $query->when($request->search, function ($q, $search) {
-            return $q->where(function ($subQuery) use ($search) {
-                $subQuery->where('nama_lengkap', 'like', "%{$search}%")
-                         ->orWhere('nip', 'like', "%{$search}%");
-            });
-        });
-
-        // Ambil data dengan paginasi
         $pegawais = $query->paginate(10)->withQueryString();
 
-        return view('backend.layouts.admin-univ-usulan.data-pegawai.master-datapegawai', compact('pegawais'));
+        return view('backend.layouts.views.admin-univ-usulan.data-pegawai.master-datapegawai', compact('pegawais'));
     }
-
 
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
-        $pangkats = Pangkat::orderBy('pangkat')->get();
-        $jabatans = Jabatan::orderBy('jabatan')->get();
-        $unitKerjas = SubSubUnitKerja::with('subUnitKerja.unitKerja')->orderBy('nama')->get();
+        // OPTIMASI: Cache data yang sering digunakan dengan cache key yang lebih spesifik
+        $pangkats = \Cache::remember('pangkats_all_hierarchy', 3600, function () {
+            return Pangkat::orderByHierarchy('asc')->get(['id', 'pangkat', 'hierarchy_level', 'status_pangkat']);
+        });
 
-        return view('backend.layouts.admin-univ-usulan.data-pegawai.form-datapegawai', compact('pangkats', 'jabatans', 'unitKerjas'));
+        $jabatans = \Cache::remember('jabatans_all_hierarchy', 3600, function () {
+            return Jabatan::orderByHierarchy('asc')->get(['id', 'jabatan', 'jenis_pegawai', 'jenis_jabatan', 'hierarchy_level']);
+        });
+
+        // OPTIMASI: Ambil data unit kerja dengan struktur yang benar
+        $unitKerjas = \Cache::remember('unit_kerjas_all', 3600, function () {
+            return \App\Models\BackendUnivUsulan\UnitKerja::orderBy('nama')->get(['id', 'nama']);
+        });
+
+        $subUnitKerjas = \Cache::remember('sub_unit_kerjas_all', 3600, function () {
+            return \App\Models\BackendUnivUsulan\SubUnitKerja::with('unitKerja:id,nama')
+                ->orderBy('nama')
+                ->get(['id', 'nama', 'unit_kerja_id']);
+        });
+
+        $subSubUnitKerjas = \Cache::remember('sub_sub_unit_kerjas_all', 3600, function () {
+            return \App\Models\BackendUnivUsulan\SubSubUnitKerja::with(['subUnitKerja:id,nama,unit_kerja_id', 'subUnitKerja.unitKerja:id,nama'])
+                ->orderBy('nama')
+                ->get(['id', 'nama', 'sub_unit_kerja_id']);
+        });
+
+        // Siapkan data untuk dropdown berjenjang dengan struktur yang benar
+        $unitKerjaOptions = [];
+        $subUnitKerjaOptions = [];
+        $subSubUnitKerjaOptions = [];
+
+        // Unit Kerja Options
+        foreach ($unitKerjas as $unitKerja) {
+            $unitKerjaOptions[$unitKerja->id] = $unitKerja->nama;
+        }
+
+        // Sub Unit Kerja Options (grouped by unit_kerja_id)
+        foreach ($subUnitKerjas as $subUnitKerja) {
+            if ($subUnitKerja->unitKerja) {
+                $unitKerjaId = $subUnitKerja->unit_kerja_id;
+                $subUnitKerjaOptions[$unitKerjaId][$subUnitKerja->id] = $subUnitKerja->nama;
+            }
+        }
+
+        // Sub-sub Unit Kerja Options (grouped by sub_unit_kerja_id)
+        foreach ($subSubUnitKerjas as $subSubUnitKerja) {
+            if ($subSubUnitKerja->subUnitKerja) {
+                $subUnitKerjaId = $subSubUnitKerja->sub_unit_kerja_id;
+                $subSubUnitKerjaOptions[$subUnitKerjaId][$subSubUnitKerja->id] = $subSubUnitKerja->nama;
+            }
+        }
+
+        // Buat dummy pegawai untuk form create
+        $pegawai = new \App\Models\BackendUnivUsulan\Pegawai();
+
+        // Dummy data untuk dropdown yang dipilih (kosong untuk form create)
+        $selectedUnitKerjaId = null;
+        $selectedSubUnitKerjaId = null;
+        $selectedSubSubUnitKerjaId = null;
+
+        return view('backend.layouts.views.admin-univ-usulan.data-pegawai.form-datapegawai',
+            compact('pangkats', 'jabatans', 'unitKerjas', 'subUnitKerjas', 'subSubUnitKerjas', 'unitKerjaOptions', 'subUnitKerjaOptions', 'subSubUnitKerjaOptions', 'pegawai', 'selectedUnitKerjaId', 'selectedSubUnitKerjaId', 'selectedSubSubUnitKerjaId'));
     }
 
     /**
@@ -69,6 +118,17 @@ class DataPegawaiController extends Controller
     {
         $validated = $this->validateRequest($request);
         $this->handleFileUploads($request, $validated);
+
+        // Handle unit_kerja_id berdasarkan unit_kerja_terakhir_id
+        if ($request->filled('unit_kerja_terakhir_id')) {
+            $subSubUnitKerja = \App\Models\BackendUnivUsulan\SubSubUnitKerja::with(['subUnitKerja', 'subUnitKerja.unitKerja'])
+                ->find($request->unit_kerja_terakhir_id);
+
+            if ($subSubUnitKerja && $subSubUnitKerja->subUnitKerja && $subSubUnitKerja->subUnitKerja->unitKerja) {
+                // Set unit_kerja_id berdasarkan parent dari Sub-sub Unit Kerja
+                $validated['unit_kerja_id'] = $subSubUnitKerja->subUnitKerja->unitKerja->id;
+            }
+        }
 
         Pegawai::create($validated);
 
@@ -81,11 +141,87 @@ class DataPegawaiController extends Controller
      */
     public function edit(Pegawai $pegawai)
     {
-        $pangkats = Pangkat::orderBy('pangkat')->get();
-        $jabatans = Jabatan::orderBy('jabatan')->get();
-        $unitKerjas = SubSubUnitKerja::with('subUnitKerja.unitKerja')->orderBy('nama')->get();
+        $pangkats = \Cache::remember('pangkats_all_hierarchy', 3600, function () {
+            return Pangkat::orderByHierarchy('asc')->get(['id', 'pangkat', 'hierarchy_level', 'status_pangkat']);
+        });
+        $jabatans = \Cache::remember('jabatans_all_hierarchy', 3600, function () {
+            return Jabatan::orderByHierarchy('asc')->get(['id', 'jabatan', 'jenis_pegawai', 'jenis_jabatan', 'hierarchy_level']);
+        });
 
-        return view('backend.layouts.admin-univ-usulan.data-pegawai.form-datapegawai', compact('pegawai', 'pangkats', 'jabatans', 'unitKerjas'));
+        // OPTIMASI: Ambil data unit kerja dengan struktur yang benar
+        $unitKerjas = \Cache::remember('unit_kerjas_all', 3600, function () {
+            return \App\Models\BackendUnivUsulan\UnitKerja::orderBy('nama')->get(['id', 'nama']);
+        });
+
+        $subUnitKerjas = \Cache::remember('sub_unit_kerjas_all', 3600, function () {
+            return \App\Models\BackendUnivUsulan\SubUnitKerja::with('unitKerja:id,nama')
+                ->orderBy('nama')
+                ->get(['id', 'nama', 'unit_kerja_id']);
+        });
+
+        $subSubUnitKerjas = \Cache::remember('sub_sub_unit_kerjas_all', 3600, function () {
+            return \App\Models\BackendUnivUsulan\SubSubUnitKerja::with(['subUnitKerja:id,nama,unit_kerja_id', 'subUnitKerja.unitKerja:id,nama'])
+                ->orderBy('nama')
+                ->get(['id', 'nama', 'sub_unit_kerja_id']);
+        });
+
+        // Siapkan data untuk dropdown berjenjang dengan struktur yang benar
+        $unitKerjaOptions = [];
+        $subUnitKerjaOptions = [];
+        $subSubUnitKerjaOptions = [];
+
+        // Unit Kerja Options
+        foreach ($unitKerjas as $unitKerja) {
+            $unitKerjaOptions[$unitKerja->id] = $unitKerja->nama;
+        }
+
+        // Sub Unit Kerja Options (grouped by unit_kerja_id)
+        foreach ($subUnitKerjas as $subUnitKerja) {
+            if ($subUnitKerja->unitKerja) {
+                $unitKerjaId = $subUnitKerja->unit_kerja_id;
+                $subUnitKerjaOptions[$unitKerjaId][$subUnitKerja->id] = $subUnitKerja->nama;
+            }
+        }
+
+        // Sub-sub Unit Kerja Options (grouped by sub_unit_kerja_id)
+        foreach ($subSubUnitKerjas as $subSubUnitKerja) {
+            if ($subSubUnitKerja->subUnitKerja) {
+                $subUnitKerjaId = $subSubUnitKerja->sub_unit_kerja_id;
+                $subSubUnitKerjaOptions[$subUnitKerjaId][$subSubUnitKerja->id] = $subSubUnitKerja->nama;
+            }
+        }
+
+        // Jika edit mode, siapkan data untuk mengisi dropdown yang sudah dipilih
+        $selectedUnitKerjaId = null;
+        $selectedSubUnitKerjaId = null;
+        $selectedSubSubUnitKerjaId = null;
+
+        if ($pegawai->unit_kerja_terakhir_id) {
+            // Cari data berdasarkan unit_kerja_terakhir_id dengan query terpisah
+            $selectedSubSubUnit = \App\Models\BackendUnivUsulan\SubSubUnitKerja::with(['subUnitKerja:id,nama,unit_kerja_id', 'subUnitKerja.unitKerja:id,nama'])
+                ->find($pegawai->unit_kerja_terakhir_id);
+
+            if ($selectedSubSubUnit && $selectedSubSubUnit->subUnitKerja && $selectedSubSubUnit->subUnitKerja->unitKerja) {
+                $selectedSubSubUnitKerjaId = $selectedSubSubUnit->id;
+                $selectedSubUnitKerjaId = $selectedSubSubUnit->subUnitKerja->id;
+                $selectedUnitKerjaId = $selectedSubSubUnit->subUnitKerja->unitKerja->id;
+            }
+        }
+
+        return view('backend.layouts.views.admin-univ-usulan.data-pegawai.form-datapegawai', compact(
+            'pegawai',
+            'pangkats',
+            'jabatans',
+            'unitKerjas',
+            'subUnitKerjas',
+            'subSubUnitKerjas',
+            'unitKerjaOptions',
+            'subUnitKerjaOptions',
+            'subSubUnitKerjaOptions',
+            'selectedUnitKerjaId',
+            'selectedSubUnitKerjaId',
+            'selectedSubSubUnitKerjaId'
+        ));
     }
 
     /**
@@ -93,13 +229,96 @@ class DataPegawaiController extends Controller
      */
     public function update(Request $request, Pegawai $pegawai)
     {
+        // Handle AJAX auto-save requests
+        if ($request->ajax() && $request->isMethod('POST')) {
+            return $this->handleAutoSave($request, $pegawai);
+        }
+
         $validated = $this->validateRequest($request, $pegawai->id);
         $this->handleFileUploads($request, $validated, $pegawai);
+
+        // Handle password update
+        if ($request->filled('password')) {
+            $validated['password'] = bcrypt($request->password);
+        } else {
+            unset($validated['password']);
+        }
+
+        // Handle unit_kerja_id berdasarkan unit_kerja_terakhir_id
+        if ($request->filled('unit_kerja_terakhir_id')) {
+            $subSubUnitKerja = \App\Models\BackendUnivUsulan\SubSubUnitKerja::with(['subUnitKerja', 'subUnitKerja.unitKerja'])
+                ->find($request->unit_kerja_terakhir_id);
+
+            if ($subSubUnitKerja && $subSubUnitKerja->subUnitKerja && $subSubUnitKerja->subUnitKerja->unitKerja) {
+                // Set unit_kerja_id berdasarkan parent dari Sub-sub Unit Kerja
+                $validated['unit_kerja_id'] = $subSubUnitKerja->subUnitKerja->unitKerja->id;
+            }
+        }
 
         $pegawai->update($validated);
 
         return redirect()->route('backend.admin-univ-usulan.data-pegawai.index')
                          ->with('success', 'Data Pegawai berhasil diperbarui.');
+    }
+
+    /**
+     * Handle auto-save functionality for AJAX requests
+     */
+    private function handleAutoSave(Request $request, Pegawai $pegawai)
+    {
+        try {
+            // Only allow updating specific dosen fields for auto-save
+            $allowedFields = [
+                'mata_kuliah_diampu',
+                'ranting_ilmu_kepakaran',
+                'url_profil_sinta'
+            ];
+
+            $updateData = [];
+            foreach ($allowedFields as $field) {
+                if ($request->has($field)) {
+                    $updateData[$field] = $request->input($field);
+                }
+            }
+
+            // Validate URL if present
+            if (isset($updateData['url_profil_sinta']) && !empty($updateData['url_profil_sinta'])) {
+                $urlPattern = '/^https?:\/\/sinta\.kemdikbud\.go\.id\/.*$/';
+                if (!preg_match($urlPattern, $updateData['url_profil_sinta'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'URL Sinta tidak valid'
+                    ], 422);
+                }
+            }
+
+            // Update only the allowed fields
+            if (!empty($updateData)) {
+                $pegawai->update($updateData);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data berhasil disimpan otomatis',
+                    'updated_at' => $pegawai->updated_at->format('Y-m-d H:i:s')
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada data yang perlu diperbarui'
+            ], 400);
+
+        } catch (\Exception $e) {
+            \Log::error('Auto-save error: ' . $e->getMessage(), [
+                'pegawai_id' => $pegawai->id,
+                'request_data' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menyimpan data'
+            ], 500);
+        }
     }
 
     /**
@@ -119,7 +338,8 @@ class DataPegawaiController extends Controller
 
         foreach ($fileColumns as $column) {
             if ($pegawai->$column) {
-                Storage::disk('local')->delete($pegawai->$column); // FIX: Gunakan disk 'local'
+                $disk = $this->getFileDisk($column);
+                Storage::disk($disk)->delete($pegawai->$column);
             }
         }
 
@@ -131,9 +351,9 @@ class DataPegawaiController extends Controller
 
     public function show(Pegawai $pegawai)
     {
-        $pegawai->load(['pangkat', 'jabatan', 'unitKerja.subUnitKerja.unitKerja']);
+        $pegawai->load(['pangkat', 'jabatan', 'unitKerja']);
 
-        return view('backend.layouts.admin-univ-usulan.data-pegawai.show-datapegawai', compact('pegawai'));
+        return view('backend.layouts.views.admin-univ-usulan.data-pegawai.show-datapegawai', compact('pegawai'));
     }
 
     /**
@@ -143,6 +363,7 @@ class DataPegawaiController extends Controller
     {
         $rules = [
             'jenis_pegawai' => 'required|string|in:Dosen,Tenaga Kependidikan',
+            'jenis_jabatan' => 'required|string|in:Dosen Fungsional,Dosen dengan Tugas Tambahan,Tenaga Kependidikan Fungsional Umum,Tenaga Kependidikan Fungsional Tertentu,Tenaga Kependidikan Struktural,Tenaga Kependidikan Tugas Tambahan',
             'nip' => 'required|numeric|digits:18|unique:pegawais,nip,' . $pegawaiId,
             'gelar_depan' => 'nullable|string|max:255',
             'nama_lengkap' => 'required|string|max:255',
@@ -157,9 +378,12 @@ class DataPegawaiController extends Controller
             'jabatan_terakhir_id' => 'required|exists:jabatans,id',
             'tmt_jabatan' => 'required|date',
             'pendidikan_terakhir' => 'required|string',
+            'nama_universitas_sekolah' => 'nullable|string|max:255',
+            'nama_prodi_jurusan_s2' => 'nullable|string|max:255',
             'predikat_kinerja_tahun_pertama' => 'required|string',
             'predikat_kinerja_tahun_kedua' => 'required|string',
             'unit_kerja_terakhir_id' => 'required|exists:sub_sub_unit_kerjas,id',
+            'unit_kerja_id' => 'nullable|exists:unit_kerjas,id',
             'nomor_handphone' => 'required|string',
             'tmt_cpns' => 'required|date',
             'tmt_pns' => 'required|date',
@@ -173,6 +397,7 @@ class DataPegawaiController extends Controller
                 'Tenaga Kependidikan PNS', 'Tenaga Kependidikan PPPK', 'Tenaga Kependidikan Non ASN'
                 ])
             ],
+            'password' => 'nullable|string|min:8|confirmed',
         ];
 
         $fileRules = [
@@ -215,10 +440,15 @@ class DataPegawaiController extends Controller
 
         foreach ($fileColumns as $column) {
             if ($request->hasFile($column)) {
+                // Delete old file if exists
                 if ($pegawai && $pegawai->$column) {
-                    Storage::disk('local')->delete($pegawai->$column);
+                    $oldDisk = $this->getFileDisk($column);
+                    Storage::disk($oldDisk)->delete($pegawai->$column);
                 }
-                $path = $request->file($column)->store('pegawai-files/' . $column, 'local');
+
+                // Store new file on appropriate disk
+                $disk = $this->getFileDisk($column);
+                $path = $request->file($column)->store('pegawai-files/' . $column, $disk);
                 $validatedData[$column] = $path;
             }
         }
@@ -243,22 +473,33 @@ class DataPegawaiController extends Controller
 
         // 2. Cek apakah file ada
         $filePath = $pegawai->$field;
-        if (!$filePath || !Storage::disk('local')->exists($filePath)) {
+        if (!$filePath) {
+            abort(404, 'File tidak ditemukan');
+        }
+
+        // Determine correct disk based on field type
+        $disk = $this->getFileDisk($field);
+        if (!Storage::disk($disk)->exists($filePath)) {
             abort(404, 'File tidak ditemukan');
         }
 
         // 3. **ACCESS CONTROL** - Cek permission berdasarkan role
-        $currentUser = Auth::guard('pegawai')->user();
+        // Coba ambil user dari berbagai guard yang mungkin
+        $currentUser = Auth::guard('pegawai')->user() ?? Auth::guard('web')->user() ?? Auth::user();
+
+        if (!$currentUser) {
+            abort(403, 'Anda harus login untuk mengakses dokumen ini.');
+        }
 
         if (!$this->canAccessDocument($currentUser, $pegawai)) {
             abort(403, 'Anda tidak memiliki akses untuk halaman atau dokumen ini.');
         }
 
         // 4. **LOGGING** - Catat akses dokumen
-        $this->logDocumentAccess($pegawai->id, $currentUser->id, $field, request());
+        $this->logDocumentAccess($pegawai->id, $currentUser->id ?? 0, $field, request());
 
-        // 5. **FIX STORAGE BUG** - Gunakan disk 'local' yang konsisten
-        $fullPath = Storage::disk('local')->path($filePath);
+        // 5. **FIX STORAGE BUG** - Gunakan disk yang sesuai
+        $fullPath = Storage::disk($disk)->path($filePath);
 
         if (!file_exists($fullPath)) {
             abort(404, 'File tidak ditemukan di storage');
@@ -347,20 +588,20 @@ class DataPegawaiController extends Controller
         try {
             // Load relasi dengan error handling
             if (!$user1->relationLoaded('unitKerja')) {
-                $user1->load('unitKerja.subUnitKerja.unitKerja');
+                $user1->load('unitKerja');
             }
             if (!$user2->relationLoaded('unitKerja')) {
-                $user2->load('unitKerja.subUnitKerja.unitKerja');
+                $user2->load('unitKerja');
             }
 
             // Method 1: Gunakan unit_kerja_id langsung (lebih efisien)
-            if ($user1->unit_kerja_id && $user2->unitKerja?->subUnitKerja?->unit_kerja_id) {
-                return $user1->unit_kerja_id === $user2->unitKerja->subUnitKerja->unit_kerja_id;
+            if ($user1->unit_kerja_id && $user2->unit_kerja_id) {
+                return $user1->unit_kerja_id === $user2->unit_kerja_id;
             }
 
-            // Method 2: Fallback dengan relasi lengkap
-            $fakultas1 = $user1->unitKerja?->subUnitKerja?->unitKerja?->id;
-            $fakultas2 = $user2->unitKerja?->subUnitKerja?->unitKerja?->id;
+            // Method 2: Fallback dengan relasi langsung
+            $fakultas1 = $user1->unitKerja?->id;
+            $fakultas2 = $user2->unitKerja?->id;
 
             return $fakultas1 && $fakultas2 && $fakultas1 === $fakultas2;
 
@@ -390,7 +631,7 @@ class DataPegawaiController extends Controller
             ]);
 
             // Log role info separately untuk debugging
-            $accessor = Auth::guard('pegawai')->user();
+            $accessor = Auth::guard('pegawai')->user() ?? Auth::guard('web')->user() ?? Auth::user();
             if ($accessor) {
                 \Log::info('Document accessed', [
                     'pegawai_id' => $pegawaiId,
@@ -407,5 +648,19 @@ class DataPegawaiController extends Controller
                 'error' => $e->getMessage()
             ]);
         }
+    }
+
+    /**
+     * Get the appropriate disk for a given field
+     */
+    private function getFileDisk($field): string
+    {
+        $sensitiveFiles = [
+            'sk_pangkat_terakhir', 'sk_jabatan_terakhir', 'ijazah_terakhir',
+            'transkrip_nilai_terakhir', 'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir',
+            'pak_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua', 'sk_cpns', 'sk_pns'
+        ];
+
+        return in_array($field, $sensitiveFiles) ? 'local' : 'public';
     }
 }

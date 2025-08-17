@@ -10,6 +10,7 @@ use App\Models\BackendUnivUsulan\PeriodeUsulan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Admin Fakultas Controller
@@ -49,7 +50,7 @@ class AdminFakultasController extends Controller
         // Get dashboard statistics
         $statistics = $this->getDashboardStatistics($periodeUsulans, $unitKerja);
 
-        return view('backend.layouts.admin-fakultas.dashboard', compact('periodeUsulans', 'unitKerja', 'statistics'));
+        return view('backend.layouts.views.admin-fakultas.dashboard', compact('periodeUsulans', 'unitKerja', 'statistics'));
     }
 
     /**
@@ -62,10 +63,10 @@ class AdminFakultasController extends Controller
         $unitKerja = $admin->unitKerjaPengelola;
 
         if (!$unitKerja) {
-            return view('backend.layouts.admin-fakultas.usulan.index', [
-                'periodeUsulans' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10),
-                'unitKerja' => null
-            ]);
+                    return view('backend.layouts.views.admin-fakultas.usulan.index', [
+            'periodeUsulans' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10),
+            'unitKerja' => null
+        ]);
         }
 
         $unitKerjaId = $unitKerja->id;
@@ -79,17 +80,23 @@ class AdminFakultasController extends Controller
                         ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
                             $subQuery->where('id', $unitKerjaId);
                         });
+                },
+                // Count semua usulan untuk informasi total
+                'usulans as total_usulan' => function ($query) use ($unitKerjaId) {
+                    $query->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
+                        $subQuery->where('id', $unitKerjaId);
+                    });
                 }
             ])
             ->latest()
             ->paginate(10);
 
-        return view('backend.layouts.admin-fakultas.usulan.index', compact('periodeUsulans', 'unitKerja'));
+        return view('backend.layouts.views.admin-fakultas.usulan.index', compact('periodeUsulans', 'unitKerja'));
     }
 
     /**
      * Menampilkan detail satu usulan spesifik untuk VALIDASI.
-     * ENHANCED: Process data from helper untuk ditampilkan di view
+     * OPTIMIZED: Menggunakan query scopes dan caching untuk performa optimal
      */
     public function show(Usulan $usulan)
     {
@@ -97,9 +104,31 @@ class AdminFakultasController extends Controller
             /** @var \App\Models\BackendUnivUsulan\Pegawai $admin */
             $admin = Auth::user();
 
-            // Authorization check (existing code)
-            $adminFakultasId = $admin->unit_kerja_id;
-            $usulanPegawaiFakultasId = $usulan->pegawai?->unitKerja?->subUnitKerja?->unit_kerja_id;
+            // OPTIMASI: Cache admin data untuk mengurangi query
+            $adminFakultasId = Cache::remember("admin_fakultas_id_{$admin->id}", 300, function () use ($admin) {
+                return $admin->unit_kerja_id;
+            });
+
+            // OPTIMASI: Gunakan eager loading yang optimal
+            $usulan->load([
+                'pegawai:id,nama_lengkap,email,nip,gelar_depan,gelar_belakang,pangkat_terakhir_id,jabatan_terakhir_id,unit_kerja_terakhir_id,jenis_pegawai,status_kepegawaian,nuptk,tempat_lahir,tanggal_lahir,jenis_kelamin,nomor_handphone,nomor_kartu_pegawai,tmt_pangkat,tmt_jabatan,tmt_cpns,tmt_pns,pendidikan_terakhir,mata_kuliah_diampu,ranting_ilmu_kepakaran,url_profil_sinta,predikat_kinerja_tahun_pertama,predikat_kinerja_tahun_kedua,nilai_konversi,ijazah_terakhir,transkrip_nilai_terakhir,sk_pangkat_terakhir,sk_jabatan_terakhir,skp_tahun_pertama,skp_tahun_kedua,pak_konversi,sk_cpns,sk_pns,sk_penyetaraan_ijazah,disertasi_thesis_terakhir',
+                'pegawai.pangkat:id,pangkat',
+                'pegawai.jabatan:id,jabatan',
+                'pegawai.unitKerja:id,nama,sub_unit_kerja_id',
+                'pegawai.unitKerja.subUnitKerja:id,nama,unit_kerja_id',
+                'pegawai.unitKerja.subUnitKerja.unitKerja:id,nama',
+                'jabatanLama:id,jabatan',
+                'jabatanTujuan:id,jabatan',
+                'periodeUsulan:id,nama_periode,tanggal_mulai,tanggal_selesai,status',
+                'dokumens:id,usulan_id,nama_dokumen,path',
+                'logs:id,usulan_id,status_baru,catatan,created_at,dilakukan_oleh_id',
+                'logs.dilakukanOleh:id,nama_lengkap'
+            ]);
+
+            // OPTIMASI: Cache fakultas ID untuk authorization check
+            $usulanPegawaiFakultasId = Cache::remember("usulan_fakultas_{$usulan->id}", 300, function () use ($usulan) {
+                return $usulan->pegawai?->unitKerja?->subUnitKerja?->unit_kerja_id;
+            });
 
             if (!$adminFakultasId || $adminFakultasId !== $usulanPegawaiFakultasId) {
                 Log::warning('Admin Fakultas mencoba akses usulan dari fakultas lain.', [
@@ -112,37 +141,32 @@ class AdminFakultasController extends Controller
                     ->with('error', 'Akses ditolak. Anda tidak berhak melihat usulan dari fakultas lain.');
             }
 
-            // Eager loading (existing code)
-            $usulan->load([
-                'pegawai.pangkat',
-                'pegawai.jabatan',
-                'pegawai.unitKerja',
-                'jabatanLama',
-                'jabatanTujuan',
-                'dokumens',
-                'logs' => function ($query) {
-                    $query->with('dilakukanOleh')->latest();
-                }
-            ]);
+            // OPTIMASI: Cache validation fields
+            $validationFields = Cache::remember("validation_fields_{$usulan->id}_admin_fakultas", 300, function () use ($usulan) {
+                return \App\Models\BackendUnivUsulan\Usulan::getValidationFieldsWithDynamicBkd($usulan, 'admin_fakultas');
+            });
 
-            // ENHANCED: Process validation fields dengan helper
-            $validationFields = $this->processValidationFieldsForView($usulan);
+            // OPTIMASI: Cache BKD labels
+            $bkdLabels = Cache::remember("bkd_labels_{$usulan->id}", 300, function () use ($usulan) {
+                return $usulan->getBkdDisplayLabels();
+            });
 
-            // ENHANCED: Process BKD labels for display
-            $bkdLabels = $usulan->getBkdDisplayLabels();
+            // OPTIMASI: Cache existing validation data
+            $existingValidation = Cache::remember("existing_validation_{$usulan->id}_admin_fakultas", 300, function () use ($usulan) {
+                return $usulan->getValidasiByRole('admin_fakultas');
+            });
 
-            // Existing validation data
-            $existingValidation = $usulan->getValidasiByRole('admin_fakultas');
+            // OPTIMASI: Cache dokumen data
+            $dokumenData = Cache::remember("dokumen_data_{$usulan->id}", 300, function () use ($usulan) {
+                return $this->processDokumenDataForView($usulan);
+            });
 
-            // ENHANCED: Process dokumen data untuk view
-            $dokumenData = $this->processDokumenDataForView($usulan);
-
-            return view('backend.layouts.admin-fakultas.usulan-detail-wrapper', [
+            return view('backend.layouts.views.admin-fakultas.usulan.detail', [
                 'usulan' => $usulan,
                 'validationFields' => $validationFields,
                 'existingValidation' => $existingValidation,
                 'bkdLabels' => $bkdLabels,
-                'dokumenData' => $dokumenData, // NEW: Processed document data
+                'dokumenData' => $dokumenData,
                 // Multi-role configuration
                 'currentRole' => 'admin_fakultas',
                 'formAction' => route('admin-fakultas.usulan.save-validation', $usulan->id),
@@ -151,11 +175,16 @@ class AdminFakultasController extends Controller
                 'canEdit' => in_array($usulan->status_usulan, ['Diajukan', 'Sedang Direview']),
                 'roleConfig' => [
                     'canEdit' => in_array($usulan->status_usulan, ['Diajukan', 'Sedang Direview']),
+                    'canView' => true, // Always allow viewing data
                     'submitFunctions' => ['save', 'return_to_pegawai', 'reject_to_pegawai', 'forward_to_university']
                 ]
             ]);
         } catch (\Exception $e) {
-            Log::error('Gagal menampilkan detail usulan: ' . $e->getMessage(), ['usulan_id' => $usulan->id]);
+            Log::error('Gagal menampilkan detail usulan: ' . $e->getMessage(), [
+                'usulan_id' => $usulan->id,
+                'admin_id' => Auth::id(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return redirect()->back()->with('error', 'Terjadi kesalahan saat memuat data detail usulan. Error: ' . $e->getMessage());
         }
     }
@@ -180,6 +209,7 @@ class AdminFakultasController extends Controller
                         'catatan_umum' => 'required|string|min:10|max:2000'
                     ], [
                         'catatan_umum.required' => 'Catatan untuk pegawai wajib diisi.',
+                        'catatan_umum.min' => 'Catatan untuk pegawai minimal 10 karakter.',
                     ]);
 
                     $usulan->setValidasiByRole('admin_fakultas', $validatedData['validation'], $adminId);
@@ -203,6 +233,30 @@ class AdminFakultasController extends Controller
                     $logMessage = 'Usulan dikembalikan ke Pegawai untuk perbaikan.';
                     break;
 
+                case 'reject_to_pegawai':
+                    // Validasi khusus untuk aksi 'belum direkomendasikan'
+                    $validatedData = $request->validate([
+                        'validation' => 'required|array',
+                        'catatan_reject' => 'required|string|min:10|max:2000'
+                    ], [
+                        'catatan_reject.required' => 'Alasan belum direkomendasikan wajib diisi.',
+                        'catatan_reject.min' => 'Alasan belum direkomendasikan minimal 10 karakter.',
+                    ]);
+
+                    $usulan->setValidasiByRole('admin_fakultas', $validatedData['validation'], $adminId);
+
+                    // Buat catatan lengkap untuk pegawai
+                    $catatanDetail = ["Usulan belum dapat direkomendasikan oleh Admin Fakultas."];
+                    $catatanDetail[] = "\nAlasan:";
+                    $catatanDetail[] = $validatedData['catatan_reject'];
+                    $catatanLengkap = implode("\n", $catatanDetail);
+
+                    // Update usulan - mencegah submit di periode ini
+                    $usulan->status_usulan = 'Belum Direkomendasikan';
+                    $usulan->catatan_verifikator = $catatanLengkap;
+                    $logMessage = 'Usulan ditandai belum direkomendasikan oleh Admin Fakultas.';
+                    break;
+
                 case 'forward_to_university':
                     // Validasi khusus untuk aksi 'teruskan ke universitas'
                     $validatedData = $request->validate([
@@ -211,6 +265,11 @@ class AdminFakultasController extends Controller
                         'file_surat_usulan' => 'required|file|mimes:pdf|max:1024', // 1MB = 1024KB
                         'nomor_berita_senat' => 'required|string|max:255',
                         'file_berita_senat' => 'required|file|mimes:pdf|max:1024', // 1MB = 1024KB,
+                    ], [
+                        'nomor_surat_usulan.required' => 'Nomor surat usulan wajib diisi.',
+                        'file_surat_usulan.required' => 'File surat usulan wajib diunggah.',
+                        'nomor_berita_senat.required' => 'Nomor surat senat wajib diisi.',
+                        'file_berita_senat.required' => 'File surat senat wajib diunggah.',
                     ]);
 
                     $usulan->setValidasiByRole('admin_fakultas', $validatedData['validation'], $adminId);
@@ -256,6 +315,10 @@ class AdminFakultasController extends Controller
             $usulan->save();
             $usulan->createLog($usulan->status_usulan, $statusLama, $logMessage, $adminId);
 
+            // OPTIMASI: Clear cache setelah data berubah
+            $this->clearUsulanCache($usulan);
+            $this->clearAdminCache($adminId);
+
             DB::commit();
 
             return redirect()->route('admin-fakultas.dashboard')->with('success', 'Aksi pada usulan berhasil diproses.');
@@ -294,7 +357,7 @@ class AdminFakultasController extends Controller
             ->latest()
             ->paginate(15);
 
-        return view('backend.layouts.admin-fakultas.usulan.pengusul', [
+        return view('backend.layouts.views.admin-fakultas.usulan.pengusul', [
             'periode' => $periodeUsulan,
             'usulans' => $usulans,
         ]);
@@ -302,8 +365,14 @@ class AdminFakultasController extends Controller
 
     public function showUsulanDocument(Usulan $usulan, $field)
     {
-        // TODO: Tambahkan otorisasi untuk memastikan admin fakultas ini
-        // berhak melihat usulan dari fakultas pegawai terkait.
+        // Authorization check untuk admin fakultas
+        $admin = Auth::user();
+        $adminFakultasId = $admin->unit_kerja_id;
+        $usulanPegawaiFakultasId = $usulan->pegawai?->unitKerja?->subUnitKerja?->unit_kerja_id;
+
+        if (!$adminFakultasId || $adminFakultasId !== $usulanPegawaiFakultasId) {
+            abort(403, 'Akses ditolak. Anda tidak berhak melihat dokumen dari fakultas lain.');
+        }
 
         // Validasi field yang diizinkan
         $allowedFields = [
@@ -319,20 +388,34 @@ class AdminFakultasController extends Controller
             abort(404, 'Jenis dokumen tidak valid.');
         }
 
-        // Cari path file dari data JSON
-        $filePath = data_get($usulan->data_usulan, "dokumen_usulan.{$field}.path");
+        // Cari path file menggunakan method getDocumentPath
+        $filePath = $usulan->getDocumentPath($field);
 
-        // Fallback jika struktur datanya lama
         if (!$filePath) {
-            $filePath = data_get($usulan->data_usulan, $field);
+            abort(404, 'File tidak ditemukan');
         }
 
-        if (!$filePath || !Storage::disk('local')->exists($filePath)) {
-            abort(404, 'File tidak ditemukan di penyimpanan.');
+        // Determine correct disk and check file existence
+        $disk = 'local'; // Dokumen usulan selalu disimpan di local disk
+        if (!Storage::disk($disk)->exists($filePath)) {
+            abort(404, 'File tidak ditemukan di storage');
         }
 
-        // Kirim file ke browser
-        return response()->file(Storage::disk('local')->path($filePath));
+        // Serve file
+        $fullPath = Storage::disk($disk)->path($filePath);
+        if (!file_exists($fullPath)) {
+            abort(404, 'File tidak ditemukan di storage');
+        }
+
+        $mimeType = \Illuminate\Support\Facades\File::mimeType($fullPath);
+
+        return response()->file($fullPath, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . basename($fullPath) . '"',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0'
+        ]);
     }
 
     /**
@@ -364,11 +447,31 @@ class AdminFakultasController extends Controller
         // Ambil path dokumen dari pegawai
         $filePath = $usulan->pegawai->{$field} ?? null;
 
-        if (!$filePath || !Storage::disk('local')->exists($filePath)) {
-            abort(404, 'File dokumen profil tidak ditemukan.');
+        if (!$filePath) {
+            abort(404, 'File tidak ditemukan');
         }
 
-        return response()->file(Storage::disk('local')->path($filePath));
+        // Determine correct disk and check file existence
+        $disk = $this->getFileDisk($field);
+        if (!Storage::disk($disk)->exists($filePath)) {
+            abort(404, 'File tidak ditemukan di storage');
+        }
+
+        // Serve file
+        $fullPath = Storage::disk($disk)->path($filePath);
+        if (!file_exists($fullPath)) {
+            abort(404, 'File tidak ditemukan di storage');
+        }
+
+        $mimeType = \Illuminate\Support\Facades\File::mimeType($fullPath);
+
+        return response()->file($fullPath, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . basename($fullPath) . '"',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0'
+        ]);
     }
 
     /**
@@ -480,7 +583,7 @@ class AdminFakultasController extends Controller
                 ->paginate(10);
 
             // GUNAKAN VIEW YANG SUDAH ADA (sama dengan indexUsulanJabatan)
-            return view('backend.layouts.admin-fakultas.usulan.index', compact('periodeUsulans', 'unitKerja'));
+            return view('backend.layouts.views.admin-fakultas.usulan.index', compact('periodeUsulans', 'unitKerja'));
 
         } catch (\Exception $e) {
             \Log::error('usulanJabatan error: ' . $e->getMessage());
@@ -510,7 +613,7 @@ class AdminFakultasController extends Controller
         // Configuration untuk setiap type
         $config = $this->getUsulanConfig($type, $unitKerja);
 
-        return view('backend.layouts.admin-fakultas.usulan.index-dynamic', compact('config', 'unitKerja'));
+        return view('backend.layouts.views.admin-fakultas.usulan.index-dynamic', compact('config', 'unitKerja'));
     }
 
     /**
@@ -1051,6 +1154,46 @@ class AdminFakultasController extends Controller
         }
 
         return 'text_field';
+    }
+
+    /**
+     * Determine file disk based on field type
+     */
+    private function getFileDisk($field): string
+    {
+        $sensitiveFiles = [
+            'sk_pangkat_terakhir', 'sk_jabatan_terakhir', 'ijazah_terakhir',
+            'transkrip_nilai_terakhir', 'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir',
+            'pak_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua', 'sk_cpns', 'sk_pns'
+        ];
+
+        return in_array($field, $sensitiveFiles) ? 'local' : 'public';
+    }
+
+    /**
+     * Clear cache for usulan
+     */
+    private function clearUsulanCache(Usulan $usulan): void
+    {
+        $cacheKeys = [
+            "validation_fields_{$usulan->id}",
+            "bkd_labels_{$usulan->id}",
+            "existing_validation_{$usulan->id}_admin_fakultas",
+            "dokumen_data_{$usulan->id}",
+            "usulan_fakultas_{$usulan->id}"
+        ];
+
+        foreach ($cacheKeys as $key) {
+            Cache::forget($key);
+        }
+    }
+
+    /**
+     * Clear admin cache
+     */
+    private function clearAdminCache(int $adminId): void
+    {
+        Cache::forget("admin_fakultas_id_{$adminId}");
     }
 
 

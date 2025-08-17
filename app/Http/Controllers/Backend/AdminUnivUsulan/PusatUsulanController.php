@@ -19,7 +19,7 @@ class PusatUsulanController extends Controller
                                        ->latest()
                                        ->paginate(10);
 
-        return view('backend.layouts.admin-univ-usulan.pusat-usulan.index', [
+        return view('backend.layouts.views.admin-univ-usulan.pusat-usulan.index', [
             'periodeUsulans' => $periodeUsulans
         ]);
     }
@@ -31,7 +31,7 @@ class PusatUsulanController extends Controller
                                 ->latest()
                                 ->paginate(15);
 
-        return view('backend.layouts.admin-univ-usulan.pusat-usulan.show-pendaftar', [
+        return view('backend.layouts.views.admin-univ-usulan.pusat-usulan.show-pendaftar', [
             'periode' => $periodeUsulan,
             'usulans' => $usulans,
         ]);
@@ -53,8 +53,8 @@ class PusatUsulanController extends Controller
             }
         ]);
 
-        // UPDATED: Pass usulan object to get dynamic BKD fields
-        $validationFields = Usulan::getValidationFieldsWithDynamicBkd($usulan);
+        // UPDATED: Pass usulan object and role to get dynamic BKD fields
+        $validationFields = Usulan::getValidationFieldsWithDynamicBkd($usulan, 'admin_universitas');
 
         // ADDED: Get BKD labels for display
         $bkdLabels = $usulan->getBkdDisplayLabels();
@@ -69,7 +69,7 @@ class PusatUsulanController extends Controller
         ]);
 
         // Return view dengan data yang diperlukan
-        return view('backend.layouts.admin-univ-usulan.pusat-usulan.detail-usulan', [
+        return view('backend.layouts.views.admin-univ-usulan.pusat-usulan.detail-usulan', [
             'usulan' => $usulan,
             'canEdit' => $canEdit,
             'validationFields' => $validationFields,
@@ -201,12 +201,18 @@ class PusatUsulanController extends Controller
             return redirect()->back()->with('error', 'Aksi tidak dapat dilakukan karena status usulan saat ini adalah: ' . $usulan->status_usulan);
         }
 
-        // 2) Validasi input (tambahkan recommend_proposal)
+        // 2) Validasi input (tambahkan action baru)
         $request->validate([
-            'action_type'  => 'required|in:save_only,return_to_pegawai,reject_proposal,approve_proposal,recommend_proposal',
-            'catatan_umum' => 'required_if:action_type,return_to_pegawai|nullable|string|min:10|max:2000',
+            'action_type'  => 'required|in:save_only,return_to_pegawai,reject_proposal,approve_proposal,recommend_proposal,return_for_revision,not_recommended,send_to_assessor_team,send_to_senate_team',
+            'catatan_umum' => 'required_if:action_type,return_to_pegawai,return_for_revision,not_recommended|nullable|string|min:10|max:2000',
+            'assessor_ids' => 'required_if:action_type,send_to_assessor_team|array|min:1|max:3',
+            'assessor_ids.*' => 'required_if:action_type,send_to_assessor_team|exists:pegawais,id',
         ], [
             'catatan_umum.required_if' => 'Catatan wajib diisi jika Anda mengembalikan usulan ke pegawai.',
+            'assessor_ids.required_if' => 'Pilih minimal 1 dan maksimal 3 penilai.',
+            'assessor_ids.min' => 'Pilih minimal 1 penilai.',
+            'assessor_ids.max' => 'Pilih maksimal 3 penilai.',
+            'assessor_ids.*.exists' => 'Penilai yang dipilih tidak valid.',
         ]);
 
         // 3) Cek prasyarat rekomendasi SENAT & PENILAI lebih dulu (hindari early-return dalam transaksi)
@@ -239,6 +245,51 @@ class PusatUsulanController extends Controller
                     // Pastikan kolom ini ada; jika tidak, pindahkan ke log/validasi
                     $usulan->catatan_verifikator = $request->catatan_umum;
                     $logMessage = 'Usulan dikembalikan ke Pegawai untuk perbaikan oleh Admin Universitas.';
+                    break;
+
+                case 'return_for_revision':
+                    // Langsung ke employee tanpa melalui Faculty Admin
+                    $usulan->status_usulan = 'Perlu Perbaikan';
+                    $usulan->catatan_verifikator = $request->catatan_umum;
+                    $logMessage = 'Usulan dikembalikan langsung ke Pegawai untuk perbaikan oleh Admin Universitas.';
+                    break;
+
+                case 'not_recommended':
+                    // Return ke employee dan tidak bisa submit lagi di periode tersebut
+                    $usulan->status_usulan = 'Tidak Direkomendasikan';
+                    $usulan->catatan_verifikator = $request->catatan_umum;
+                    $logMessage = 'Usulan tidak direkomendasikan oleh Admin Universitas. Pegawai tidak dapat submit lagi di periode ini.';
+                    break;
+
+                case 'send_to_assessor_team':
+                    // Kirim ke tim penilai
+                    $usulan->status_usulan = 'Sedang Dinilai';
+
+                    // Hapus penilai lama jika ada
+                    $usulan->penilais()->detach();
+
+                    // Tambah penilai baru
+                    $assessorIds = $request->assessor_ids;
+                    $assessorData = [];
+                    foreach ($assessorIds as $assessorId) {
+                        $assessorData[$assessorId] = [
+                            'status_penilaian' => 'Belum Dinilai',
+                            'catatan_penilaian' => null,
+                        ];
+                    }
+                    $usulan->penilais()->attach($assessorData);
+
+                    $logMessage = 'Usulan dikirim ke Tim Penilai (' . count($assessorIds) . ' penilai).';
+                    break;
+
+                case 'send_to_senate_team':
+                    // Kirim ke tim senat (hanya jika penilai sudah memberikan rekomendasi)
+                    if (!$usulan->isRecommendedByReviewer()) {
+                        return back()->with('error', 'Belum dapat dikirim ke Tim Senat: menunggu rekomendasi dari Tim Penilai.');
+                    }
+
+                    $usulan->status_usulan = 'Sedang Direview Senat';
+                    $logMessage = 'Usulan dikirim ke Tim Senat untuk review.';
                     break;
 
                 case 'reject_proposal':
@@ -295,10 +346,10 @@ class PusatUsulanController extends Controller
         }
 
         $usulan = \App\Models\BackendUnivUsulan\Usulan::findOrFail($usulanId);
-        
+
         // Test helper untuk semua kategori dokumen
         $helper = new \App\Helpers\UsulanFieldHelper($usulan);
-        
+
         $debugData = [
             'basic_info' => [
                 'usulan_id' => $usulan->id,
@@ -307,14 +358,14 @@ class PusatUsulanController extends Controller
                 'status_usulan' => $usulan->status_usulan,
                 'created_at' => $usulan->created_at->format('Y-m-d H:i:s'),
             ],
-            
+
             'data_usulan_analysis' => [
                 'has_data_usulan' => !empty($usulan->data_usulan),
                 'main_keys' => array_keys($usulan->data_usulan ?? []),
                 'dokumen_usulan_exists' => isset($usulan->data_usulan['dokumen_usulan']),
                 'dokumen_usulan_keys' => array_keys($usulan->data_usulan['dokumen_usulan'] ?? []),
             ],
-            
+
             'document_path_tests' => [
                 'pakta_integritas' => $usulan->getDocumentPath('pakta_integritas'),
                 'bukti_korespondensi' => $usulan->getDocumentPath('bukti_korespondensi'),
@@ -323,15 +374,15 @@ class PusatUsulanController extends Controller
                 'bkd_semester_1' => $usulan->getDocumentPath('bkd_semester_1'),
                 'bkd_ganjil_2024_2025' => $usulan->getDocumentPath('bkd_ganjil_2024_2025'),
             ],
-            
+
             'helper_field_tests' => [],
             'helper_errors' => [],
-            
+
             'bkd_label_tests' => [],
-            
+
             'route_tests' => []
         ];
-        
+
         // Test UsulanFieldHelper untuk kategori dokumen_usulan
         $dokumenUsulanFields = ['pakta_integritas', 'bukti_korespondensi', 'turnitin', 'upload_artikel'];
         foreach ($dokumenUsulanFields as $field) {
@@ -341,7 +392,7 @@ class PusatUsulanController extends Controller
                 $debugData['helper_errors']['dokumen_usulan'][$field] = $e->getMessage();
             }
         }
-        
+
         // Test UsulanFieldHelper untuk kategori dokumen_bkd
         $bkdFields = ['bkd_semester_1', 'bkd_semester_2', 'bkd_semester_3', 'bkd_semester_4'];
         foreach ($bkdFields as $field) {
@@ -351,14 +402,14 @@ class PusatUsulanController extends Controller
                 $debugData['helper_errors']['dokumen_bkd'][$field] = $e->getMessage();
             }
         }
-        
+
         // Test BKD Labels dari model
         try {
             $debugData['bkd_label_tests'] = $usulan->getBkdDisplayLabels();
         } catch (\Exception $e) {
             $debugData['helper_errors']['bkd_labels'] = $e->getMessage();
         }
-        
+
         // Test route generation
         try {
             $debugData['route_tests'] = [
@@ -368,10 +419,10 @@ class PusatUsulanController extends Controller
         } catch (\Exception $e) {
             $debugData['helper_errors']['routes'] = $e->getMessage();
         }
-        
+
         // Detail struktur data_usulan (full dump untuk analisis)
         $debugData['full_data_usulan'] = $usulan->data_usulan;
-        
+
         return response()->json($debugData, 200, [], JSON_PRETTY_PRINT);
 }
 

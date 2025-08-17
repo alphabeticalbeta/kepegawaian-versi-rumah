@@ -18,6 +18,8 @@ class RoleSeeder extends Seeder
             'Admin Universitas Usulan',
             'Admin Universitas',
             'Admin Fakultas',
+            'Admin Keuangan',
+            'Tim Senat',
             'Penilai Universitas',
             'Pegawai Unmul' // Menggunakan nama peran yang lebih spesifik
         ];
@@ -39,6 +41,8 @@ class RoleSeeder extends Seeder
             'view_fakultas_pegawai_documents',   // Admin Fakultas - akses dokumen pegawai di fakultasnya
             'view_own_documents',                // Pegawai - akses dokumen sendiri
             'view_assessment_documents',         // Penilai - akses dokumen yang sedang dinilai
+            'view_financial_documents',          // Admin Keuangan - akses dokumen keuangan
+            'view_senate_documents',             // Tim Senat - akses dokumen senat
         ];
 
         // Buat permissions
@@ -68,6 +72,16 @@ class RoleSeeder extends Seeder
         $penilaiUniversitas = Role::where('name', 'Penilai Universitas')->first();
         if ($penilaiUniversitas) {
             $penilaiUniversitas->givePermissionTo('view_assessment_documents');
+        }
+
+        $adminKeuangan = Role::where('name', 'Admin Keuangan')->first();
+        if ($adminKeuangan) {
+            $adminKeuangan->givePermissionTo('view_financial_documents');
+        }
+
+        $timSenat = Role::where('name', 'Tim Senat')->first();
+        if ($timSenat) {
+            $timSenat->givePermissionTo('view_senate_documents');
         }
     }
 }

@@ -14,12 +14,12 @@ class PangkatController extends Controller
         // Mengurutkan pangkat berdasarkan hierarchy_level menggunakan scope
         $pangkats = Pangkat::orderByHierarchy('asc')->paginate(10);
 
-        return view('backend.layouts.admin-univ-usulan.pangkat.master-data-pangkat', compact('pangkats'));
+        return view('backend.layouts.views.admin-univ-usulan.pangkat.master-data-pangkat', compact('pangkats'));
     }
 
     public function create()
     {
-        return view('backend.layouts.admin-univ-usulan.pangkat.form-pangkat');
+        return view('backend.layouts.views.admin-univ-usulan.pangkat.form-pangkat');
     }
 
     public function store(Request $request)
@@ -63,7 +63,7 @@ class PangkatController extends Controller
 
     public function edit(Pangkat $pangkat)
     {
-        return view('backend.layouts.admin-univ-usulan.pangkat.form-pangkat', compact('pangkat'));
+        return view('backend.layouts.views.admin-univ-usulan.pangkat.form-pangkat', compact('pangkat'));
     }
 
     public function update(Request $request, Pangkat $pangkat)

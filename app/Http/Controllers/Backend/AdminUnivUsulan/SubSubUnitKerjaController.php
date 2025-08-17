@@ -15,11 +15,11 @@ class SubSubUnitKerjaController extends Controller
      */
     public function index()
     {
-        $subSubUnitKerjas = SubSubUnitKerja::with(['subUnitKerja.unitKerja'])
+        $subSubUnitKerjas = SubSubUnitKerja::with(['subUnitKerja', 'unitKerja'])
             ->orderBy('nama')
             ->paginate(10);
 
-        return view('backend.layouts.admin-univ-usulan.sub-sub-unitkerja.master-data-sub-sub-unitkerja', compact('subSubUnitKerjas'));
+        return view('backend.layouts.views.admin-univ-usulan.sub-sub-unitkerja.master-data-sub-sub-unitkerja', compact('subSubUnitKerjas'));
     }
 
     /**
@@ -30,7 +30,7 @@ class SubSubUnitKerjaController extends Controller
         $unitKerjas = UnitKerja::orderBy('nama')->get();
         $subUnitKerjas = collect(); // Empty collection initially
 
-        return view('backend.layouts.admin-univ-usulan.sub-sub-unitkerja.form-sub-sub-unitkerja', compact('unitKerjas', 'subUnitKerjas'));
+        return view('backend.layouts.views.admin-univ-usulan.sub-sub-unitkerja.form-sub-sub-unitkerja', compact('unitKerjas', 'subUnitKerjas'));
     }
 
     /**
@@ -59,7 +59,7 @@ class SubSubUnitKerjaController extends Controller
             ->orderBy('nama')
             ->get();
 
-        return view('backend.layouts.admin-univ-usulan.sub-sub-unitkerja.form-sub-sub-unitkerja', compact('subSubUnitKerja', 'unitKerjas', 'subUnitKerjas'));
+        return view('backend.layouts.views.admin-univ-usulan.sub-sub-unitkerja.form-sub-sub-unitkerja', compact('subSubUnitKerja', 'unitKerjas', 'subUnitKerjas'));
     }
 
     /**
@@ -112,7 +112,7 @@ class SubSubUnitKerjaController extends Controller
      */
     public function importForm()
     {
-        return view('backend.layouts.admin-univ-usulan.sub-sub-unitkerja.import-sub-sub-unitkerja');
+        return view('backend.layouts.views.admin-univ-usulan.sub-sub-unitkerja.import-sub-sub-unitkerja');
     }
 
     /**
