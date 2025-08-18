@@ -32,7 +32,7 @@
                        placeholder="Nomor pada kartu pegawai"
                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
             @else
-                <p class="text-gray-900 py-2">{{ $pegawai->nomor_kartu_pegawai ?? '-' }}</p>
+                <p class="text-gray-900 py-2">{{ \App\Helpers\ProfileDisplayHelper::displayValue($pegawai->nomor_kartu_pegawai) }}</p>
             @endif
         </div>
 

@@ -174,7 +174,7 @@
                                         {{ number_format($pegawai->nilai_konversi, 2) }}
                                     </span>
                                 @else
-                                    <span class="text-gray-500">Belum diisi</span>
+                                    <span class="text-gray-500">{{ \App\Helpers\ProfileDisplayHelper::displayValue($pegawai->nilai_konversi, 'Belum diisi') }}</span>
                                 @endif
                             </div>
                         @endif

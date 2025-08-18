@@ -34,7 +34,7 @@
                             </p>
                             <p class="text-xs text-slate-400">PDF, maksimal 2MB</p>
                         </div>
-                        <input id="ijazah_terakhir" name="ijazah_terakhir" type="file" class="hidden" accept=".pdf" data-preview="ijazah_terakhir_preview" data-max-size="2" />
+                        <input id="ijazah_terakhir" name="ijazah_terakhir" type="file" class="hidden" accept=".pdf" data-preview="ijazah_terakhir_preview" data-max-size="2" onchange="handleFileUpload(this)" />
                     </label>
                     @if(isset($pegawai) && $pegawai->ijazah_terakhir)
                     <div class="mt-3 text-center">
@@ -65,7 +65,7 @@
                             </p>
                             <p class="text-xs text-slate-400">PDF, maksimal 2MB</p>
                         </div>
-                        <input id="transkrip_nilai_terakhir" name="transkrip_nilai_terakhir" type="file" class="hidden" accept=".pdf" data-preview="transkrip_nilai_terakhir_preview" data-max-size="2" />
+                        <input id="transkrip_nilai_terakhir" name="transkrip_nilai_terakhir" type="file" class="hidden" accept=".pdf" data-preview="transkrip_nilai_terakhir_preview" data-max-size="2" onchange="handleFileUpload(this)" />
                     </label>
                     @if(isset($pegawai) && $pegawai->transkrip_nilai_terakhir)
                     <div class="mt-3 text-center">
@@ -96,7 +96,7 @@
                             </p>
                             <p class="text-xs text-slate-400">PDF, maksimal 2MB</p>
                         </div>
-                        <input id="sk_penyetaraan_ijazah" name="sk_penyetaraan_ijazah" type="file" class="hidden" accept=".pdf" data-preview="sk_penyetaraan_ijazah_preview" data-max-size="2" />
+                        <input id="sk_penyetaraan_ijazah" name="sk_penyetaraan_ijazah" type="file" class="hidden" accept=".pdf" data-preview="sk_penyetaraan_ijazah_preview" data-max-size="2" onchange="handleFileUpload(this)" />
                     </label>
                     @if(isset($pegawai) && $pegawai->sk_penyetaraan_ijazah)
                     <div class="mt-3 text-center">
@@ -127,7 +127,7 @@
                             </p>
                             <p class="text-xs text-slate-400">PDF, maksimal 10MB</p>
                         </div>
-                        <input id="disertasi_thesis_terakhir" name="disertasi_thesis_terakhir" type="file" class="hidden" accept=".pdf" data-preview="disertasi_thesis_terakhir_preview" data-max-size="10" />
+                        <input id="disertasi_thesis_terakhir" name="disertasi_thesis_terakhir" type="file" class="hidden" accept=".pdf" data-preview="disertasi_thesis_terakhir_preview" data-max-size="10" onchange="handleFileUpload(this)" />
                     </label>
                     @if(isset($pegawai) && $pegawai->disertasi_thesis_terakhir)
                     <div class="mt-3 text-center">
@@ -173,7 +173,7 @@
                             </p>
                             <p class="text-xs text-slate-400">PDF, maksimal 2MB</p>
                         </div>
-                        <input id="sk_cpns" name="sk_cpns" type="file" class="hidden" accept=".pdf" data-preview="sk_cpns_preview" data-max-size="2" />
+                        <input id="sk_cpns" name="sk_cpns" type="file" class="hidden" accept=".pdf" data-preview="sk_cpns_preview" data-max-size="2" onchange="handleFileUpload(this)" />
                     </label>
                     @if(isset($pegawai) && $pegawai->sk_cpns)
                     <div class="mt-3 text-center">
@@ -204,7 +204,7 @@
                             </p>
                             <p class="text-xs text-slate-400">PDF, maksimal 2MB</p>
                         </div>
-                        <input id="sk_pns" name="sk_pns" type="file" class="hidden" accept=".pdf" data-preview="sk_pns_preview" data-max-size="2" />
+                        <input id="sk_pns" name="sk_pns" type="file" class="hidden" accept=".pdf" data-preview="sk_pns_preview" data-max-size="2" onchange="handleFileUpload(this)" />
                     </label>
                     @if(isset($pegawai) && $pegawai->sk_pns)
                     <div class="mt-3 text-center">
@@ -235,7 +235,7 @@
                             </p>
                             <p class="text-xs text-slate-400">PDF, maksimal 2MB</p>
                         </div>
-                        <input id="sk_pangkat_terakhir" name="sk_pangkat_terakhir" type="file" class="hidden" accept=".pdf" data-preview="sk_pangkat_terakhir_preview" data-max-size="2" />
+                        <input id="sk_pangkat_terakhir" name="sk_pangkat_terakhir" type="file" class="hidden" accept=".pdf" data-preview="sk_pangkat_terakhir_preview" data-max-size="2" onchange="handleFileUpload(this)" />
                     </label>
                     @if(isset($pegawai) && $pegawai->sk_pangkat_terakhir)
                     <div class="mt-3 text-center">
@@ -266,7 +266,7 @@
                             </p>
                             <p class="text-xs text-slate-400">PDF, maksimal 2MB</p>
                         </div>
-                        <input id="sk_jabatan_terakhir" name="sk_jabatan_terakhir" type="file" class="hidden" accept=".pdf" data-preview="sk_jabatan_terakhir_preview" data-max-size="2" />
+                        <input id="sk_jabatan_terakhir" name="sk_jabatan_terakhir" type="file" class="hidden" accept=".pdf" data-preview="sk_jabatan_terakhir_preview" data-max-size="2" onchange="handleFileUpload(this)" />
                     </label>
                     @if(isset($pegawai) && $pegawai->sk_jabatan_terakhir)
                     <div class="mt-3 text-center">
@@ -315,7 +315,7 @@
                             </p>
                             <p class="text-xs text-slate-400">PDF, maksimal 2MB</p>
                         </div>
-                        <input id="skp_tahun_pertama" name="skp_tahun_pertama" type="file" class="hidden" accept=".pdf" data-preview="skp_tahun_pertama_preview" data-max-size="2" />
+                        <input id="skp_tahun_pertama" name="skp_tahun_pertama" type="file" class="hidden" accept=".pdf" data-preview="skp_tahun_pertama_preview" data-max-size="2" onchange="handleFileUpload(this)" />
                     </label>
                     @if(isset($pegawai) && $pegawai->skp_tahun_pertama)
                     <div class="mt-3 text-center">
@@ -346,7 +346,7 @@
                             </p>
                             <p class="text-xs text-slate-400">PDF, maksimal 2MB</p>
                         </div>
-                        <input id="skp_tahun_kedua" name="skp_tahun_kedua" type="file" class="hidden" accept=".pdf" data-preview="skp_tahun_kedua_preview" data-max-size="2" />
+                        <input id="skp_tahun_kedua" name="skp_tahun_kedua" type="file" class="hidden" accept=".pdf" data-preview="skp_tahun_kedua_preview" data-max-size="2" onchange="handleFileUpload(this)" />
                     </label>
                     @if(isset($pegawai) && $pegawai->skp_tahun_kedua)
                     <div class="mt-3 text-center">
@@ -377,7 +377,7 @@
                             </p>
                             <p class="text-xs text-slate-400">PDF, maksimal 2MB</p>
                         </div>
-                        <input id="pak_konversi" name="pak_konversi" type="file" class="hidden" accept=".pdf" data-preview="pak_konversi_preview" data-max-size="2" />
+                        <input id="pak_konversi" name="pak_konversi" type="file" class="hidden" accept=".pdf" data-preview="pak_konversi_preview" data-max-size="2" onchange="handleFileUpload(this)" />
                     </label>
                     @if(isset($pegawai) && $pegawai->pak_konversi)
                     <div class="mt-3 text-center">
@@ -439,3 +439,5 @@
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 </style>
+
+

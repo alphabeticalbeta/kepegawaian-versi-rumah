@@ -198,9 +198,11 @@ abstract class BaseUsulanController extends Controller
      */
     protected function validateUploadedFile($file, string $key): void
     {
-        // Check file size (1MB max)
-        if ($file->getSize() > 1024 * 1024) {
-            throw new \RuntimeException("File $key terlalu besar. Maksimal 1MB.");
+        // Check file size (2MB max for BKD, 1MB for others)
+        $maxSize = strpos($key, 'bkd_semester') !== false ? 2 * 1024 * 1024 : 1024 * 1024;
+        if ($file->getSize() > $maxSize) {
+            $maxSizeMB = $maxSize / (1024 * 1024);
+            throw new \RuntimeException("File $key terlalu besar. Maksimal {$maxSizeMB}MB.");
         }
 
         // Check file type

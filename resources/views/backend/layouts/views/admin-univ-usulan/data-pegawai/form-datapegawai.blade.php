@@ -581,4 +581,7 @@
             console.log('Progress updated');
         }
     </script>
+
+    {{-- Upload Indicator Script --}}
+    <script src="{{ asset('js/upload-indicator.js') }}"></script>
 @endpush

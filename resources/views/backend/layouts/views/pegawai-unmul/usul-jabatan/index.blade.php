@@ -1,49 +1,43 @@
 @extends('backend.layouts.roles.pegawai-unmul.app')
 
-@section('title', 'Usulan Jabatan Saya')
+@section('title', 'Periode Usulan Jabatan')
 
 @section('content')
+<style>
+    /* Custom CSS untuk animasi tombol */
+    .btn-animate {
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+    }
+
+    .btn-animate:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-animate:active {
+        transform: scale(0.98);
+    }
+
+    /* Memastikan hover berfungsi */
+    .btn-animate:hover {
+        opacity: 0.9;
+    }
+</style>
 <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    {{-- Flash Messages --}}
-    @if (session('success'))
-        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 px-4 py-3 rounded-lg relative mb-6 shadow-md" role="alert">
-            <strong class="font-bold">Sukses!</strong>
-            <span class="block sm:inline">{{ session('success') }}</span>
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg relative mb-6 shadow-md" role="alert">
-            <strong class="font-bold">Gagal!</strong>
-            <span class="block sm:inline">{{ session('error') }}</span>
-        </div>
-    @endif
-
-    @if (session('warning'))
-        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 px-4 py-3 rounded-lg relative mb-6 shadow-md" role="alert">
-            <strong class="font-bold">Perhatian!</strong>
-            <span class="block sm:inline">{{ session('warning') }}</span>
-        </div>
-    @endif
+    {{-- Notifikasi sudah ditangani oleh component flash di layout base --}}
 
     {{-- Header --}}
     <div class="mb-8">
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">
-                    Usulan Jabatan Saya
+                    Periode Usulan Jabatan
                 </h1>
                 <p class="mt-2 text-gray-600">
-                    Pantau status dan riwayat usulan jabatan yang telah Anda ajukan.
+                    Daftar periode usulan jabatan yang tersedia untuk status kepegawaian Anda ({{ $pegawai->status_kepegawaian }}).
                 </p>
             </div>
-            <a href="{{ route('pegawai-unmul.usulan-jabatan.create') }}"
-               class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                Buat Usulan Baru
-            </a>
         </div>
     </div>
 
@@ -51,103 +45,260 @@
     <div class="bg-white shadow-xl rounded-2xl border border-gray-200 overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
             <h3 class="text-lg font-semibold text-gray-800">
-                Daftar Usulan Jabatan
+                Daftar Periode Usulan Jabatan
             </h3>
             <p class="text-sm text-gray-500 mt-1">
-                Berikut adalah semua usulan jabatan yang pernah Anda buat.
+                Berikut adalah periode usulan jabatan yang sesuai dengan status kepegawaian Anda.
             </p>
         </div>
 
         <div class="overflow-x-auto">
-            @if($usulans->count() > 0)
-                <table class="w-full text-sm text-left text-gray-600">
+            @if($periodeUsulans->count() > 0)
+                <table class="w-full text-sm text-center text-gray-600">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                         <tr>
-                            <th scope="col" class="px-6 py-4">Jenis Usulan</th>
-                            <th scope="col" class="px-6 py-4">Periode</th>
-                            <th scope="col" class="px-6 py-4">Jabatan Tujuan</th>
-                            <th scope="col" class="px-6 py-4">Tanggal Pengajuan</th>
-                            <th scope="col" class="px-6 py-4 text-center">Status</th>
-                            <th scope="col" class="px-6 py-4 text-center">Aksi</th>
+                            <th scope="col" class="px-6 py-4 align-middle">No</th>
+                            <th scope="col" class="px-6 py-4 align-middle">Nama Periode</th>
+                            <th scope="col" class="px-6 py-4 align-middle">Tanggal Pembukaan</th>
+                            <th scope="col" class="px-6 py-4 align-middle">Tanggal Penutupan</th>
+                            <th scope="col" class="px-6 py-4 align-middle">Tanggal Awal Perbaikan</th>
+                            <th scope="col" class="px-6 py-4 align-middle">Tanggal Akhir Perbaikan</th>
+                            <th scope="col" class="px-6 py-4 align-middle">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($usulans as $usulan)
+                        @foreach ($periodeUsulans as $index => $periode)
+                            @php
+                                // Cek apakah pegawai sudah membuat usulan untuk periode ini
+                                $existingUsulan = $usulans->where('periode_usulan_id', $periode->id)->first();
+                            @endphp
                             <tr class="bg-white border-b hover:bg-gray-50 transition-colors duration-200">
-                                <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">
-                                    {{ ucwords(str_replace('-', ' ', $usulan->jenis_usulan)) }}
+                                <td class="px-6 py-4 font-medium text-gray-900 align-middle">
+                                    {{ $index + 1 }}
                                 </td>
-                                <td class="px-6 py-4">{{ $usulan->periodeUsulan->nama_periode ?? 'N/A' }}</td>
-                                <td class="px-6 py-4">
-                                    @if($usulan->jabatanTujuan)
-                                        {{ $usulan->jabatanTujuan->jabatan }}
+                                <td class="px-6 py-4 font-semibold text-gray-900 align-middle">
+                                    {{ $periode->nama_periode }}
+                                </td>
+                                <td class="px-6 py-4 align-middle">
+                                    {{ $periode->tanggal_mulai ? $periode->tanggal_mulai->isoFormat('D MMMM YYYY') : '-' }}
+                                </td>
+                                <td class="px-6 py-4 align-middle">
+                                    {{ $periode->tanggal_selesai ? $periode->tanggal_selesai->isoFormat('D MMMM YYYY') : '-' }}
+                                </td>
+                                <td class="px-6 py-4 align-middle">
+                                    {{ $periode->tanggal_mulai_perbaikan ? $periode->tanggal_mulai_perbaikan->isoFormat('D MMMM YYYY') : '-' }}
+                                </td>
+                                <td class="px-6 py-4 align-middle">
+                                    {{ $periode->tanggal_selesai_perbaikan ? $periode->tanggal_selesai_perbaikan->isoFormat('D MMMM YYYY') : '-' }}
+                                </td>
+                                <td class="px-6 py-4 text-center align-middle">
+                                    @if($existingUsulan)
+                                        {{-- Jika sudah ada usulan, tampilkan tombol Lihat Detail dan Hapus --}}
+                                        <div class="flex items-center justify-center space-x-2">
+                                            @if(in_array($existingUsulan->status_usulan, ['Draft', 'Perlu Perbaikan', 'Dikembalikan ke Pegawai']))
+                                                <a href="{{ route('pegawai-unmul.usulan-jabatan.edit', $existingUsulan->id) }}"
+                                                   class="btn-animate inline-flex items-center px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 hover:text-indigo-700">
+                                                    <i data-lucide="edit" class="w-3 h-3 mr-1"></i>
+                                                    Edit Usulan
+                                                </a>
+                                            @else
+                                                <a href="{{ route('pegawai-unmul.usulan-jabatan.show', $existingUsulan->id) }}"
+                                                   class="btn-animate inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:text-blue-700">
+                                                    <i data-lucide="eye" class="w-3 h-3 mr-1"></i>
+                                                    Lihat Detail
+                                                </a>
+                                            @endif
+                                            <button type="button"
+                                                    data-usulan-id="{{ $existingUsulan->id }}"
+                                                    onclick="showLogs({{ $existingUsulan->id }})"
+                                                    class="btn-animate inline-flex items-center px-3 py-1.5 text-xs font-medium text-green-600 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 hover:text-green-700">
+                                                <i data-lucide="activity" class="w-3 h-3 mr-1"></i>
+                                                Log
+                                            </button>
+                                            <button type="button"
+                                                    data-usulan-id="{{ $existingUsulan->id }}"
+                                                    onclick="confirmDelete(this.dataset.usulanId)"
+                                                    class="btn-animate inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 hover:text-red-700">
+                                                <i data-lucide="trash-2" class="w-3 h-3 mr-1"></i>
+                                                Hapus
+                                            </button>
+                                        </div>
                                     @else
-                                        N/A
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4">{{ $usulan->created_at->isoFormat('D MMMM YYYY') }}</td>
-                                <td class="px-6 py-4 text-center">
-                                    @php
-                                        $statusClass = match($usulan->status_usulan) {
-                                            'Draft' => 'bg-gray-100 text-gray-800',
-                                            'Diajukan' => 'bg-blue-100 text-blue-800',
-                                            'Sedang Direview' => 'bg-yellow-100 text-yellow-800',
-                                            'Perlu Perbaikan' => 'bg-orange-100 text-orange-800',
-                                            'Dikembalikan' => 'bg-red-100 text-red-800',
-                                            'Disetujui' => 'bg-green-100 text-green-800',
-                                            'Direkomendasikan' => 'bg-purple-100 text-purple-800',
-                                            'Ditolak' => 'bg-red-100 text-red-800',
-                                            default => 'bg-gray-100 text-gray-800'
-                                        };
-                                    @endphp
-                                    <span class="px-2 py-1 text-xs font-medium rounded-full {{ $statusClass }}">
-                                        {{ $usulan->status_usulan }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <div class="flex items-center justify-center space-x-2">
-                                        <a href="{{ route('pegawai-unmul.usulan-jabatan.show', $usulan->id) }}"
-                                           class="text-indigo-600 hover:text-indigo-900 font-medium text-sm">
-                                            Detail
+                                        {{-- Jika belum ada usulan, tampilkan tombol Membuat Usulan --}}
+                                        <a href="{{ route('pegawai-unmul.usulan-jabatan.create') }}?periode_id={{ $periode->id }}"
+                                           class="btn-animate inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-blue-500 border border-blue-500 rounded-lg hover:bg-gray-500 hover:text-white">
+                                            <i data-lucide="plus" class="w-3 h-3 mr-1"></i>
+                                            Membuat Usulan
                                         </a>
-                                        @if($usulan->status_usulan === 'Draft')
-                                            <a href="{{ route('pegawai-unmul.usulan-jabatan.edit', $usulan->id) }}"
-                                               class="text-blue-600 hover:text-blue-900 font-medium text-sm">
-                                                Edit
-                                            </a>
-                                        @endif
-                                    </div>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
-
-                {{-- Pagination --}}
-                <div class="px-6 py-4 border-t border-gray-200">
-                    {{ $usulans->links() }}
-                </div>
             @else
                 <div class="px-6 py-12 text-center">
                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">Belum ada usulan</h3>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">Tidak ada periode usulan</h3>
                     <p class="mt-1 text-sm text-gray-500">
-                        Anda belum pernah membuat usulan jabatan.
+                        Saat ini tidak ada periode usulan jabatan yang aktif untuk status kepegawaian Anda.
                     </p>
-                    <div class="mt-6">
-                        <a href="{{ route('pegawai-unmul.usulan-jabatan.create') }}"
-                           class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                            </svg>
-                            Buat Usulan Pertama
-                        </a>
-                    </div>
                 </div>
             @endif
         </div>
     </div>
 </div>
+
+{{-- Confirmation Modal for Delete --}}
+<div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                <i data-lucide="alert-triangle" class="h-6 w-6 text-red-600"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mt-4">Konfirmasi Hapus</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-500">
+                    Apakah Anda yakin ingin menghapus usulan ini? Tindakan ini tidak dapat dibatalkan.
+                </p>
+            </div>
+            <div class="items-center px-4 py-3">
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="button" onclick="closeDeleteModal()"
+                            class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                        Batal
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-24 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+                        Hapus
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Log Modal --}}
+<div id="logModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-10 mx-auto p-5 border w-4/5 max-w-4xl shadow-lg rounded-md bg-white">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900 flex items-center">
+                <i data-lucide="activity" class="w-5 h-5 mr-2 text-green-600"></i>
+                Log Aktivitas Usulan
+            </h3>
+            <button type="button" onclick="closeLogModal()" class="text-gray-400 hover:text-gray-600">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+        <div id="logModalContent" class="max-h-96 overflow-y-auto">
+            <div class="text-center py-8">
+                <i data-lucide="loader" class="w-8 h-8 text-gray-400 mx-auto animate-spin"></i>
+                <p class="text-sm text-gray-500 mt-2">Memuat log aktivitas...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(usulanId) {
+    const modal = document.getElementById('deleteModal');
+    const form = document.getElementById('deleteForm');
+    form.action = `/pegawai-unmul/usulan-jabatan/${usulanId}`;
+    modal.classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    modal.classList.add('hidden');
+}
+
+function showLogs(usulanId) {
+    const modal = document.getElementById('logModal');
+    const content = document.getElementById('logModalContent');
+
+    // Show modal with loading state
+    modal.classList.remove('hidden');
+    content.innerHTML = `
+        <div class="text-center py-8">
+            <i data-lucide="loader" class="w-8 h-8 text-gray-400 mx-auto animate-spin"></i>
+            <p class="text-sm text-gray-500 mt-2">Memuat log aktivitas...</p>
+        </div>
+    `;
+
+    // Fetch logs
+    fetch(`/pegawai-unmul/usulan-jabatan/${usulanId}/logs`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.logs && data.logs.length > 0) {
+                let html = '<div class="space-y-4">';
+                data.logs.forEach(log => {
+                    const statusClass = log.status_badge_class || 'bg-gray-100 text-gray-800 border-gray-300';
+                    const statusIcon = log.status_icon || 'help-circle';
+
+                    html += `
+                        <div class="border-l-4 border-green-400 pl-4 py-3 bg-gray-50 rounded-r-lg">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                                            <i data-lucide="${statusIcon}" class="w-3 h-3 mr-1"></i>
+                                            ${log.status_baru || log.status_sebelumnya || 'N/A'}
+                                        </span>
+                                        <span class="text-xs text-gray-500">${log.formatted_date || log.created_at}</span>
+                                    </div>
+                                    <p class="text-sm font-medium text-gray-900 mb-1">${log.action || log.keterangan || 'Aktivitas usulan'}</p>
+                                    ${log.catatan ? `<p class="text-xs text-gray-600">${log.catatan}</p>` : ''}
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-xs text-gray-400">${log.user_name || 'System'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                content.innerHTML = html;
+            } else {
+                content.innerHTML = `
+                    <div class="text-center py-8">
+                        <i data-lucide="file-text" class="w-12 h-12 text-gray-400 mx-auto mb-4"></i>
+                        <p class="text-sm text-gray-500">Belum ada log aktivitas untuk usulan ini</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading logs:', error);
+            content.innerHTML = `
+                <div class="text-center py-8">
+                    <i data-lucide="alert-triangle" class="w-12 h-12 text-red-400 mx-auto mb-4"></i>
+                    <p class="text-sm text-red-500">Gagal memuat log aktivitas</p>
+                    <p class="text-xs text-gray-500 mt-1">Silakan coba lagi</p>
+                </div>
+            `;
+        });
+}
+
+function closeLogModal() {
+    const modal = document.getElementById('logModal');
+    modal.classList.add('hidden');
+}
+
+// Close modals when clicking outside
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeDeleteModal();
+    }
+});
+
+document.getElementById('logModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeLogModal();
+    }
+});
+</script>
 @endsection

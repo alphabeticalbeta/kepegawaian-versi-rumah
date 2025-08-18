@@ -5,11 +5,11 @@
 <div class="bg-white p-8 rounded-xl shadow-lg mb-6 border border-gray-100">
     <!-- Header -->
     <div class="bg-gradient-to-r {{ $formConfig['gradient_colors'] }} -m-8 mb-8 p-6 rounded-t-xl ">
-        <h2 class="text-2xl font-bold text-white flex items-center">
+        <h2 class="text-2xl font-bold text-black flex items-center">
             <i data-lucide="book-open" class="w-6 h-6 mr-3"></i>
             Karya Ilmiah &amp; Artikel
         </h2>
-        <p class="text-white/90 mt-2">Lengkapi informasi karya ilmiah dan artikel yang akan disubmit</p>
+        <p class="text-black/90 mt-2">Lengkapi informasi karya ilmiah dan artikel yang akan disubmit</p>
     </div>
 
     <!-- Jenis Karya Ilmiah -->

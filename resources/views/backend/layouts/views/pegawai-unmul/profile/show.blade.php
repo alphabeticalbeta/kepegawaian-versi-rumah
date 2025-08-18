@@ -47,35 +47,8 @@
             </div>
         </div>
 
-        {{-- Alert Messages --}}
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-            @if(session('success'))
-                <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg flex items-start gap-3">
-                    <i data-lucide="check-circle" class="w-5 h-5 text-green-600 mt-0.5"></i>
-                    <div class="flex-1">
-                        <p class="font-medium">Berhasil!</p>
-                        <p class="text-sm">{{ session('success') }}</p>
-                    </div>
-                </div>
-            @endif
-
-            @if($errors->any())
-                <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-start gap-3 mt-4">
-                    <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 mt-0.5"></i>
-                    <div class="flex-1">
-                        <p class="font-medium">Terjadi Kesalahan</p>
-                        <ul class="text-sm mt-1 list-disc list-inside">
-                            @foreach($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                </div>
-            @endif
-        </div>
-
         {{-- Main Content --}}
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 p-5"
              x-data="{
                  activeTab: 'personal',
                  jenisPegawai: '{{ old('jenis_pegawai', $pegawai->jenis_pegawai) ?? 'Dosen' }}',
@@ -89,7 +62,7 @@
              }">
 
             {{-- Profile Header Component --}}
-            @include('backend.layouts.pegawai-unmul.profile.profile-header', ['pegawai' => $pegawai, 'isEditing' => $isEditing])
+            @include('backend.layouts.views.pegawai-unmul.profile.profile-header', ['pegawai' => $pegawai, 'isEditing' => $isEditing])
 
             {{-- Tab Navigation & Content --}}
             <div class="bg-white rounded-xl shadow-sm border mb-6">
@@ -167,10 +140,10 @@
                 {{-- Tab Content --}}
                 <div class="p-6">
                     {{-- Personal Tab --}}
-                    @include('backend.layouts.pegawai-unmul.profile.components.tabs.personal-tab', ['pegawai' => $pegawai, 'isEditing' => $isEditing])
+                    @include('backend.layouts.views.pegawai-unmul.profile.components.tabs.personal-tab', ['pegawai' => $pegawai, 'isEditing' => $isEditing])
 
                     {{-- Kepegawaian Tab --}}
-                    @include('backend.layouts.pegawai-unmul.profile.components.tabs.kepegawaian-tab', [
+                    @include('backend.layouts.views.pegawai-unmul.profile.components.tabs.kepegawaian-tab', [
                         'pegawai' => $pegawai,
                         'isEditing' => $isEditing,
                         'pangkats' => $pangkats ?? [],
@@ -179,16 +152,16 @@
                     ])
 
                     {{-- PAK & SKP Tab --}}
-                    @include('backend.layouts.pegawai-unmul.profile.components.tabs.pak-skp-tab', ['pegawai' => $pegawai, 'isEditing' => $isEditing])
+                    @include('backend.layouts.views.pegawai-unmul.profile.components.tabs.pak-skp-tab', ['pegawai' => $pegawai, 'isEditing' => $isEditing])
 
                     {{-- Informasi Dosen Tab - Conditional --}}
-                    @include('backend.layouts.pegawai-unmul.profile.components.tabs.dosen-tab', ['pegawai' => $pegawai, 'isEditing' => $isEditing])
+                    @include('backend.layouts.views.pegawai-unmul.profile.components.tabs.dosen-tab', ['pegawai' => $pegawai, 'isEditing' => $isEditing])
 
                     {{-- Security Tab --}}
-                    @include('backend.layouts.pegawai-unmul.profile.components.tabs.security-tab', ['pegawai' => $pegawai, 'isEditing' => $isEditing])
+                    @include('backend.layouts.views.pegawai-unmul.profile.components.tabs.security-tab', ['pegawai' => $pegawai, 'isEditing' => $isEditing])
 
                     {{-- Dokumen Tab --}}
-                    @include('backend.layouts.pegawai-unmul.profile.components.tabs.dokumen-tab', [
+                    @include('backend.layouts.views.pegawai-unmul.profile.components.tabs.dokumen-tab', [
                         'pegawai' => $pegawai,
                         'isEditing' => $isEditing,
                         'documentFields' => $documentFields
@@ -212,4 +185,9 @@
         </div>
     </form>
 </div>
+
+@push('scripts')
+<script src="{{ asset('js/upload-indicator.js') }}"></script>
+@endpush
+
 @endsection

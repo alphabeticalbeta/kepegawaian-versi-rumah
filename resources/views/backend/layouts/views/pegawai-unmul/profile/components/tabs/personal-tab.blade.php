@@ -16,7 +16,7 @@
                     <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
                 @enderror
             @else
-                <p class="text-gray-900 py-2">{{ $pegawai->nama_lengkap ?? '-' }}</p>
+                <p class="text-gray-900 py-2">{{ \App\Helpers\ProfileDisplayHelper::displayNamaLengkap($pegawai) }}</p>
             @endif
         </div>
 
@@ -36,7 +36,7 @@
                 @enderror
             @else
                 <p class="text-gray-900 py-2 flex items-center gap-2">
-                    {{ $pegawai->email ?? '-' }}
+                    {{ \App\Helpers\ProfileDisplayHelper::displayEmail($pegawai) }}
                     @if($pegawai->email)
                         <a href="mailto:{{ $pegawai->email }}"
                            class="text-indigo-600 hover:text-indigo-800">
@@ -59,7 +59,7 @@
                        placeholder="Dr., Prof., dll."
                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
             @else
-                <p class="text-gray-900 py-2">{{ $pegawai->gelar_depan ?? '-' }}</p>
+                <p class="text-gray-900 py-2">{{ \App\Helpers\ProfileDisplayHelper::displayValue($pegawai->gelar_depan) }}</p>
             @endif
         </div>
 
@@ -75,7 +75,7 @@
                        placeholder="S.Kom., M.T., Ph.D., dll."
                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
             @else
-                <p class="text-gray-900 py-2">{{ $pegawai->gelar_belakang ?? '-' }}</p>
+                <p class="text-gray-900 py-2">{{ \App\Helpers\ProfileDisplayHelper::displayValue($pegawai->gelar_belakang) }}</p>
             @endif
         </div>
 
@@ -91,7 +91,7 @@
                        placeholder="Samarinda"
                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
             @else
-                <p class="text-gray-900 py-2">{{ $pegawai->tempat_lahir ?? '-' }}</p>
+                <p class="text-gray-900 py-2">{{ \App\Helpers\ProfileDisplayHelper::displayValue($pegawai->tempat_lahir) }}</p>
             @endif
         </div>
 
@@ -136,7 +136,7 @@
                             <i data-lucide="user" class="w-4 h-4 text-pink-600"></i>
                         @endif
                     @endif
-                    {{ $pegawai->jenis_kelamin ?? '-' }}
+                    {{ \App\Helpers\ProfileDisplayHelper::displayValue($pegawai->jenis_kelamin) }}
                 </p>
             @endif
         </div>
@@ -154,7 +154,7 @@
                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
             @else
                 <p class="text-gray-900 py-2 flex items-center gap-2">
-                    {{ $pegawai->nomor_handphone ?? '-' }}
+                    {{ \App\Helpers\ProfileDisplayHelper::displayNomorHandphone($pegawai) }}
                     @if($pegawai->nomor_handphone)
                         <a href="tel:{{ $pegawai->nomor_handphone }}"
                            class="text-indigo-600 hover:text-indigo-800">
@@ -221,8 +221,46 @@
                             </span>
                         @endif
                     @endif
-                    {{ $pegawai->pendidikan_terakhir ?? '-' }}
+                    {{ \App\Helpers\ProfileDisplayHelper::displayPendidikanTerakhir($pegawai) }}
                 </p>
+            @endif
+        </div>
+
+        {{-- Nama Universitas/Sekolah --}}
+        <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                <i data-lucide="building" class="w-4 h-4 inline mr-1"></i>
+                Nama Universitas/Sekolah
+            </label>
+            @if($isEditing)
+                <input type="text" name="nama_universitas_sekolah"
+                       value="{{ old('nama_universitas_sekolah', $pegawai->nama_universitas_sekolah) }}"
+                       placeholder="Universitas Mulawarman"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 @error('nama_universitas_sekolah') border-red-500 @enderror">
+                @error('nama_universitas_sekolah')
+                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            @else
+                <p class="text-gray-900 py-2">{{ \App\Helpers\ProfileDisplayHelper::displayNamaUniversitasSekolah($pegawai) }}</p>
+            @endif
+        </div>
+
+        {{-- Nama Program Studi/Jurusan --}}
+        <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                <i data-lucide="book-open" class="w-4 h-4 inline mr-1"></i>
+                Nama Program Studi/Jurusan
+            </label>
+            @if($isEditing)
+                <input type="text" name="nama_prodi_jurusan"
+                       value="{{ old('nama_prodi_jurusan', $pegawai->nama_prodi_jurusan) }}"
+                       placeholder="Teknik Informatika"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 @error('nama_prodi_jurusan') border-red-500 @enderror">
+                @error('nama_prodi_jurusan')
+                    <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
+                @enderror
+            @else
+                <p class="text-gray-900 py-2">{{ \App\Helpers\ProfileDisplayHelper::displayNamaProdiJurusan($pegawai) }}</p>
             @endif
         </div>
     </div>

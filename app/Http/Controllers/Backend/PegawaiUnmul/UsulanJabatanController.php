@@ -8,6 +8,7 @@ use App\Models\BackendUnivUsulan\Pegawai;
 use App\Models\BackendUnivUsulan\PeriodeUsulan;
 use App\Models\BackendUnivUsulan\Usulan;
 use App\Models\BackendUnivUsulan\UsulanDokumen;
+use App\Models\BackendUnivUsulan\UsulanLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -24,13 +25,81 @@ class UsulanJabatanController extends BaseUsulanController
     {
         $pegawai = Auth::user();
 
-        $usulans = $pegawai->usulans()
-                          ->whereIn('jenis_usulan', ['usulan-jabatan-dosen', 'usulan-jabatan-tendik'])
-                          ->with(['periodeUsulan', 'jabatanLama', 'jabatanTujuan'])
-                          ->latest()
-                          ->paginate(10);
+        // Determine jenis usulan berdasarkan status kepegawaian
+        $jenisUsulanPeriode = $this->determineJenisUsulanPeriode($pegawai);
 
-        return view('backend.layouts.views.pegawai-unmul.usul-jabatan.index', compact('usulans'));
+        // Debug information
+        Log::info('UsulanJabatanController@index Debug', [
+            'pegawai_id' => $pegawai->id,
+            'pegawai_nip' => $pegawai->nip,
+            'jenis_pegawai' => $pegawai->jenis_pegawai,
+            'status_kepegawaian' => $pegawai->status_kepegawaian,
+            'jenis_usulan_periode' => $jenisUsulanPeriode
+        ]);
+
+        // Get periode usulan yang sesuai dengan status kepegawaian
+        $periodeUsulans = PeriodeUsulan::where('jenis_usulan', $jenisUsulanPeriode)
+            ->where('status', 'Buka')
+            ->whereJsonContains('status_kepegawaian', $pegawai->status_kepegawaian)
+            ->orderBy('tanggal_mulai', 'desc')
+            ->get();
+
+        // Debug query results
+        Log::info('Periode Usulan Query Results', [
+            'total_periode_found' => $periodeUsulans->count(),
+            'periode_ids' => $periodeUsulans->pluck('id')->toArray(),
+            'periode_names' => $periodeUsulans->pluck('nama_periode')->toArray()
+        ]);
+
+        // Alternative query if no results
+        if ($periodeUsulans->count() == 0) {
+            // Try without JSON contains
+            $altPeriodeUsulans = PeriodeUsulan::where('jenis_usulan', $jenisUsulanPeriode)
+                ->where('status', 'Buka')
+                ->orderBy('tanggal_mulai', 'desc')
+                ->get();
+
+            Log::info('Alternative Query Results (without JSON contains)', [
+                'total_periode_found' => $altPeriodeUsulans->count(),
+                'periode_ids' => $altPeriodeUsulans->pluck('id')->toArray(),
+                'periode_names' => $altPeriodeUsulans->pluck('nama_periode')->toArray()
+            ]);
+
+            // Use alternative results if found
+            if ($altPeriodeUsulans->count() > 0) {
+                $periodeUsulans = $altPeriodeUsulans;
+            }
+        }
+
+        // Get usulan yang sudah dibuat oleh pegawai
+        $usulans = $pegawai->usulans()
+                          ->where('jenis_usulan', $jenisUsulanPeriode)
+                          ->with(['periodeUsulan', 'jabatanLama', 'jabatanTujuan'])
+                          ->get();
+
+        // Debug usulan yang ditemukan
+        Log::info('Usulan yang ditemukan untuk pegawai', [
+            'pegawai_id' => $pegawai->id,
+            'jenis_usulan_periode' => $jenisUsulanPeriode,
+            'total_usulan_found' => $usulans->count(),
+            'usulan_ids' => $usulans->pluck('id')->toArray()
+        ]);
+
+        return view('backend.layouts.views.pegawai-unmul.usul-jabatan.index', compact('periodeUsulans', 'usulans', 'pegawai'));
+    }
+
+    /**
+     * Display the specified usulan jabatan.
+     * Show detail view in read-only mode.
+     */
+    public function show(Usulan $usulan)
+    {
+        // Ownership guard (should already be handled by route binding)
+        if ($usulan->pegawai_id !== Auth::id()) {
+            abort(403, 'AKSES DITOLAK');
+        }
+
+        return view('backend.layouts.views.pegawai-unmul.usul-jabatan.show', compact('usulan'));
     }
 
     /**
@@ -42,31 +111,12 @@ class UsulanJabatanController extends BaseUsulanController
         $pegawai = Pegawai::with(['jabatan', 'pangkat', 'unitKerja'])
                 ->findOrFail(Auth::id());
 
-        // Load dokumen profil pegawai
-        $documentFields = [
-            'sk_pangkat_terakhir' => ['label' => 'SK Pangkat Terakhir', 'icon' => 'file-text'],
-            'sk_jabatan_terakhir' => ['label' => 'SK Jabatan Terakhir', 'icon' => 'file-text'],
-            'ijazah_terakhir' => ['label' => 'Ijazah Terakhir', 'icon' => 'award'],
-            'transkrip_nilai_terakhir' => ['label' => 'Transkrip Nilai Terakhir', 'icon' => 'file-text'],
-            'sk_cpns' => ['label' => 'SK CPNS', 'icon' => 'file-text'],
-            'sk_pns' => ['label' => 'SK PNS', 'icon' => 'file-text'],
-            'skp_tahun_pertama' => ['label' => 'SKP Tahun Pertama', 'icon' => 'clipboard'],
-            'skp_tahun_kedua' => ['label' => 'SKP Tahun Kedua', 'icon' => 'clipboard'],
-        ];
-        // Add dosen-specific documents
-        if ($pegawai->jenis_pegawai === 'Dosen') {
-            $documentFields['pak_konversi'] = ['label' => 'PAK Konversi', 'icon' => 'file-check'];
-            $documentFields['sk_penyetaraan_ijazah'] = ['label' => 'SK Penyetaraan Ijazah', 'icon' => 'file-text'];
-            $documentFields['disertasi_thesis_terakhir'] = ['label' => 'Disertasi/Thesis Terakhir', 'icon' => 'book'];
-        }
-
         Log::info('Create usulan jabatan accessed', [
             'user_id' => Auth::id(),
             'pegawai_id' => $pegawai->id,
             'jenis_pegawai' => $pegawai->jenis_pegawai,
             'status_kepegawaian' => $pegawai->status_kepegawaian
         ]);
-
 
         // =============================================================
         // BLOK PENGECEKAN AKSES BARU
@@ -78,54 +128,24 @@ class UsulanJabatanController extends BaseUsulanController
         }
         // =============================================================
 
-        // Validasi kelengkapan profil
-        $missingFields = $this->validateProfileCompleteness($pegawai);
-        if ($missingFields) {
-            return redirect()->route('pegawai-unmul.profile.edit')
-                ->with('warning', 'Profil Anda belum lengkap. Silakan lengkapi semua data profil sebelum membuat usulan. Data yang belum lengkap: ' . count($missingFields) . ' field.');
-        }
-
-        if (!$pegawai->jabatan) {
-            return redirect()->route('pegawai-unmul.profile.edit')
-                ->with('error', 'Data Jabatan Fungsional Belum Ditentukan. Silakan perbarui profil Anda atau hubungi admin.');
-        }
-
-        // ... sisa kode method create() tetap sama ...
         // Determine jenis usulan berdasarkan pegawai
         $jenisUsulanPeriode = $this->determineJenisUsulanPeriode($pegawai);
 
         // Cek periode yang sedang buka
         $daftarPeriode = $this->getActivePeriode($jenisUsulanPeriode);
-        if (!$daftarPeriode) {
-            return redirect()->route('pegawai-unmul.usulan-pegawai.dashboard')
-                ->with('error', 'Saat ini tidak ada periode pengajuan usulan jabatan yang aktif untuk jenis pegawai Anda.');
-        }
 
-        $isRejectedInCurrentPeriod = Usulan::where('pegawai_id', Auth::id())
-            ->where('periode_usulan_id', $daftarPeriode->id)
-            ->where('status_usulan', 'Ditolak Universitas')
-            ->exists();
-
-
-        if ($isRejectedInCurrentPeriod) {
-            return redirect()->route('pegawai-unmul.usulan-pegawai.dashboard')
-                ->with('error', 'Anda tidak dapat mengajukan usulan baru pada periode ini karena usulan Anda sebelumnya telah ditolak oleh universitas.');
-        }
-
-        // Cek usulan aktif
-        if ($this->hasActiveUsulan(Auth::id(), $jenisUsulanPeriode)) {
-            return redirect()->route('pegawai-unmul.usulan-pegawai.dashboard')
-                ->with('error', 'Anda sudah memiliki usulan jabatan yang sedang aktif.');
+        // Cek usulan yang sudah ada untuk periode ini
+        $existingUsulan = null;
+        if ($daftarPeriode) {
+            $existingUsulan = Usulan::where('pegawai_id', Auth::id())
+                ->where('periode_usulan_id', $daftarPeriode->id)
+                ->where('jenis_usulan', $jenisUsulanPeriode)
+                ->first();
         }
 
         // Cek jabatan tujuan
         $jabatanLama = $pegawai->jabatan;
         $jabatanTujuan = $this->getJabatanTujuan($pegawai, $jabatanLama);
-
-        if (!$jabatanTujuan && $pegawai->jenis_pegawai === 'Dosen') {
-            return redirect()->route('pegawai-unmul.usulan-pegawai.dashboard')
-                ->with('warning', 'Anda sudah berada di jabatan fungsional tertinggi. Tidak ada jabatan yang lebih tinggi untuk diajukan.');
-        }
 
         // Determine jenjang type & form config
         $jenjangType = $this->determineJenjangType($pegawai, $jabatanLama, $jabatanTujuan);
@@ -137,7 +157,23 @@ class UsulanJabatanController extends BaseUsulanController
         $bkdSemesters = $this->generateBkdSemesterLabels($daftarPeriode);
 
         // Get document fields for the form
-        $documentFields = $this->getDocumentKeys($pegawai->jenis_pegawai);
+        $documentFields = $this->getDocumentKeys($pegawai->jenis_pegawai, $daftarPeriode);
+
+        // Prepare catatan perbaikan (empty for new usulan)
+        $catatanPerbaikan = [
+            'data_pribadi' => [],
+            'data_kepegawaian' => [],
+            'data_pendidikan' => [],
+            'data_kinerja' => [],
+            'dokumen_profil' => [],
+            'dokumen_usulan' => [],
+            'dokumen_bkd' => [],
+            'karya_ilmiah' => [],
+        ];
+
+        // Set read-only status
+        $isReadOnly = false;
+        $isEditMode = false;
 
         return view('backend.layouts.views.pegawai-unmul.usul-jabatan.create-jabatan', [
             'pegawai' => $pegawai,
@@ -149,6 +185,10 @@ class UsulanJabatanController extends BaseUsulanController
             'jenisUsulanPeriode' => $jenisUsulanPeriode,
             'bkdSemesters' => $bkdSemesters,
             'documentFields' => $documentFields,
+            'catatanPerbaikan' => $catatanPerbaikan,
+            'isReadOnly' => $isReadOnly,
+            'isEditMode' => $isEditMode,
+            'existingUsulan' => $existingUsulan,
         ]);
     }
 
@@ -171,17 +211,37 @@ class UsulanJabatanController extends BaseUsulanController
 
         Log::info('=== USULAN STORE START ===', [
             'user_id' => Auth::id(),
-            'action' => $request->input('action')
+            'action' => $request->input('action'),
+            'request_data' => $request->all()
         ]);
 
         $validatedData = $request->validated();
-        $statusUsulan = ($request->input('action') === 'submit_final') ? 'Diajukan' : 'Draft';
+
+        Log::info('=== VALIDATED DATA ===', [
+            'validated_data' => $validatedData,
+            'validation_passed' => true
+        ]);
+
+        // Determine status based on action
+        $action = $request->input('action');
+        $statusUsulan = match($action) {
+            'submit' => 'Diajukan',
+            'save_draft' => 'Draft',
+            default => 'Draft'
+        };
 
         // ... sisa kode method store() tetap sama ...
         // Determine jenis usulan
         $jenisUsulanPeriode = $this->determineJenisUsulanPeriode($pegawai);
 
-        // Validasi periode usulan
+        // Validasi periode usulan dengan logging yang lebih detail
+        Log::info('=== VALIDATING PERIODE ===', [
+            'requested_periode_id' => $validatedData['periode_usulan_id'],
+            'jenis_usulan_periode' => $jenisUsulanPeriode,
+            'pegawai_status_kepegawaian' => $pegawai->status_kepegawaian
+        ]);
+
+        // Coba cari periode dengan berbagai kondisi
         $periodeUsulan = PeriodeUsulan::where('id', $validatedData['periode_usulan_id'])
             ->where('status', 'Buka')
             ->where('jenis_usulan', $jenisUsulanPeriode)
@@ -189,15 +249,33 @@ class UsulanJabatanController extends BaseUsulanController
             ->where('tanggal_selesai', '>=', now())
             ->first();
 
+        // Jika tidak ditemukan, coba tanpa validasi status_kepegawaian
+        if (!$periodeUsulan) {
+            Log::info('Periode not found with status_kepegawaian check, trying without...');
+            $periodeUsulan = PeriodeUsulan::where('id', $validatedData['periode_usulan_id'])
+                ->where('status', 'Buka')
+                ->where('jenis_usulan', $jenisUsulanPeriode)
+                ->where('tanggal_mulai', '<=', now())
+                ->where('tanggal_selesai', '>=', now())
+                ->first();
+        }
+
         if (!$periodeUsulan) {
             Log::error('Periode usulan tidak valid', [
                 'requested_id' => $validatedData['periode_usulan_id'],
-                'jenis_usulan' => $jenisUsulanPeriode
+                'jenis_usulan' => $jenisUsulanPeriode,
+                'available_periodes' => PeriodeUsulan::where('status', 'Buka')->pluck('id', 'jenis_usulan')->toArray()
             ]);
             return redirect()->back()
                 ->withErrors(['periode_usulan_id' => 'Periode usulan tidak valid atau sudah tidak aktif.'])
                 ->withInput();
         }
+
+        Log::info('=== PERIODE VALIDATED ===', [
+            'periode_id' => $periodeUsulan->id,
+            'periode_nama' => $periodeUsulan->nama_periode,
+            'periode_jenis' => $periodeUsulan->jenis_usulan
+        ]);
 
         // Validasi jabatan
         $jabatanLama = $pegawai->jabatan;
@@ -217,14 +295,37 @@ class UsulanJabatanController extends BaseUsulanController
                 $request, $pegawai, $periodeUsulan, $jabatanLama, $jabatanTujuan,
                 $statusUsulan, $validatedData, $jenisUsulanPeriode, &$usulanCreated
             ) {
+                Log::info('=== TRANSACTION START ===', [
+                    'pegawai_id' => $pegawai->id,
+                    'periode_id' => $periodeUsulan->id
+                ]);
+
                 // Persiapan data
                 $pegawaiSnapshot = $this->createPegawaiSnapshot($pegawai);
+                Log::info('=== PEGAWAI SNAPSHOT CREATED ===', [
+                    'snapshot_data' => $pegawaiSnapshot
+                ]);
+
                 $karyaIlmiahData = $this->extractKaryaIlmiahData($validatedData);
+                Log::info('=== KARYA ILMIAH DATA ===', [
+                    'karya_ilmiah_data' => $karyaIlmiahData
+                ]);
+
                 $syaratKhususData = $this->extractSyaratKhususData($validatedData);
+                Log::info('=== SYARAT KHUSUS DATA ===', [
+                    'syarat_khusus_data' => $syaratKhususData
+                ]);
 
                 // Upload dokumen
-                $documentKeys = $this->getDocumentKeys($pegawai->jenis_pegawai);
+                $documentKeys = $this->getDocumentKeys($pegawai->jenis_pegawai, $periodeUsulan);
+                Log::info('=== DOCUMENT KEYS ===', [
+                    'document_keys' => $documentKeys
+                ]);
+
                 $dokumenPaths = $this->handleDocumentUploads($request, $pegawai, $documentKeys);
+                Log::info('=== DOCUMENT PATHS ===', [
+                    'dokumen_paths' => $dokumenPaths
+                ]);
 
                 // Struktur data usulan
                 $dataUsulan = [
@@ -253,13 +354,38 @@ class UsulanJabatanController extends BaseUsulanController
                     'catatan_verifikator' => null,
                 ];
 
+                Log::info('=== USULAN DATA PREPARED ===', [
+                    'usulan_data' => $usulanData
+                ]);
+
                 $usulan = Usulan::create($usulanData);
 
+                Log::info('=== USULAN CREATED ===', [
+                    'usulan_id' => $usulan->id,
+                    'usulan_status' => $usulan->status_usulan
+                ]);
+
                 // Simpan dokumen dan log
+                Log::info('=== SAVING DOCUMENTS ===', [
+                    'usulan_id' => $usulan->id,
+                    'dokumen_paths_count' => count($dokumenPaths)
+                ]);
+
                 $this->saveUsulanDocuments($usulan, $dokumenPaths, $pegawai);
+
+                Log::info('=== CREATING LOG ===', [
+                    'usulan_id' => $usulan->id,
+                    'status' => $statusUsulan
+                ]);
+
                 $this->createUsulanLog($usulan, null, $statusUsulan, $pegawai, $validatedData);
 
                 $usulanCreated = $usulan;
+
+                Log::info('=== TRANSACTION COMPLETED ===', [
+                    'usulan_id' => $usulan->id,
+                    'status' => $statusUsulan
+                ]);
             });
 
             // Dispatch background jobs
@@ -294,12 +420,77 @@ class UsulanJabatanController extends BaseUsulanController
                 ->withInput();
         }
 
-        $message = $statusUsulan === 'Diajukan'
-            ? 'Usulan kenaikan jabatan berhasil diajukan. Tim verifikasi akan meninjau usulan Anda.'
-            : 'Usulan jabatan berhasil disimpan sebagai draft. Anda dapat melanjutkan pengisian nanti.';
+        $message = match($action) {
+            'submit' => 'Usulan kenaikan jabatan berhasil diajukan. Tim verifikasi akan meninjau usulan Anda.',
+            'save_draft' => 'Usulan jabatan berhasil disimpan sebagai draft. Anda dapat melanjutkan pengisian nanti.',
+            default => 'Usulan jabatan berhasil disimpan.'
+        };
 
         return redirect()->route('pegawai-unmul.usulan-pegawai.dashboard')
             ->with('success', $message);
+    }
+
+    /**
+     * Test method for form submission - bypasses FormRequest
+     */
+    public function testStore(Request $request)
+    {
+        Log::info('=== TEST STORE METHOD CALLED ===', [
+            'user_id' => Auth::id(),
+            'request_data' => $request->all()
+        ]);
+
+        try {
+            $pegawai = Auth::user();
+
+            // Get active periode
+            $periode = \App\Models\BackendUnivUsulan\PeriodeUsulan::where('jenis_usulan', 'Usulan Jabatan')
+                ->where('status', 'Buka')
+                ->first();
+
+            if (!$periode) {
+                return response()->json(['error' => 'No active periode found'], 400);
+            }
+
+            // Create usulan with minimal data
+            $usulan = new \App\Models\BackendUnivUsulan\Usulan();
+            $usulan->pegawai_id = $pegawai->id;
+            $usulan->periode_usulan_id = $periode->id;
+            $usulan->jenis_usulan = 'Usulan Jabatan';
+            $usulan->status_usulan = 'Draft';
+            $usulan->data_usulan = $request->all();
+            $usulan->save();
+
+            // Create usulan log
+            $usulanLog = new \App\Models\BackendUnivUsulan\UsulanLog();
+            $usulanLog->usulan_id = $usulan->id;
+            $usulanLog->dilakukan_oleh_id = $pegawai->id;
+            $usulanLog->status_sebelumnya = null;
+            $usulanLog->status_baru = 'Draft';
+            $usulanLog->catatan = 'Usulan jabatan dibuat via test method';
+            $usulanLog->save();
+
+            Log::info('=== TEST STORE SUCCESS ===', [
+                'usulan_id' => $usulan->id,
+                'log_id' => $usulanLog->id
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Usulan berhasil dibuat',
+                'usulan_id' => $usulan->id
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('=== TEST STORE ERROR ===', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Gagal membuat usulan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -340,7 +531,7 @@ class UsulanJabatanController extends BaseUsulanController
         $bkdSemesters = $this->generateBkdSemesterLabels($usulanJabatan->periodeUsulan);
 
         // Get document fields for the form
-        $documentFields = $this->getDocumentKeys($pegawai->jenis_pegawai);
+        $documentFields = $this->getDocumentKeys($pegawai->jenis_pegawai, $usulanJabatan->periodeUsulan);
 
         return view('backend.layouts.views.pegawai-unmul.usul-jabatan.create-jabatan', [
             'pegawai' => $pegawai,
@@ -353,6 +544,9 @@ class UsulanJabatanController extends BaseUsulanController
             'catatanPerbaikan' => $catatanPerbaikan,
             'bkdSemesters' => $bkdSemesters,
             'documentFields' => $documentFields,
+            'isReadOnly' => $isReadOnly,
+            'isEditMode' => $canEdit,
+            'existingUsulan' => $usulanJabatan,
         ]);
     }
 
@@ -382,7 +576,14 @@ class UsulanJabatanController extends BaseUsulanController
         $validatedData = $request->validated();
         $pegawai = Auth::user();
         $oldStatus = $usulanJabatan->status_usulan;
-        $statusUsulan = ($request->input('action') === 'submit_final') ? 'Diajukan' : 'Draft';
+
+        // Determine status based on action
+        $action = $request->input('action');
+        $statusUsulan = match($action) {
+            'submit' => 'Diajukan',
+            'save_draft' => 'Draft',
+            default => 'Draft'
+        };
 
         Log::info('Starting usulan update', [
             'usulan_id' => $usulanJabatan->id,
@@ -466,9 +667,11 @@ class UsulanJabatanController extends BaseUsulanController
                 }
             }
 
-            $message = $statusUsulan === 'Diajukan'
-                ? 'Usulan kenaikan jabatan berhasil diperbarui dan diajukan. Tim verifikasi akan meninjau usulan Anda.'
-                : 'Perubahan pada usulan Anda berhasil disimpan sebagai Draft.';
+            $message = match($action) {
+                'submit' => 'Usulan kenaikan jabatan berhasil diperbarui dan diajukan. Tim verifikasi akan meninjau usulan Anda.',
+                'save_draft' => 'Perubahan pada usulan Anda berhasil disimpan sebagai Draft.',
+                default => 'Perubahan pada usulan Anda berhasil disimpan.'
+            };
 
             Log::info('Usulan update completed successfully', [
                 'usulan_id' => $usulanJabatan->id,
@@ -605,12 +808,12 @@ class UsulanJabatanController extends BaseUsulanController
     protected function determineJenisUsulanPeriode($pegawai): string
     {
         if ($pegawai->jenis_pegawai === 'Dosen' && $pegawai->status_kepegawaian === 'Dosen PNS') {
-            return 'usulan-jabatan-dosen';
+            return 'Usulan Jabatan';
         } elseif ($pegawai->jenis_pegawai === 'Tenaga Kependidikan' && $pegawai->status_kepegawaian === 'Tenaga Kependidikan PNS') {
-            return 'usulan-jabatan-tendik';
+            return 'Usulan Jabatan';
         }
 
-        return 'usulan-jabatan-dosen'; // Fallback
+        return 'Usulan Jabatan'; // Fallback
     }
 
     /**
@@ -829,20 +1032,16 @@ class UsulanJabatanController extends BaseUsulanController
     /**
      * Get document keys berdasarkan jenis pegawai
      */
-    protected function getDocumentKeys(string $jenisPegawai): array
+    protected function getDocumentKeys(string $jenisPegawai, ?PeriodeUsulan $periode = null): array
     {
         $baseKeys = ['pakta_integritas'];
 
         if ($jenisPegawai === 'Dosen') {
-            // Dinamis mengambil BKD slugs dari periode usulan saat ini
-            $periodeId = request()->input('periode_usulan_id');
+            // Dinamis mengambil BKD slugs dari periode usulan
             $bkdSlugs = [];
-            if ($periodeId) {
-                $periode = PeriodeUsulan::find($periodeId);
-                if ($periode) {
-                    $bkdSemesters = $this->generateBkdSemesterLabels($periode);
-                    $bkdSlugs = array_column($bkdSemesters, 'slug');
-                }
+            if ($periode) {
+                $bkdSemesters = $this->generateBkdSemesterLabels($periode);
+                $bkdSlugs = array_column($bkdSemesters, 'slug');
             }
 
             return array_merge($baseKeys, [
@@ -861,7 +1060,7 @@ class UsulanJabatanController extends BaseUsulanController
      */
     protected function updateDocuments($request, $usulan, $pegawai, &$dataUsulanLama): void
     {
-        $documentKeys = $this->getDocumentKeys($pegawai->jenis_pegawai);
+        $documentKeys = $this->getDocumentKeys($pegawai->jenis_pegawai, $usulan->periodeUsulan);
 
         foreach ($documentKeys as $key) {
             if ($request->hasFile($key)) {
@@ -1039,4 +1238,53 @@ class UsulanJabatanController extends BaseUsulanController
 
         return $semesters;
     }
+
+    /**
+     * Remove the specified usulan from storage.
+     */
+    public function destroy($id)
+    {
+        $usulan = Usulan::where('id', $id)
+                        ->where('pegawai_id', Auth::id())
+                        ->firstOrFail();
+
+        // Only allow deletion if status is Draft or Perlu Perbaikan
+        if (!in_array($usulan->status_usulan, ['Draft', 'Perlu Perbaikan'])) {
+            return redirect()->route('pegawai-unmul.usulan-jabatan.index')
+                ->with('error', 'Usulan tidak dapat dihapus karena status tidak memungkinkan.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Delete related documents
+            if ($usulan->dokumen_usulan) {
+                foreach ($usulan->dokumen_usulan as $document) {
+                    if (isset($document['path']) && Storage::disk('local')->exists($document['path'])) {
+                        Storage::disk('local')->delete($document['path']);
+                    }
+                }
+            }
+
+            // Delete usulan
+            $usulan->delete();
+
+            DB::commit();
+
+            return redirect()->route('pegawai-unmul.usulan-jabatan.index')
+                ->with('success', 'Usulan berhasil dihapus.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Failed to delete usulan', [
+                'usulan_id' => $id,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->route('pegawai-unmul.usulan-jabatan.index')
+                ->with('error', 'Gagal menghapus usulan. Silakan coba lagi.');
+        }
+    }
+
 }

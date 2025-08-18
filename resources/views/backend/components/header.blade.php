@@ -1,4 +1,4 @@
-<header class="bg-white shadow-sm border-b border-gray-200 px-4 sm:px-6 py-3 h-16 flex items-center justify-between flex-shrink-0 z-40 sticky top-0">
+<header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3 h-16 flex items-center justify-between flex-shrink-0 z-40 sticky top-0 transition-colors">
     {{-- Bagian kiri header tidak berubah --}}
     <div class="flex items-center gap-4">
         <button onclick="toggleSidebar()" class="p-1.5 rounded-lg hover:bg-gray-100">
@@ -57,14 +57,22 @@
                 $profileCompleteness = round(($uploadedDocs / $totalDocs) * 100);
             @endphp
 
+                        {{-- Dark Mode Toggle --}}
+            <button
+                id="dark-mode-toggle"
+                class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full relative transition-colors"
+            >
+                <i data-lucide="moon" id="dark-mode-icon" class="w-5 h-5 text-gray-600 dark:text-gray-300"></i>
+            </button>
+
             {{-- Tombol notifikasi --}}
-            <button class="p-2 hover:bg-gray-100 rounded-full relative">
-                <i data-lucide="bell" class="w-5 h-5 text-gray-600"></i>
+            <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full relative transition-colors">
+                <i data-lucide="bell" class="w-5 h-5 text-gray-600 dark:text-gray-300"></i>
                 {{-- Notification badge (if needed) --}}
                 {{-- <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span> --}}
             </button>
 
-            <div class="w-px h-6 bg-gray-200"></div>
+            <div class="w-px h-6 bg-gray-200 dark:bg-gray-600"></div>
 
             {{-- MENU PINDAH HALAMAN (TERPISAH) --}}
             @if(count($availableDashboards) > 1)

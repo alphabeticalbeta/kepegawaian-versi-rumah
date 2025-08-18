@@ -4,20 +4,7 @@
 
 @section('content')
 <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    {{-- Flash Messages --}}
-    @if (session('success'))
-        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 px-4 py-3 rounded-lg relative mb-6 shadow-md" role="alert">
-            <strong class="font-bold">Sukses!</strong>
-            <span class="block sm:inline">{{ session('success') }}</span>
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg relative mb-6 shadow-md" role="alert">
-            <strong class="font-bold">Gagal!</strong>
-            <span class="block sm:inline">{{ session('error') }}</span>
-        </div>
-    @endif
+    {{-- Notifikasi sudah ditangani oleh component flash di layout base --}}
 
     {{-- Header --}}
     <div class="mb-8">

@@ -114,6 +114,7 @@
                                 id="{{ $field }}"
                                 class="hidden"
                                 accept=".pdf"
+                                data-max-size="2"
                                 onchange="previewUploadedFile(this, 'preview-{{ $field }}')">
 
                             {{-- File Requirements --}}
@@ -284,3 +285,5 @@
         </div>
     @endif
 </div>
+
+

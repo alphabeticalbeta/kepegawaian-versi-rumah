@@ -75,6 +75,8 @@ class ProfileController extends Controller
             'jenis_kelamin' => 'required|in:Laki-Laki,Perempuan',
             'nomor_handphone' => 'required|string|max:20',
             'pendidikan_terakhir' => 'required|string',
+            'nama_universitas_sekolah' => 'nullable|string|max:255',
+            'nama_prodi_jurusan' => 'nullable|string|max:255',
             'nuptk' => 'nullable|string|max:16',
             'ranting_ilmu_kepakaran' => 'nullable|string',
             'mata_kuliah_diampu' => 'nullable|string',

@@ -688,7 +688,18 @@
                 </label>
                 <div class="relative">
                     @php
-                        $pendidikanOptions = ['SD', 'SLTP/Sederajat', 'SLTA/Sederajat', 'Diploma Satu (D1)', 'Diploma Dua (D2)', 'Diploma Tiga (D3)', 'Diploma Empat (D4)/ Sarjana (S1)', 'Magister (S2)', 'Doktor (S3)'];
+                        $pendidikanOptions =
+                        [
+                            'Sekolah Dasar (SD)',
+                            'Sekolah Lanjutan Tingkat Pertama (SLTP) / Sederajat',
+                            'Sekolah Lanjutan Tingkat Menengah (SLTA)',
+                            'Diploma I',
+                            'Diploma II',
+                            'Diploma III',
+                            'Sarjana (S1) / Diploma IV / Sederajat',
+                            'Magister (S2) / Sederajat',
+                            'Doktor (S3) / Sederajat'
+                        ];
                     @endphp
                     <select name="pendidikan_terakhir"
                             id="pendidikan_terakhir"
@@ -727,13 +738,13 @@
                 <label for="nama_prodi_jurusan_s2" class="block text-sm lg:text-base font-semibold text-slate-700 mb-3 group-hover:text-indigo-600 transition-colors">
                     <div class="flex items-center gap-2">
                         <i data-lucide="book-open" class="w-4 h-4 text-indigo-600 flex-shrink-0"></i>
-                        Nama Prodi/Jurusan S2
+                        Nama Prodi/Jurusan
                     </div>
                 </label>
                 <input type="text"
-                       name="nama_prodi_jurusan_s2"
-                       id="nama_prodi_jurusan_s2"
-                       value="{{ old('nama_prodi_jurusan_s2', $pegawai->nama_prodi_jurusan_s2 ?? '') }}"
+                       name="nama_prodi_jurusan"
+                       id="nama_prodi_jurusan"
+                       value="{{ old('nama_prodi_jurusan', $pegawai->nama_prodi_jurusan ?? '') }}"
                        placeholder="Contoh: Magister Teknologi Informasi, Magister Manajemen, Magister Pendidikan"
                        class="w-full px-4 py-4 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200/50 transition-all duration-300 bg-white/80 backdrop-blur-sm hover:bg-white hover:shadow-md">
             </div>

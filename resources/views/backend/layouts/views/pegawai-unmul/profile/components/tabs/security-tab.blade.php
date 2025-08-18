@@ -315,3 +315,39 @@
                 if (newPassword === confirmPassword) {
                     matchText.textContent = 'Password cocok';
                     matchText.className = 'text-xs text-green-600';
+                } else {
+                    matchText.textContent = 'Password tidak cocok';
+                    matchText.className = 'text-xs text-red-600';
+                }
+            } else {
+                matchElement.classList.add('hidden');
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const newPasswordField = document.getElementById('new_password');
+            const confirmPasswordField = document.getElementById('new_password_confirmation');
+
+            if (newPasswordField) {
+                newPasswordField.addEventListener('input', function() {
+                    const strengthElement = document.getElementById('password-strength');
+                    if (this.value.length > 0) {
+                        strengthElement.classList.remove('hidden');
+                        checkPasswordStrength(this.value);
+                    } else {
+                        strengthElement.classList.add('hidden');
+                    }
+                    checkPasswordMatch();
+                });
+            }
+
+            if (confirmPasswordField) {
+                confirmPasswordField.addEventListener('input', function() {
+                    checkPasswordMatch();
+                });
+            }
+        });
+    </script>
+    @endpush
+@endif

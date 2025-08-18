@@ -25,7 +25,7 @@ class DashboardController extends Controller
 
         // Get all usulans with pagination
         $usulans = Usulan::where('pegawai_id', $pegawaiId)
-            ->with(['periodeUsulan', 'jabatan'])
+            ->with(['periodeUsulan', 'jabatanLama', 'jabatanTujuan'])
             ->latest()
             ->paginate(10);
 
@@ -79,7 +79,7 @@ class DashboardController extends Controller
     private function getRecentUsulans($pegawaiId)
     {
         return Usulan::where('pegawai_id', $pegawaiId)
-            ->with(['periodeUsulan', 'jabatan'])
+            ->with(['periodeUsulan', 'jabatanLama', 'jabatanTujuan'])
             ->latest()
             ->take(5)
             ->get();

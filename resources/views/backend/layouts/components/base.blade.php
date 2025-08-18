@@ -43,7 +43,7 @@
             @include('backend.components.header')
 
             {{-- Main Content Area --}}
-            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 sm:p-6 lg:p-8">
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-6 sm:p-6 lg:p-8">
                 @include('backend.components.flash')
                 @yield('content')
             </main>

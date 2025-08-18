@@ -10,18 +10,6 @@ document.addEventListener('DOMContentLoaded', function() {
         formData: {}
     };
 
-    // Debug panel disabled for production
-    function addDebugPanel() {
-        // Debug panel is disabled
-        return;
-    }
-
-    // Debug panel update disabled
-    function updateDebugPanel() {
-        // Debug panel is disabled
-        return;
-    }
-
     // Tab switching functionality
     window.switchTab = function(tabName) {
         const currentTab = window.dataPegawaiData.activeTab;

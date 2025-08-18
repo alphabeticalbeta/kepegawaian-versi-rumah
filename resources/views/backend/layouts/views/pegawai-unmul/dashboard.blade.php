@@ -23,28 +23,7 @@
 
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-            {{-- [FIX] BLOK NOTIFIKASI LENGKAP --}}
-        @if (session('success'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 px-4 py-3 rounded-lg relative mb-6 shadow-md" role="alert">
-                <strong class="font-bold">Sukses!</strong>
-                <span class="block sm:inline">{{ session('success') }}</span>
-            </div>
-        @endif
-
-        @if (session('error'))
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg relative mb-6 shadow-md" role="alert">
-                <strong class="font-bold">Gagal!</strong>
-                <span class="block sm:inline">{{ session('error') }}</span>
-            </div>
-        @endif
-
-        @if (session('warning'))
-            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 px-4 py-3 rounded-lg relative mb-6 shadow-md" role="alert">
-                <strong class="font-bold">Perhatian!</strong>
-                <span class="block sm:inline">{{ session('warning') }}</span>
-            </div>
-        @endif
-        {{-- BATAS AKHIR BLOK NOTIFIKASI --}}
+        {{-- Notifikasi sudah ditangani oleh component flash di layout base --}}
 
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900">
@@ -104,21 +83,46 @@
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <div class="flex justify-center space-x-2">
+                                        @php
+                                            // Tentukan route berdasarkan jenis usulan
+                                            $routeName = match($usulan->jenis_usulan) {
+                                                'Usulan Jabatan' => 'pegawai-unmul.usulan-jabatan',
+                                                'Usulan Kepangkatan' => 'pegawai-unmul.usulan-kepangkatan',
+                                                'Usulan ID SINTA ke SISTER' => 'pegawai-unmul.usulan-id-sinta-sister',
+                                                'Usulan Laporan LKD' => 'pegawai-unmul.usulan-laporan-lkd',
+                                                'Usulan Laporan SERDOS' => 'pegawai-unmul.usulan-laporan-serdos',
+                                                'Usulan NUPTK' => 'pegawai-unmul.usulan-nuptk',
+                                                'Usulan Pencantuman Gelar' => 'pegawai-unmul.usulan-pencantuman-gelar',
+                                                'Usulan Pengaktifan Kembali' => 'pegawai-unmul.usulan-pengaktifan-kembali',
+                                                'Usulan Pensiun' => 'pegawai-unmul.usulan-pensiun',
+                                                'Usulan Penyesuaian Masa Kerja' => 'pegawai-unmul.usulan-penyesuaian-masa-kerja',
+                                                'Usulan Presensi' => 'pegawai-unmul.usulan-presensi',
+                                                'Usulan Satyalancana' => 'pegawai-unmul.usulan-satyalancana',
+                                                'Usulan Tugas Belajar' => 'pegawai-unmul.usulan-tugas-belajar',
+                                                'Usulan Ujian Dinas & Ijazah' => 'pegawai-unmul.usulan-ujian-dinas-ijazah',
+                                                default => 'pegawai-unmul.usulan-jabatan'
+                                            };
+
+                                            // Tentukan apakah bisa edit atau hanya lihat detail
+                                            $canEdit = in_array($usulan->status_usulan, ['Draft', 'Perlu Perbaikan', 'Dikembalikan ke Pegawai']);
+                                            $actionRoute = $canEdit ? $routeName . '.edit' : $routeName . '.show';
+                                        @endphp
+
                                         @if($usulan->status_usulan == 'Perlu Perbaikan')
-                                            <a href="{{ route('pegawai-unmul.usulan-jabatan.edit', $usulan) }}"
+                                            <a href="{{ route($actionRoute, $usulan) }}"
                                             class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-orange-600 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 hover:text-orange-700 transition-colors duration-200">
                                                 <i data-lucide="edit" class="w-3 h-3 mr-1"></i>
                                                 Perbaiki Usulan
                                             </a>
                                         @else
-                                            <a href="{{ route('pegawai-unmul.usulan-jabatan.edit', $usulan) }}"
+                                            <a href="{{ route($actionRoute, $usulan) }}"
                                             class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 hover:text-indigo-700 transition-colors duration-200">
                                                 <i data-lucide="eye" class="w-3 h-3 mr-1"></i>
                                                 Detail
                                             </a>
                                         @endif
                                         <button type="button"
-                                                onclick="showLogModal({{ $usulan->id }})"
+                                                onclick="showLogModal({{ $usulan->id }}, '{{ $routeName }}')"
                                                 class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-gray-700 transition-colors duration-200">
                                             <i data-lucide="history" class="w-3 h-3 mr-1"></i>
                                             Log
@@ -173,5 +177,139 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+function showLogModal(usulanId, routeName) {
+    // Show modal
+    document.getElementById('logModal').classList.remove('hidden');
+
+    // Show loading
+    document.getElementById('logContent').innerHTML = `
+        <div class="flex items-center justify-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span class="ml-2 text-gray-600">Memuat log...</span>
+        </div>
+    `;
+
+    // Fetch log data
+    fetch(`/pegawai-unmul/${routeName.replace('pegawai-unmul.', '')}/${usulanId}/logs`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && data.logs) {
+                displayLogs(data.logs);
+            } else {
+                document.getElementById('logContent').innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i data-lucide="alert-circle" class="w-12 h-12 mx-auto mb-4 text-gray-300"></i>
+                        <p>Tidak ada log yang tersedia</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching logs:', error);
+            document.getElementById('logContent').innerHTML = `
+                <div class="text-center py-8 text-red-500">
+                    <i data-lucide="alert-triangle" class="w-12 h-12 mx-auto mb-4 text-red-300"></i>
+                    <p>Gagal memuat log. Silakan coba lagi.</p>
+                </div>
+            `;
+        });
+}
+
+function displayLogs(logs) {
+    const logContent = document.getElementById('logContent');
+
+    if (logs.length === 0) {
+        logContent.innerHTML = `
+            <div class="text-center py-8 text-gray-500">
+                <i data-lucide="file-text" class="w-12 h-12 mx-auto mb-4 text-gray-300"></i>
+                <p>Belum ada log untuk usulan ini</p>
+            </div>
+        `;
+        return;
+    }
+
+    let logHTML = '<div class="space-y-4">';
+
+    logs.forEach(log => {
+        const statusChange = log.is_status_change ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200';
+        const statusIcon = log.is_status_change ? 'refresh-cw' : 'file-text';
+
+        logHTML += `
+            <div class="border rounded-lg p-4 ${statusChange}">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            <i data-lucide="${statusIcon}" class="w-5 h-5 text-gray-500"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-gray-900">${log.action}</p>
+                            ${log.is_status_change ? `
+                                <div class="mt-1 flex items-center space-x-2">
+                                    <span class="text-xs text-gray-500">Status:</span>
+                                    <span class="text-xs px-2 py-1 rounded-full bg-gray-200 text-gray-700">${log.status_sebelumnya || 'N/A'}</span>
+                                    <i data-lucide="arrow-right" class="w-3 h-3 text-gray-400"></i>
+                                    <span class="text-xs px-2 py-1 rounded-full ${log.status_badge_class}">${log.status_baru}</span>
+                                </div>
+                            ` : ''}
+                            ${log.catatan ? `<p class="mt-1 text-sm text-gray-600">${log.catatan}</p>` : ''}
+                            <div class="mt-2 flex items-center space-x-4 text-xs text-gray-500">
+                                <span>Oleh: ${log.user_name}</span>
+                                <span>${log.created_at}</span>
+                                <span class="text-gray-400">${log.relative_time}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    logHTML += '</div>';
+    logContent.innerHTML = logHTML;
+
+    // Reinitialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+function closeLogModal() {
+    document.getElementById('logModal').classList.add('hidden');
+    document.getElementById('logContent').innerHTML = '';
+}
+
+// Initialize event listeners when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Close modal when clicking outside
+    const logModal = document.getElementById('logModal');
+    if (logModal && !logModal.hasAttribute('data-initialized')) {
+        logModal.setAttribute('data-initialized', 'true');
+        logModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeLogModal();
+            }
+        });
+    }
+
+    // Close modal with Escape key (only add once)
+    if (!document.hasAttribute('data-escape-listener')) {
+        document.setAttribute('data-escape-listener', 'true');
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeLogModal();
+            }
+        });
+    }
+});
+</script>
+@endpush
 
 

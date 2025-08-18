@@ -56,6 +56,7 @@ class Pegawai extends Authenticatable
         // Data Pendidikan
         'pendidikan_terakhir',
         'nama_universitas_sekolah',
+        'nama_prodi_jurusan',
         'nama_prodi_jurusan_s2',
 
         // Data Fungsional (Khusus Dosen)

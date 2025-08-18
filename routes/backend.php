@@ -11,12 +11,97 @@ Route::get('/login', [LoginController::class, 'showLoginForm'])->middleware('gue
 Route::post('/login', [LoginController::class, 'login'])->middleware('guest:pegawai');
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth:pegawai')->name('logout');
 
+// ======================================================================
+// TEST ROUTES - UNTUK DEBUGGING (HAPUS SETELAH SELESAI)
+// ======================================================================
+Route::get('/test-document/{pegawai}/{field}', function($pegawai, $field) {
+    return response()->json([
+        'message' => 'Test route working',
+        'pegawai_id' => $pegawai,
+        'field' => $field,
+        'url' => request()->url()
+    ]);
+})->name('test.document');
 
+// Test route for form submission - bypasses all middleware
+Route::post('/test-usulan-submission', function() {
+    try {
+        // Get first pegawai for testing
+        $pegawai = \App\Models\BackendUnivUsulan\Pegawai::first();
+        if (!$pegawai) {
+            return response()->json(['error' => 'No pegawai found'], 400);
+        }
+
+        // Get active periode
+        $periode = \App\Models\BackendUnivUsulan\PeriodeUsulan::where('jenis_usulan', 'Usulan Jabatan')
+            ->where('status', 'Buka')
+            ->first();
+
+        if (!$periode) {
+            return response()->json(['error' => 'No active periode found'], 400);
+        }
+
+        // Create usulan with minimal data
+        $usulan = new \App\Models\BackendUnivUsulan\Usulan();
+        $usulan->pegawai_id = $pegawai->id;
+        $usulan->periode_usulan_id = $periode->id;
+        $usulan->jenis_usulan = 'Usulan Jabatan';
+        $usulan->status_usulan = 'Draft';
+        $usulan->data_usulan = request()->all();
+        $usulan->save();
+
+        // Create usulan log
+        $usulanLog = new \App\Models\BackendUnivUsulan\UsulanLog();
+        $usulanLog->usulan_id = $usulan->id;
+        $usulanLog->dilakukan_oleh_id = $pegawai->id;
+        $usulanLog->status_sebelumnya = null;
+        $usulanLog->status_baru = 'Draft';
+        $usulanLog->catatan = 'Usulan jabatan dibuat via test route';
+        $usulanLog->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Usulan berhasil dibuat via test route',
+            'usulan_id' => $usulan->id,
+            'log_id' => $usulanLog->id
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => 'Gagal membuat usulan: ' . $e->getMessage()
+        ], 500);
+    }
+})->name('test.usulan.submission');
+
+// Temporary document route without authentication for testing
+Route::get('/temp-document/{pegawai}/{field}', function($pegawai, $field) {
+    try {
+        $pegawaiModel = \App\Models\BackendUnivUsulan\Pegawai::find($pegawai);
+        if (!$pegawaiModel) {
+            return response()->json(['error' => 'Pegawai not found'], 404);
+        }
+
+        $filePath = $pegawaiModel->$field;
+        if (!$filePath) {
+            return response()->json(['error' => 'File not found in database'], 404);
+        }
+
+        return response()->json([
+            'message' => 'File found',
+            'pegawai_id' => $pegawai,
+            'field' => $field,
+            'file_path' => $filePath,
+            'exists' => \Storage::disk('public')->exists($filePath)
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+})->name('temp.document');
 
 // ======================================================================
 // PROTECTED ROUTES - SEMUA RUTE DI BAWAH INI HANYA BISA DIAKSES SETELAH LOGIN
 // ======================================================================
-Route::middleware(['auth:pegawai'])->group(function () {
+Route::middleware(['web', 'auth:pegawai'])->group(function () {
 
     // ======================================================================
     // ADMIN UNIVERSITAS ROUTES
@@ -218,6 +303,10 @@ Route::middleware(['auth:pegawai'])->group(function () {
                     ->name('create');
                 Route::post('/', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanJabatanController::class, 'store'])
                     ->name('store');
+                Route::post('/test', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanJabatanController::class, 'testStore'])
+                    ->name('test-store');
+                Route::get('/{usulan}', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanJabatanController::class, 'show'])
+                    ->name('show');
                 Route::get('/{usulan}/edit', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanJabatanController::class, 'edit'])
                     ->name('edit');
                 Route::put('/{usulan}', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanJabatanController::class, 'update'])
@@ -239,78 +328,112 @@ Route::middleware(['auth:pegawai'])->group(function () {
             // =====================================================
             Route::resource('usulan-nuptk', App\Http\Controllers\Backend\PegawaiUnmul\UsulanNuptkController::class)
                 ->names('usulan-nuptk');
+            Route::get('/usulan-nuptk/{usulan}/logs', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanNuptkController::class, 'getLogs'])
+                ->name('usulan-nuptk.logs');
 
             // =====================================================
             // USULAN LAPORAN LKD ROUTES
             // =====================================================
             Route::resource('usulan-laporan-lkd', App\Http\Controllers\Backend\PegawaiUnmul\UsulanLaporanLkdController::class)
                 ->names('usulan-laporan-lkd');
+            Route::get('/usulan-laporan-lkd/{usulan}/logs', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanLaporanLkdController::class, 'getLogs'])
+                ->name('usulan-laporan-lkd.logs');
 
             // =====================================================
             // USULAN PRESENSI ROUTES
             // =====================================================
             Route::resource('usulan-presensi', App\Http\Controllers\Backend\PegawaiUnmul\UsulanPresensiController::class)
                 ->names('usulan-presensi');
+            Route::get('/usulan-presensi/{usulan}/logs', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanPresensiController::class, 'getLogs'])
+                ->name('usulan-presensi.logs');
+
 
             // =====================================================
             // USULAN PENYESUAIAN MASA KERJA ROUTES
             // =====================================================
             Route::resource('usulan-penyesuaian-masa-kerja', App\Http\Controllers\Backend\PegawaiUnmul\UsulanPenyesuaianMasaKerjaController::class)
                 ->names('usulan-penyesuaian-masa-kerja');
+            Route::get('/usulan-penyesuaian-masa-kerja/{usulan}/logs', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanPenyesuaianMasaKerjaController::class, 'getLogs'])
+                ->name('usulan-penyesuaian-masa-kerja.logs');
+
 
             // =====================================================
             // USULAN UJIAN DINAS & IJAZAH ROUTES
             // =====================================================
             Route::resource('usulan-ujian-dinas-ijazah', App\Http\Controllers\Backend\PegawaiUnmul\UsulanUjianDinasIjazahController::class)
                 ->names('usulan-ujian-dinas-ijazah');
+            Route::get('/usulan-ujian-dinas-ijazah/{usulan}/logs', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanUjianDinasIjazahController::class, 'getLogs'])
+                ->name('usulan-ujian-dinas-ijazah.logs');
+
 
             // =====================================================
             // USULAN LAPORAN SERDOS ROUTES
             // =====================================================
             Route::resource('usulan-laporan-serdos', App\Http\Controllers\Backend\PegawaiUnmul\UsulanLaporanSerdosController::class)
                 ->names('usulan-laporan-serdos');
+            Route::get('/usulan-laporan-serdos/{usulan}/logs', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanLaporanSerdosController::class, 'getLogs'])
+                ->name('usulan-laporan-serdos.logs');
 
             // =====================================================
             // USULAN PENSIUN ROUTES
             // =====================================================
             Route::resource('usulan-pensiun', App\Http\Controllers\Backend\PegawaiUnmul\UsulanPensiunController::class)
                 ->names('usulan-pensiun');
+            Route::get('/usulan-pensiun/{usulan}/logs', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanPensiunController::class, 'getLogs'])
+                ->name('usulan-pensiun.logs');
+
 
             // =====================================================
             // USULAN KEPANGKATAN ROUTES
             // =====================================================
             Route::resource('usulan-kepangkatan', App\Http\Controllers\Backend\PegawaiUnmul\UsulanKepangkatanController::class)
                 ->names('usulan-kepangkatan');
+            Route::get('/usulan-kepangkatan/{usulan}/logs', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanKepangkatanController::class, 'getLogs'])
+                ->name('usulan-kepangkatan.logs');
 
             // =====================================================
             // USULAN PENCANTUMAN GELAR ROUTES
             // =====================================================
             Route::resource('usulan-pencantuman-gelar', App\Http\Controllers\Backend\PegawaiUnmul\UsulanPencantumanGelarController::class)
                 ->names('usulan-pencantuman-gelar');
+            Route::get('/usulan-pencantuman-gelar/{usulan}/logs', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanPencantumanGelarController::class, 'getLogs'])
+                ->name('usulan-pencantuman-gelar.logs');
+
 
             // =====================================================
             // USULAN ID SINTA KE SISTER ROUTES
             // =====================================================
             Route::resource('usulan-id-sinta-sister', App\Http\Controllers\Backend\PegawaiUnmul\UsulanIdSintaSisterController::class)
                 ->names('usulan-id-sinta-sister');
+            Route::get('/usulan-id-sinta-sister/{usulan}/logs', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanIdSintaSisterController::class, 'getLogs'])
+                ->name('usulan-id-sinta-sister.logs');
 
             // =====================================================
             // USULAN SATYALANCANA ROUTES
             // =====================================================
             Route::resource('usulan-satyalancana', App\Http\Controllers\Backend\PegawaiUnmul\UsulanSatyalancanaController::class)
                 ->names('usulan-satyalancana');
+            Route::get('/usulan-satyalancana/{usulan}/logs', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanSatyalancanaController::class, 'getLogs'])
+                ->name('usulan-satyalancana.logs');
+
 
             // =====================================================
             // USULAN TUGAS BELAJAR ROUTES
             // =====================================================
             Route::resource('usulan-tugas-belajar', App\Http\Controllers\Backend\PegawaiUnmul\UsulanTugasBelajarController::class)
                 ->names('usulan-tugas-belajar');
+            Route::get('/usulan-tugas-belajar/{usulan}/logs', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanTugasBelajarController::class, 'getLogs'])
+                ->name('usulan-tugas-belajar.logs');
+
 
             // =====================================================
             // USULAN PENGAKTIFAN KEMBALI ROUTES
             // =====================================================
             Route::resource('usulan-pengaktifan-kembali', App\Http\Controllers\Backend\PegawaiUnmul\UsulanPengaktifanKembaliController::class)
                 ->names('usulan-pengaktifan-kembali');
+            Route::get('/usulan-pengaktifan-kembali/{usulan}/logs', [App\Http\Controllers\Backend\PegawaiUnmul\UsulanPengaktifanKembaliController::class, 'getLogs'])
+                ->name('usulan-pengaktifan-kembali.logs');
+
 
             // =====================================================
             // LEGACY COMPATIBILITY - Redirect old routes

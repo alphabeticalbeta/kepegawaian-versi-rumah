@@ -45,7 +45,7 @@
                                     {{ $pegawai->nuptk }}
                                 </span>
                             @else
-                                <span class="text-gray-500">Belum diisi</span>
+                                <span class="text-gray-500">{{ \App\Helpers\ProfileDisplayHelper::displayValue($pegawai->nuptk, 'Belum diisi') }}</span>
                             @endif
                         </div>
                     @endif
@@ -71,7 +71,7 @@
                                     <span>Lihat Profil Sinta</span>
                                 </a>
                             @else
-                                <span class="text-gray-500">Belum diisi</span>
+                                <span class="text-gray-500">{{ \App\Helpers\ProfileDisplayHelper::displayValue($pegawai->url_profil_sinta, 'Belum diisi') }}</span>
                             @endif
                         </div>
                     @endif
@@ -92,7 +92,7 @@
                             @if($pegawai->ranting_ilmu_kepakaran)
                                 <p class="text-gray-900 text-sm leading-relaxed">{{ $pegawai->ranting_ilmu_kepakaran }}</p>
                             @else
-                                <p class="text-gray-500 text-sm italic">Belum diisi</p>
+                                <p class="text-gray-500 text-sm italic">{{ \App\Helpers\ProfileDisplayHelper::displayValue($pegawai->ranting_ilmu_kepakaran, 'Belum diisi') }}</p>
                             @endif
                         </div>
                     @endif
@@ -113,7 +113,7 @@
                             @if($pegawai->mata_kuliah_diampu)
                                 <p class="text-gray-900 text-sm leading-relaxed">{{ $pegawai->mata_kuliah_diampu }}</p>
                             @else
-                                <p class="text-gray-500 text-sm italic">Belum diisi</p>
+                                <p class="text-gray-500 text-sm italic">{{ \App\Helpers\ProfileDisplayHelper::displayValue($pegawai->mata_kuliah_diampu, 'Belum diisi') }}</p>
                             @endif
                         </div>
                     @endif
