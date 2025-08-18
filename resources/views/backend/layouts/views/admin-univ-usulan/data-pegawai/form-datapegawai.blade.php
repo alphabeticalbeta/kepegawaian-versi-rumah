@@ -332,7 +332,8 @@
 </div>
 
 {{-- Success Toast dengan Animasi Modern --}}
-<div x-show="showSuccess"
+<div x-data="{ showSuccess: {{ session('success') ? 'true' : 'false' }} }"
+     x-show="showSuccess"
      x-transition:enter="transition ease-out duration-500"
      x-transition:enter-start="opacity-0 transform translate-y-4 scale-95"
      x-transition:enter-end="opacity-100 transform translate-y-0 scale-100"
@@ -359,8 +360,9 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('js/admin-universitas/data-pegawai.js') }}"></script>
-    <script src="{{ asset('js/admin-universitas/documents.js') }}"></script>
+    @vite(['resources/js/admin-universitas/data-pegawai.js'])
+    @vite(['resources/js/admin-universitas/documents.js'])
+    @vite(['resources/js/admin-universitas/dosen-data.js'])
     <script>
         // Pass data to JavaScript
         window.successMessage = @json(session('success'));

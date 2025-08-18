@@ -32,6 +32,7 @@ class Pegawai extends Authenticatable
         'gelar_belakang',
         'email',
         'password',
+        'username',
         'nomor_kartu_pegawai',
 
         // Data Pribadi

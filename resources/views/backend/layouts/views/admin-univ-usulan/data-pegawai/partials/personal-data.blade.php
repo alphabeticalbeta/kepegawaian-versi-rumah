@@ -1,14 +1,5 @@
 @push('scripts')
     <script>
-        // Debug: Log data from controller
-        console.log('=== BLADE DATA DEBUG ===');
-        console.log('Unit Kerja Options from controller:', @json($unitKerjaOptions));
-        console.log('Sub Unit Kerja Options from controller:', @json($subUnitKerjaOptions));
-        console.log('Sub Sub Unit Kerja Options from controller:', @json($subSubUnitKerjaOptions));
-        console.log('Selected Unit Kerja ID from controller:', @json($selectedUnitKerjaId));
-        console.log('Selected Sub Unit Kerja ID from controller:', @json($selectedSubUnitKerjaId));
-        console.log('Selected Sub Sub Unit Kerja ID from controller:', @json($selectedSubSubUnitKerjaId));
-
         // Pass data to JavaScript
         window.unitKerjaOptions = @json($unitKerjaOptions);
         window.subUnitKerjaOptions = @json($subUnitKerjaOptions);
@@ -17,11 +8,8 @@
         window.selectedSubUnitKerjaId = @json($selectedSubUnitKerjaId);
         window.selectedSubSubUnitKerjaId = @json($selectedSubSubUnitKerjaId);
 
-        console.log('=== BLADE DATA DEBUG COMPLETED ===');
-
         // Unit Kerja cascading dropdowns - INLINE SCRIPT
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('=== PERSONAL DATA INLINE SCRIPT LOADED ===');
 
             // Unit Kerja cascading dropdowns
             const unitKerjaSelect = document.getElementById('unit_kerja_id');
@@ -30,32 +18,16 @@
             const unitKerjaTerakhirInput = document.getElementById('unit_kerja_terakhir_id');
             const hierarchyDisplay = document.getElementById('unit_kerja_hierarchy_display');
 
-            console.log('Elements found:', {
-                unitKerjaSelect: !!unitKerjaSelect,
-                subUnitKerjaSelect: !!subUnitKerjaSelect,
-                subSubUnitKerjaSelect: !!subSubUnitKerjaSelect,
-                unitKerjaTerakhirInput: !!unitKerjaTerakhirInput,
-                hierarchyDisplay: !!hierarchyDisplay
-            });
+
 
             // Check if elements exist
-            if (!unitKerjaSelect) {
-                console.error('❌ Unit Kerja select element not found!');
-                return;
-            }
-            if (!subUnitKerjaSelect) {
-                console.error('❌ Sub Unit Kerja select element not found!');
-                return;
-            }
-            if (!subSubUnitKerjaSelect) {
-                console.error('❌ Sub Sub Unit Kerja select element not found!');
+            if (!unitKerjaSelect || !subUnitKerjaSelect || !subSubUnitKerjaSelect) {
                 return;
             }
 
             // Populate Sub Unit Kerja based on Unit Kerja selection
             window.populateSubUnitKerja = function() {
                 const selectedUnitKerjaId = unitKerjaSelect.value;
-                console.log('🔄 populateSubUnitKerja called with:', selectedUnitKerjaId);
 
                 // Clear sub unit kerja options
                 subUnitKerjaSelect.innerHTML = '<option value="">Pilih Sub Unit Kerja</option>';
@@ -66,19 +38,17 @@
                     subSubUnitKerjaSelect.disabled = true;
                     unitKerjaTerakhirInput.value = '';
                     hierarchyDisplay.classList.add('hidden');
-                    console.log('❌ No unit kerja selected, disabling dropdowns');
                     return;
                 }
 
                 // Enable sub unit kerja select
                 subUnitKerjaSelect.disabled = false;
-                console.log('✅ Sub Unit Kerja dropdown enabled');
 
                 // Get sub unit kerja data from the page
                 const subUnitKerjaData = window.subUnitKerjaOptions || {};
                 const availableSubUnits = subUnitKerjaData[selectedUnitKerjaId] || {};
 
-                console.log('📊 Available sub units for unit kerja', selectedUnitKerjaId, ':', availableSubUnits);
+
 
                 // Convert the object format to array format for easier handling
                 Object.keys(availableSubUnits).forEach(subUnitId => {
@@ -86,14 +56,12 @@
                     option.value = subUnitId;
                     option.textContent = availableSubUnits[subUnitId];
                     subUnitKerjaSelect.appendChild(option);
-                    console.log('➕ Added option:', subUnitId, '-', availableSubUnits[subUnitId]);
                 });
 
                 // Reset hierarchy display
                 unitKerjaTerakhirInput.value = '';
                 hierarchyDisplay.classList.add('hidden');
 
-                console.log('✅ Sub Unit Kerja populated with', Object.keys(availableSubUnits).length, 'options');
             };
 
             // Populate Sub-sub Unit Kerja based on Sub Unit Kerja selection

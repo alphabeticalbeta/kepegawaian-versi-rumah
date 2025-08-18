@@ -1,5 +1,5 @@
 @push('scripts')
-    <script src="{{ asset('js/admin-universitas/dosen-data.js') }}"></script>
+    @vite(['resources/js/admin-universitas/dosen-data.js'])
 @endpush
 
 {{-- Dosen Data Tab --}}

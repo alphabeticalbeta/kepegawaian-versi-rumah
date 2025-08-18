@@ -595,35 +595,26 @@
 {{-- Include Employment Data JavaScript --}}
 <script>
 // Employment Data Filtering JavaScript
-console.log('=== EMPLOYMENT DATA FILTER SCRIPT STARTING ===');
-
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('=== EMPLOYMENT DATA FILTER SCRIPT LOADED ===');
 
     function updateFilterStatus(elementId, message, isActive = true) {
         const statusEl = document.getElementById(elementId);
         if (statusEl) {
             statusEl.textContent = message;
             statusEl.className = isActive ? 'filter-status' : 'filter-status inactive';
-            console.log(`Updated filter status for ${elementId}: ${message}`);
-        } else {
-            console.log(`Filter status element not found: ${elementId}`);
         }
     }
 
     function filterJenisJabatan() {
-        console.log('=== FILTERING JENIS JABATAN ===');
         const jenisPegawaiSelect = document.getElementById('jenis_pegawai');
         const jenisJabatanSelect = document.getElementById('jenis_jabatan');
 
         if (!jenisPegawaiSelect || !jenisJabatanSelect) {
-            console.log('Jenis jabatan elements not found');
             updateFilterStatus('jenis-jabatan-filter-status', 'Elements Not Found', false);
             return;
         }
 
         const selectedJenisPegawai = jenisPegawaiSelect.value;
-        console.log('Filtering jenis jabatan for jenis pegawai:', selectedJenisPegawai);
 
         if (!selectedJenisPegawai) {
             updateFilterStatus('jenis-jabatan-filter-status', 'No Selection');
@@ -639,50 +630,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Keep placeholder visible
                 option.style.display = '';
                 option.disabled = false;
-                console.log(`Keeping placeholder option: ${option.textContent}`);
                 return;
             }
 
             const dataJenisPegawai = option.getAttribute('data-jenis-pegawai');
-            console.log(`Option ${index}: ${option.textContent} - data-jenis-pegawai: ${dataJenisPegawai}`);
 
             if (dataJenisPegawai === selectedJenisPegawai) {
                 option.style.display = '';
                 option.disabled = false;
                 visibleCount++;
-                console.log(`JENIS JABATAN SHOW: ${option.textContent}`);
             } else {
                 option.style.display = 'none';
                 option.disabled = true;
                 hiddenCount++;
-                console.log(`JENIS JABATAN HIDE: ${option.textContent}`);
             }
         });
 
-        console.log(`Jenis jabatan filter complete: ${visibleCount} visible, ${hiddenCount} hidden`);
         updateFilterStatus('jenis-jabatan-filter-status', `${visibleCount} Options Visible`);
 
         // Force browser to re-render the select
         jenisJabatanSelect.style.display = 'none';
         setTimeout(() => {
             jenisJabatanSelect.style.display = '';
-            console.log('Forced re-render of jenis jabatan select');
         }, 10);
     }
 
     function filterStatusKepegawaian() {
-        console.log('=== FILTERING STATUS KEPEGAWAIAN ===');
         const jenisPegawaiSelect = document.getElementById('jenis_pegawai');
         const statusKepegawaianSelect = document.getElementById('status_kepegawaian');
 
         if (!jenisPegawaiSelect || !statusKepegawaianSelect) {
-            console.log('Status kepegawaian elements not found');
             updateFilterStatus('status-kepegawaian-filter-status', 'Elements Not Found', false);
             return;
         }
 
         const selectedJenisPegawai = jenisPegawaiSelect.value;
-        console.log('Filtering status kepegawaian for jenis pegawai:', selectedJenisPegawai);
 
         if (!selectedJenisPegawai) {
             updateFilterStatus('status-kepegawaian-filter-status', 'No Selection');
@@ -707,41 +689,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 option.style.display = '';
                 option.disabled = false;
                 visibleCount++;
-                console.log(`STATUS KEPEGAWAIAN SHOW: ${option.textContent}`);
             } else {
                 option.style.display = 'none';
                 option.disabled = true;
                 hiddenCount++;
-                console.log(`STATUS KEPEGAWAIAN HIDE: ${option.textContent}`);
             }
         });
 
-        console.log(`Status kepegawaian filter complete: ${visibleCount} visible, ${hiddenCount} hidden`);
         updateFilterStatus('status-kepegawaian-filter-status', `${visibleCount} Options Visible`);
-
-        // Force browser to re-render the select
-        statusKepegawaianSelect.style.display = 'none';
-        setTimeout(() => {
-            statusKepegawaianSelect.style.display = '';
-        }, 10);
     }
 
     function filterJabatanTerakhir() {
-        console.log('=== FILTERING JABATAN TERAKHIR ===');
-        const jenisPegawaiSelect = document.getElementById('jenis_pegawai');
+        const jenisJabatanSelect = document.getElementById('jenis_jabatan');
         const jabatanTerakhirSelect = document.getElementById('jabatan_terakhir_id');
 
-        if (!jenisPegawaiSelect || !jabatanTerakhirSelect) {
-            console.log('Jabatan terakhir elements not found');
-            updateFilterStatus('jabatan-terakhir-filter-status', 'Elements Not Found', false);
+        if (!jenisJabatanSelect || !jabatanTerakhirSelect) {
             return;
         }
 
-        const selectedJenisPegawai = jenisPegawaiSelect.value;
-        console.log('Filtering jabatan terakhir for jenis pegawai:', selectedJenisPegawai);
+        const selectedJenisJabatan = jenisJabatanSelect.value;
 
-        if (!selectedJenisPegawai) {
-            updateFilterStatus('jabatan-terakhir-filter-status', 'No Selection');
+        if (!selectedJenisJabatan) {
+            // Show all options if no jenis jabatan selected
+            const options = jabatanTerakhirSelect.querySelectorAll('option');
+            options.forEach(option => {
+                option.style.display = '';
+                option.disabled = false;
+            });
             return;
         }
 
@@ -757,142 +731,129 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            const dataJenisPegawai = option.getAttribute('data-jenis-pegawai');
+            const dataJenisJabatan = option.getAttribute('data-jenis-jabatan');
 
-            if (dataJenisPegawai === selectedJenisPegawai) {
+            if (dataJenisJabatan === selectedJenisJabatan) {
                 option.style.display = '';
                 option.disabled = false;
                 visibleCount++;
-                console.log(`JABATAN TERAKHIR SHOW: ${option.textContent}`);
             } else {
                 option.style.display = 'none';
                 option.disabled = true;
                 hiddenCount++;
-                console.log(`JABATAN TERAKHIR HIDE: ${option.textContent}`);
             }
         });
-
-        console.log(`Jabatan terakhir filter complete: ${visibleCount} visible, ${hiddenCount} hidden`);
-        updateFilterStatus('jabatan-terakhir-filter-status', `${visibleCount} Options Visible`);
-
-        // Force browser to re-render the select
-        jabatanTerakhirSelect.style.display = 'none';
-        setTimeout(() => {
-            jabatanTerakhirSelect.style.display = '';
-        }, 10);
     }
 
     function filterPangkat() {
-        console.log('=== FILTERING PANGKAT ===');
         const statusKepegawaianSelect = document.getElementById('status_kepegawaian');
         const pangkatSelect = document.getElementById('pangkat_terakhir_id');
 
         if (!statusKepegawaianSelect || !pangkatSelect) {
-            console.log('Pangkat elements not found');
             return;
         }
 
         const selectedStatusKepegawaian = statusKepegawaianSelect.value;
-        console.log('Filtering pangkat for status kepegawaian:', selectedStatusKepegawaian);
 
         if (!selectedStatusKepegawaian) {
+            // Show all options if no status kepegawaian selected
+            const options = pangkatSelect.querySelectorAll('option');
+            options.forEach(option => {
+                option.style.display = '';
+                option.disabled = false;
+            });
             return;
         }
 
-        // Determine which pangkat status to show based on status kepegawaian
-        let targetPangkatStatus = '';
-        if (selectedStatusKepegawaian.includes('PNS')) {
-            targetPangkatStatus = 'PNS';
-        } else if (selectedStatusKepegawaian.includes('PPPK')) {
-            targetPangkatStatus = 'PPPK';
-        } else if (selectedStatusKepegawaian.includes('Non ASN')) {
-            targetPangkatStatus = 'Non-ASN';
+        // Map status kepegawaian to pangkat status
+        let targetPangkatStatus;
+        switch (selectedStatusKepegawaian) {
+            case 'Dosen PNS':
+            case 'Tenaga Kependidikan PNS':
+                targetPangkatStatus = 'PNS';
+                break;
+            case 'Dosen PPPK':
+            case 'Tenaga Kependidikan PPPK':
+                targetPangkatStatus = 'PPPK';
+                break;
+            case 'Dosen Non ASN':
+            case 'Tenaga Kependidikan Non ASN':
+                targetPangkatStatus = 'Non ASN';
+                break;
+            default:
+                targetPangkatStatus = null;
         }
 
-        console.log('Target pangkat status:', targetPangkatStatus);
-
-        // Get all optgroups and options
-        const optgroups = pangkatSelect.querySelectorAll('optgroup');
+        const options = pangkatSelect.querySelectorAll('option');
         let visibleCount = 0;
         let hiddenCount = 0;
 
-        optgroups.forEach((optgroup) => {
-            const optgroupLabel = optgroup.getAttribute('label');
-            const options = optgroup.querySelectorAll('option');
+        options.forEach((option, index) => {
+            if (option.value === '') {
+                // Keep placeholder visible
+                option.style.display = '';
+                option.disabled = false;
+                return;
+            }
 
-            if (optgroupLabel === targetPangkatStatus) {
-                // Show this optgroup
-                optgroup.style.display = '';
-                options.forEach((option) => {
-                    option.style.display = '';
-                    option.disabled = false;
-                    visibleCount++;
-                    console.log(`PANGKAT SHOW: ${option.textContent} (${optgroupLabel})`);
-                });
+            const optgroup = option.parentElement;
+            const optgroupLabel = optgroup.label || '';
+
+            if (targetPangkatStatus && optgroupLabel.includes(targetPangkatStatus)) {
+                option.style.display = '';
+                option.disabled = false;
+                visibleCount++;
             } else {
-                // Hide this optgroup
-                optgroup.style.display = 'none';
-                options.forEach((option) => {
-                    option.style.display = 'none';
-                    option.disabled = true;
-                    hiddenCount++;
-                    console.log(`PANGKAT HIDE: ${option.textContent} (${optgroupLabel})`);
-                });
+                option.style.display = 'none';
+                option.disabled = true;
+                hiddenCount++;
             }
         });
-
-        console.log(`Pangkat filter complete: ${visibleCount} visible, ${hiddenCount} hidden`);
     }
 
     function filterAllEmploymentData() {
-        console.log('=== FILTERING ALL EMPLOYMENT DATA ===');
         filterJenisJabatan();
         filterStatusKepegawaian();
         filterJabatanTerakhir();
         filterPangkat();
-        console.log('=== ALL EMPLOYMENT DATA FILTERED ===');
     }
 
     // Apply filters immediately
-    console.log('Applying filters immediately...');
     filterAllEmploymentData();
 
-    // Add event listener for jenis pegawai
+    // Add event listeners
     const jenisPegawaiSelect = document.getElementById('jenis_pegawai');
     if (jenisPegawaiSelect) {
-        console.log('Adding event listener to jenis pegawai select');
         jenisPegawaiSelect.addEventListener('change', function() {
-            console.log('Jenis pegawai changed to:', this.value);
-            filterAllEmploymentData();
-        });
-    } else {
-        console.log('Jenis pegawai select not found for event listener');
-    }
-
-    // Add event listener for status kepegawaian
-    const statusKepegawaianSelect = document.getElementById('status_kepegawaian');
-    if (statusKepegawaianSelect) {
-        console.log('Adding event listener to status kepegawaian select');
-        statusKepegawaianSelect.addEventListener('change', function() {
-            console.log('Status kepegawaian changed to:', this.value);
+            filterJenisJabatan();
+            filterStatusKepegawaian();
+            filterJabatanTerakhir();
             filterPangkat();
         });
-    } else {
-        console.log('Status kepegawaian select not found for event listener');
+    }
+
+    const jenisJabatanSelect = document.getElementById('jenis_jabatan');
+    if (jenisJabatanSelect) {
+        jenisJabatanSelect.addEventListener('change', function() {
+            filterJabatanTerakhir();
+        });
+    }
+
+    const statusKepegawaianSelect = document.getElementById('status_kepegawaian');
+    if (statusKepegawaianSelect) {
+        statusKepegawaianSelect.addEventListener('change', function() {
+            filterPangkat();
+        });
     }
 
     // Apply filters again after delays
-    console.log('Setting up delayed filter applications...');
     setTimeout(() => {
-        console.log('Applying filters after 100ms delay...');
         filterAllEmploymentData();
     }, 100);
     setTimeout(() => {
-        console.log('Applying filters after 500ms delay...');
         filterAllEmploymentData();
     }, 500);
     setTimeout(() => {
-        console.log('Applying filters after 1000ms delay...');
         filterAllEmploymentData();
     }, 1000);
 
@@ -903,18 +864,6 @@ document.addEventListener('DOMContentLoaded', function() {
     window.directFilterPangkat = filterPangkat;
     window.directFilterAllEmploymentData = filterAllEmploymentData;
 
-    // Manual trigger button removed - no longer needed
-
-    console.log('=== EMPLOYMENT DATA FILTER SCRIPT COMPLETED ===');
 });
 
-// Also try to run immediately if DOM is already loaded
-if (document.readyState === 'loading') {
-    console.log('DOM still loading, waiting for DOMContentLoaded...');
-} else {
-    console.log('DOM already loaded, running script immediately...');
-    // Trigger the script manually
-    const event = new Event('DOMContentLoaded');
-    document.dispatchEvent(event);
-}
 </script>

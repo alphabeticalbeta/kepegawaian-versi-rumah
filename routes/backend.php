@@ -11,6 +11,8 @@ Route::get('/login', [LoginController::class, 'showLoginForm'])->middleware('gue
 Route::post('/login', [LoginController::class, 'login'])->middleware('guest:pegawai');
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth:pegawai')->name('logout');
 
+
+
 // ======================================================================
 // PROTECTED ROUTES - SEMUA RUTE DI BAWAH INI HANYA BISA DIAKSES SETELAH LOGIN
 // ======================================================================
@@ -60,6 +62,8 @@ Route::middleware(['auth:pegawai'])->group(function () {
                 ->parameters(['data-pegawai' => 'pegawai']);
             Route::get('/data-pegawai/{pegawai}/dokumen/{field}', [App\Http\Controllers\Backend\AdminUnivUsulan\DataPegawaiController::class, 'showDocument'])
                 ->name('data-pegawai.show-document');
+
+
 
             // Unit Kerja (Hierarchical)
             Route::prefix('unitkerja')->name('unitkerja.')->group(function () {

@@ -457,8 +457,32 @@ class DataPegawaiController extends Controller
     /**
      * Display a document with access control and logging.
      */
-    public function showDocument(Pegawai $pegawai, $field)
+        public function showDocument(Pegawai $pegawai, $field)
     {
+        try {
+            // Debug info
+            \Log::info('showDocument called', [
+                'pegawai_id' => $pegawai->id,
+                'field' => $field,
+                'url' => request()->url()
+            ]);
+        } catch (\Exception $e) {
+            // Handle database connection error
+            \Log::error('Database connection error in showDocument', [
+                'error' => $e->getMessage(),
+                'field' => $field,
+                'url' => request()->url()
+            ]);
+
+            return response()->json([
+                'error' => 'Database connection error',
+                'message' => 'Tidak dapat terhubung ke database. Pastikan MySQL server berjalan.',
+                'details' => $e->getMessage(),
+                'field' => $field,
+                'suggestion' => 'Start MySQL server atau gunakan SQLite'
+            ], 503);
+        }
+
         // 1. Validasi field yang diizinkan
         $allowedFields = [
             'sk_pangkat_terakhir', 'sk_jabatan_terakhir',
@@ -468,19 +492,44 @@ class DataPegawaiController extends Controller
         ];
 
         if (!in_array($field, $allowedFields)) {
-            abort(404, 'Jenis dokumen tidak valid.');
+            \Log::warning('Invalid field requested', ['field' => $field]);
+            return response()->json([
+                'error' => 'Jenis dokumen tidak valid',
+                'field' => $field,
+                'allowed_fields' => $allowedFields
+            ], 404);
         }
 
         // 2. Cek apakah file ada
         $filePath = $pegawai->$field;
+
         if (!$filePath) {
-            abort(404, 'File tidak ditemukan');
+            \Log::warning('File path is empty', ['field' => $field, 'pegawai_id' => $pegawai->id]);
+            return response()->json([
+                'error' => 'File tidak ditemukan',
+                'message' => 'Pegawai tidak memiliki file ' . $field,
+                'pegawai_id' => $pegawai->id,
+                'field' => $field
+            ], 404);
         }
 
         // Determine correct disk based on field type
         $disk = $this->getFileDisk($field);
+
         if (!Storage::disk($disk)->exists($filePath)) {
-            abort(404, 'File tidak ditemukan');
+            \Log::warning('File not found in storage', [
+                'field' => $field,
+                'filePath' => $filePath,
+                'disk' => $disk
+            ]);
+            return response()->json([
+                'error' => 'File tidak ditemukan di storage',
+                'message' => 'File ada di database tapi tidak ditemukan di storage',
+                'file_path' => $filePath,
+                'disk' => $disk,
+                'pegawai_id' => $pegawai->id,
+                'field' => $field
+            ], 404);
         }
 
         // 3. **ACCESS CONTROL** - Cek permission berdasarkan role

@@ -16,13 +16,20 @@ class PegawaiSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->command->info('👤 Seeding data Pegawai...');
+
         // 1. Ambil data master yang relevan terlebih dahulu
-        $pangkat = Pangkat::first();
-        $jabatan = Jabatan::first();
+        $pangkatPNS = Pangkat::where('status_pangkat', 'PNS')->first();
+        $pangkatPPPK = Pangkat::where('status_pangkat', 'PPPK')->first();
+        $pangkatNonASN = Pangkat::where('status_pangkat', 'Non-ASN')->first();
+
+        $jabatanDosen = Jabatan::where('jenis_pegawai', 'Dosen')->first();
+        $jabatanTenagaKependidikan = Jabatan::where('jenis_pegawai', 'Tenaga Kependidikan')->first();
+
         $subSubUnitKerja = SubSubUnitKerja::first();
 
         // 2. Lakukan pengecekan untuk memastikan data master ada
-        if (!$pangkat || !$jabatan || !$subSubUnitKerja) {
+        if (!$pangkatPNS || !$jabatanDosen || !$subSubUnitKerja) {
             $this->command->error('❌ Seeder Pangkat/Jabatan/SubSubUnitKerja belum dijalankan atau tabel kosong.');
             $this->command->error('❌ PegawaiSeeder dibatalkan.');
             return;
@@ -39,6 +46,8 @@ class PegawaiSeeder extends Seeder
                 'jenis_pegawai' => 'Dosen',
                 'status_kepegawaian' => 'Dosen PNS',
                 'is_admin' => true,
+                'pangkat' => $pangkatPNS,
+                'jabatan' => $jabatanDosen,
                 'roles' => ['Admin Fakultas', 'Admin Universitas Usulan']
             ],
             [
@@ -48,6 +57,8 @@ class PegawaiSeeder extends Seeder
                 'jenis_pegawai' => 'Dosen',
                 'status_kepegawaian' => 'Dosen PNS',
                 'is_admin' => false,
+                'pangkat' => $pangkatPNS,
+                'jabatan' => $jabatanDosen,
                 'roles' => ['Pegawai Unmul']
             ],
             [
@@ -57,6 +68,8 @@ class PegawaiSeeder extends Seeder
                 'jenis_pegawai' => 'Tenaga Kependidikan',
                 'status_kepegawaian' => 'Tenaga Kependidikan PNS',
                 'is_admin' => false,
+                'pangkat' => $pangkatPNS,
+                'jabatan' => $jabatanTenagaKependidikan,
                 'roles' => ['Pegawai Unmul']
             ],
             [
@@ -66,6 +79,8 @@ class PegawaiSeeder extends Seeder
                 'jenis_pegawai' => 'Dosen',
                 'status_kepegawaian' => 'Dosen PNS',
                 'is_admin' => false,
+                'pangkat' => $pangkatPNS,
+                'jabatan' => $jabatanDosen,
                 'roles' => ['Pegawai Unmul']
             ],
             [
@@ -75,6 +90,8 @@ class PegawaiSeeder extends Seeder
                 'jenis_pegawai' => 'Tenaga Kependidikan',
                 'status_kepegawaian' => 'Tenaga Kependidikan PNS',
                 'is_admin' => false,
+                'pangkat' => $pangkatPNS,
+                'jabatan' => $jabatanTenagaKependidikan,
                 'roles' => ['Pegawai Unmul']
             ],
             [
@@ -84,6 +101,8 @@ class PegawaiSeeder extends Seeder
                 'jenis_pegawai' => 'Dosen',
                 'status_kepegawaian' => 'Dosen PPPK',
                 'is_admin' => false,
+                'pangkat' => $pangkatPPPK,
+                'jabatan' => $jabatanDosen,
                 'roles' => ['Pegawai Unmul']
             ],
             [
@@ -93,6 +112,8 @@ class PegawaiSeeder extends Seeder
                 'jenis_pegawai' => 'Tenaga Kependidikan',
                 'status_kepegawaian' => 'Tenaga Kependidikan PPPK',
                 'is_admin' => false,
+                'pangkat' => $pangkatPPPK,
+                'jabatan' => $jabatanTenagaKependidikan,
                 'roles' => ['Pegawai Unmul']
             ],
             [
@@ -102,6 +123,8 @@ class PegawaiSeeder extends Seeder
                 'jenis_pegawai' => 'Dosen',
                 'status_kepegawaian' => 'Dosen Non ASN',
                 'is_admin' => false,
+                'pangkat' => $pangkatNonASN,
+                'jabatan' => $jabatanDosen,
                 'roles' => ['Pegawai Unmul']
             ],
             [
@@ -111,6 +134,8 @@ class PegawaiSeeder extends Seeder
                 'jenis_pegawai' => 'Tenaga Kependidikan',
                 'status_kepegawaian' => 'Tenaga Kependidikan Non ASN',
                 'is_admin' => false,
+                'pangkat' => $pangkatNonASN,
+                'jabatan' => $jabatanTenagaKependidikan,
                 'roles' => ['Pegawai Unmul']
             ],
             [
@@ -120,15 +145,81 @@ class PegawaiSeeder extends Seeder
                 'jenis_pegawai' => 'Dosen',
                 'status_kepegawaian' => 'Dosen PNS',
                 'is_admin' => false,
+                'pangkat' => $pangkatPNS,
+                'jabatan' => $jabatanDosen,
                 'roles' => ['Pegawai Unmul']
+            ],
+            // ===================================
+            // PENILAI UNIVERSITAS
+            // ===================================
+            [
+                'nip' => '198505152010011001',
+                'nama_lengkap' => 'Prof. Dr. Bambang Setiawan',
+                'email' => 'bambang.setiawan@unmul.ac.id',
+                'jenis_pegawai' => 'Dosen',
+                'status_kepegawaian' => 'Dosen PNS',
+                'is_admin' => false,
+                'pangkat' => $pangkatPNS,
+                'jabatan' => $jabatanDosen,
+                'roles' => ['Penilai Universitas']
+            ],
+            [
+                'nip' => '198606162011022002',
+                'nama_lengkap' => 'Prof. Dr. Sri Wahyuni',
+                'email' => 'sri.wahyuni@unmul.ac.id',
+                'jenis_pegawai' => 'Dosen',
+                'status_kepegawaian' => 'Dosen PNS',
+                'is_admin' => false,
+                'pangkat' => $pangkatPNS,
+                'jabatan' => $jabatanDosen,
+                'roles' => ['Penilai Universitas']
+            ],
+            // ===================================
+            // TIM SENAT
+            // ===================================
+            [
+                'nip' => '197707172008011003',
+                'nama_lengkap' => 'Prof. Dr. Agus Setiawan',
+                'email' => 'agus.setiawan@unmul.ac.id',
+                'jenis_pegawai' => 'Dosen',
+                'status_kepegawaian' => 'Dosen PNS',
+                'is_admin' => false,
+                'pangkat' => $pangkatPNS,
+                'jabatan' => $jabatanDosen,
+                'roles' => ['Tim Senat']
+            ],
+            [
+                'nip' => '197808182009022004',
+                'nama_lengkap' => 'Prof. Dr. Endang Sulistyowati',
+                'email' => 'endang.sulistyowati@unmul.ac.id',
+                'jenis_pegawai' => 'Dosen',
+                'status_kepegawaian' => 'Dosen PNS',
+                'is_admin' => false,
+                'pangkat' => $pangkatPNS,
+                'jabatan' => $jabatanDosen,
+                'roles' => ['Tim Senat']
+            ],
+            // ===================================
+            // ADMIN KEUANGAN
+            // ===================================
+            [
+                'nip' => '198909192012033005',
+                'nama_lengkap' => 'Sri Mulyani',
+                'email' => 'sri.mulyani@unmul.ac.id',
+                'jenis_pegawai' => 'Tenaga Kependidikan',
+                'status_kepegawaian' => 'Tenaga Kependidikan PNS',
+                'is_admin' => false,
+                'pangkat' => $pangkatPNS,
+                'jabatan' => $jabatanTenagaKependidikan,
+                'roles' => ['Admin Keuangan']
             ],
         ];
 
         foreach ($pegawais as $pegawaiData) {
             // Data dasar yang sama untuk semua pegawai
             $baseData = [
-                'pangkat_terakhir_id' => $pangkat->id,
-                'jabatan_terakhir_id' => $jabatan->id,
+                'pangkat_terakhir_id' => $pegawaiData['pangkat']->id,
+                'jabatan_terakhir_id' => $pegawaiData['jabatan']->id,
                 'unit_kerja_terakhir_id' => $subSubUnitKerja->id,
                 'gelar_depan' => null,
                 'gelar_belakang' => 'S.Kom., M.Kom.',
@@ -230,6 +321,16 @@ class PegawaiSeeder extends Seeder
         $this->command->info("👥 Breakdown Status Kepegawaian:");
         foreach ($statusStats as $stat) {
             $this->command->info("   • {$stat->status_kepegawaian}: {$stat->total}");
+        }
+
+        // Tampilkan breakdown berdasarkan roles
+        $roleStats = \Spatie\Permission\Models\Role::where('guard_name', 'pegawai')
+                                                   ->withCount('users')
+                                                   ->get();
+
+        $this->command->info("🎭 Breakdown Roles:");
+        foreach ($roleStats as $role) {
+            $this->command->info("   • {$role->name}: {$role->users_count}");
         }
 
         $this->command->info("🔑 Login Credentials:");
