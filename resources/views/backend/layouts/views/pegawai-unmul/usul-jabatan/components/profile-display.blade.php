@@ -64,6 +64,12 @@
                         // Cek apakah ada catatan perbaikan untuk field ini
                         $fieldValidation = $catatanPerbaikan['data_pribadi'][$key] ?? null;
                         $isFieldInvalid = $fieldValidation && $fieldValidation['status'] === 'tidak_sesuai';
+
+                        // Get all validation notes for this field if in edit mode
+                        $allValidationNotes = [];
+                        if (isset($isEditMode) && $isEditMode && isset($validationData) && !empty($validationData)) {
+                            $allValidationNotes = getAllValidationNotes('data_pribadi', $key, $validationData);
+                        }
                     @endphp
 
                     <div class="flex items-start gap-3 p-3 rounded-lg {{ $isFieldInvalid ? 'bg-red-50 border border-red-200' : 'bg-slate-50' }} hover:{{ $isFieldInvalid ? 'bg-red-100' : 'bg-slate-100' }} transition-colors">
@@ -82,8 +88,22 @@
                             </dt>
                             <dd class="text-sm {{ $isFieldInvalid ? 'text-red-900' : 'text-slate-900' }} mt-1 break-words">{{ $value ?? '-' }}</dd>
 
-                            {{-- Tampilkan catatan spesifik dari admin jika tidak valid --}}
-                            @if($isFieldInvalid)
+                            {{-- Tampilkan catatan dari semua role jika ada --}}
+                            @if(!empty($allValidationNotes))
+                                <div class="mt-2 space-y-2">
+                                    @foreach($allValidationNotes as $note)
+                                        <div class="text-xs bg-red-100 p-2 rounded border-l-2 border-red-400">
+                                            <div class="flex items-start gap-1">
+                                                <i data-lucide="message-square" class="w-3 h-3 mt-0.5 text-red-600"></i>
+                                                <div>
+                                                    <strong>{{ $note['role'] }}:</strong><br>
+                                                    {{ $note['note'] }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @elseif($isFieldInvalid)
                                 <div class="mt-2 text-xs text-red-700 bg-red-100 p-2 rounded border-l-2 border-red-400">
                                     <div class="flex items-start gap-1">
                                         <i data-lucide="message-square" class="w-3 h-3 mt-0.5 text-red-600"></i>
@@ -128,6 +148,12 @@
                         // Cek apakah ada catatan perbaikan untuk field ini
                         $fieldValidation = $catatanPerbaikan['data_kepegawaian'][$key] ?? null;
                         $isFieldInvalid = $fieldValidation && $fieldValidation['status'] === 'tidak_sesuai';
+
+                        // Get all validation notes for this field if in edit mode
+                        $allValidationNotes = [];
+                        if (isset($isEditMode) && $isEditMode && isset($validationData) && !empty($validationData)) {
+                            $allValidationNotes = getAllValidationNotes('data_kepegawaian', $key, $validationData);
+                        }
                     @endphp
 
                     <div class="flex items-start gap-3 p-3 rounded-lg {{ $isFieldInvalid ? 'bg-red-50 border border-red-200' : 'bg-slate-50' }} hover:{{ $isFieldInvalid ? 'bg-red-100' : 'bg-slate-100' }} transition-colors">
@@ -146,8 +172,22 @@
                             </dt>
                             <dd class="text-sm {{ $isFieldInvalid ? 'text-red-900' : 'text-slate-900' }} mt-1 break-words">{{ $value ?? '-' }}</dd>
 
-                            {{-- Tampilkan catatan spesifik dari admin jika tidak valid --}}
-                            @if($isFieldInvalid)
+                            {{-- Tampilkan catatan dari semua role jika ada --}}
+                            @if(!empty($allValidationNotes))
+                                <div class="mt-2 space-y-2">
+                                    @foreach($allValidationNotes as $note)
+                                        <div class="text-xs bg-red-100 p-2 rounded border-l-2 border-red-400">
+                                            <div class="flex items-start gap-1">
+                                                <i data-lucide="message-square" class="w-3 h-3 mt-0.5 text-red-600"></i>
+                                                <div>
+                                                    <strong>{{ $note['role'] }}:</strong><br>
+                                                    {{ $note['note'] }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @elseif($isFieldInvalid)
                                 <div class="mt-2 text-xs text-red-700 bg-red-100 p-2 rounded border-l-2 border-red-400">
                                     <div class="flex items-start gap-1">
                                         <i data-lucide="message-square" class="w-3 h-3 mt-0.5 text-red-600"></i>
@@ -179,6 +219,8 @@
                 @php
                     $dataPendidikan = [
                         'pendidikan_terakhir'    => ['Pendidikan Terakhir',    $pegawai->pendidikan_terakhir, 'book-open'],
+                        'nama_universitas_sekolah' => ['Nama Universitas/Sekolah', $pegawai->nama_universitas_sekolah, 'building'],
+                        'nama_prodi_jurusan'     => ['Nama Program Studi/Jurusan', $pegawai->nama_prodi_jurusan, 'graduation-cap'],
                         'mata_kuliah_diampu'     => ['Mata Kuliah Diampu',     $pegawai->mata_kuliah_diampu, 'book'],
                         'ranting_ilmu_kepakaran' => ['Bidang Kepakaran',       $pegawai->ranting_ilmu_kepakaran, 'brain'],
                         'url_profil_sinta'       => ['Profil SINTA',           $pegawai->url_profil_sinta, 'external-link'],
@@ -190,6 +232,12 @@
                         // Cek apakah ada catatan perbaikan untuk field ini
                         $fieldValidation = $catatanPerbaikan['data_pendidikan'][$key] ?? null;
                         $isFieldInvalid = $fieldValidation && $fieldValidation['status'] === 'tidak_sesuai';
+
+                        // Get all validation notes for this field if in edit mode
+                        $allValidationNotes = [];
+                        if (isset($isEditMode) && $isEditMode && isset($validationData) && !empty($validationData)) {
+                            $allValidationNotes = getAllValidationNotes('data_pendidikan', $key, $validationData);
+                        }
                     @endphp
 
                     <div class="flex items-start gap-3 p-3 rounded-lg {{ $isFieldInvalid ? 'bg-red-50 border border-red-200' : 'bg-slate-50' }} hover:{{ $isFieldInvalid ? 'bg-red-100' : 'bg-slate-100' }} transition-colors">
@@ -258,6 +306,12 @@
                         // Cek apakah ada catatan perbaikan untuk field ini
                         $fieldValidation = $catatanPerbaikan['data_kinerja'][$key] ?? null;
                         $isFieldInvalid = $fieldValidation && $fieldValidation['status'] === 'tidak_sesuai';
+
+                        // Get all validation notes for this field if in edit mode
+                        $allValidationNotes = [];
+                        if (isset($isEditMode) && $isEditMode && isset($validationData) && !empty($validationData)) {
+                            $allValidationNotes = getAllValidationNotes('data_kinerja', $key, $validationData);
+                        }
                     @endphp
 
                     <div class="flex items-start gap-3 p-3 rounded-lg {{ $isFieldInvalid ? 'bg-red-50 border border-red-200' : 'bg-slate-50' }} hover:{{ $isFieldInvalid ? 'bg-red-100' : 'bg-slate-100' }} transition-colors">
@@ -284,8 +338,22 @@
                                 @endif
                             </dd>
 
-                            {{-- Tampilkan catatan spesifik dari admin jika tidak valid --}}
-                            @if($isFieldInvalid)
+                            {{-- Tampilkan catatan dari semua role jika ada --}}
+                            @if(!empty($allValidationNotes))
+                                <div class="mt-2 space-y-2">
+                                    @foreach($allValidationNotes as $note)
+                                        <div class="text-xs bg-red-100 p-2 rounded border-l-2 border-red-400">
+                                            <div class="flex items-start gap-1">
+                                                <i data-lucide="message-square" class="w-3 h-3 mt-0.5 text-red-600"></i>
+                                                <div>
+                                                    <strong>{{ $note['role'] }}:</strong><br>
+                                                    {{ $note['note'] }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @elseif($isFieldInvalid)
                                 <div class="mt-2 text-xs text-red-700 bg-red-100 p-2 rounded border-l-2 border-red-400">
                                     <div class="flex items-start gap-1">
                                         <i data-lucide="message-square" class="w-3 h-3 mt-0.5 text-red-600"></i>

@@ -64,6 +64,7 @@ class Usulan extends Model
         'jabatan_lama_id',
         'jabatan_tujuan_id',
         'status_usulan',
+        'status_kepegawaian',
         'data_usulan',
         'validasi_data',
         'catatan_verifikator',
@@ -226,6 +227,8 @@ class Usulan extends Model
         return $this->created_at ? $this->created_at->diffInDays(now()) : 0;
     }
 
+
+
     // =====================================
     // DATA USULAN ACCESSORS
     // =====================================
@@ -281,20 +284,20 @@ class Usulan extends Model
                         $sem = strtolower($m[1]); // ganjil|genap
                         $y1 = $m[2];
                         $y2 = $m[3];
-                        
+
                         // Try legacy key format
                         $legacyKey = 'bkd_' . $sem . '_' . $y1 . '_' . $y2;
-                        
+
                         // Check new structure with legacy key
                         if (!empty($this->data_usulan['dokumen_usulan'][$legacyKey]['path'])) {
                             return $this->data_usulan['dokumen_usulan'][$legacyKey]['path'];
                         }
-                        
+
                         // Check old structure with legacy key
                         if (!empty($this->data_usulan[$legacyKey])) {
                             return $this->data_usulan[$legacyKey];
                         }
-                        
+
                         // Scan all BKD keys in dokumen_usulan
                         if (!empty($this->data_usulan['dokumen_usulan'])) {
                             foreach ($this->data_usulan['dokumen_usulan'] as $k => $info) {
@@ -305,7 +308,7 @@ class Usulan extends Model
                                 }
                             }
                         }
-                        
+
                         // Scan all BKD keys in flat structure
                         if (!empty($this->data_usulan)) {
                             foreach ($this->data_usulan as $k => $info) {
@@ -603,7 +606,16 @@ class Usulan extends Model
      */
     public function getValidasiByRole(string $role): array
     {
-        return $this->validasi_data[$role] ?? [];
+        $roleData = $this->validasi_data[$role] ?? [];
+
+        // If the role data exists but doesn't have 'validation' key, return empty array
+        // This handles both old and new data structures
+        if (isset($roleData['validation'])) {
+            return $roleData;
+        }
+
+        // For backward compatibility, if data exists but no 'validation' key, return as is
+        return $roleData;
     }
 
     /**
@@ -613,10 +625,27 @@ class Usulan extends Model
     {
         $currentValidasi = $this->validasi_data ?? [];
 
-        $currentValidasi[$role] = array_merge($validasiData, [
+        // Preserve existing validation data and merge with new data
+        $existingValidation = $currentValidasi[$role] ?? [];
+        $existingValidationData = $existingValidation['validation'] ?? [];
+
+        // Deep merge validation data
+        foreach ($validasiData as $category => $fields) {
+            if (!isset($existingValidationData[$category])) {
+                $existingValidationData[$category] = [];
+            }
+
+            foreach ($fields as $field => $fieldData) {
+                $existingValidationData[$category][$field] = $fieldData;
+            }
+        }
+
+        // Update validation structure
+        $currentValidasi[$role] = [
+            'validation' => $existingValidationData,
             'validated_by' => $validatedBy,
             'validated_at' => now()->toISOString()
-        ]);
+        ];
 
         $this->validasi_data = $currentValidasi;
     }
@@ -781,7 +810,7 @@ class Usulan extends Model
         if ($usulan && $usulan->periodeUsulan) {
             // Generate BKD fields based on periode
             $bkdFields = $usulan->generateBkdFieldNames();
-            
+
             // Update dokumen_bkd with dynamic fields
             $fields['dokumen_bkd'] = $bkdFields;
         }
@@ -969,7 +998,7 @@ public function getSenateDecisionCounts(): array
     {
         // OPTIMASI: Gunakan Eloquent relationship instead of raw DB query
         $total = $this->penilais()->count();
-        
+
         if ($total === 0) {
             return false;
         }

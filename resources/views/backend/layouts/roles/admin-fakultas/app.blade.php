@@ -16,6 +16,7 @@
     @vite(['resources/css/app.css', 'resources/js/admin-fakultas/index.js'])
 
     {{-- External Libraries --}}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 

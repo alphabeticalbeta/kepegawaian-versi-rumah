@@ -5,6 +5,7 @@
     // Set default values for variables that might not be defined
     $isEditMode = $isEditMode ?? false;
     $isReadOnly = $isReadOnly ?? false;
+    $isShowMode = $isShowMode ?? false;
     $existingUsulan = $existingUsulan ?? null;
     $daftarPeriode = $daftarPeriode ?? null;
     $pegawai = $pegawai ?? null;
@@ -16,9 +17,63 @@
     $bkdSemesters = $bkdSemesters ?? [];
     $documentFields = $documentFields ?? [];
     $catatanPerbaikan = $catatanPerbaikan ?? [];
+
+    // Get validation data from all roles for edit mode
+    $validationData = [];
+    if ($isEditMode && $usulan) {
+        $roles = ['admin_fakultas', 'admin_universitas', 'tim_penilai'];
+
+        foreach ($roles as $role) {
+            $roleData = $usulan->getValidasiByRole($role);
+            if (!empty($roleData['validation'])) {
+                $validationData[$role] = $roleData['validation'];
+            }
+        }
+    }
+
+    // Function to check if field has validation issues
+    function hasValidationIssue($fieldGroup, $fieldName, $validationData) {
+        foreach ($validationData as $role => $data) {
+            if (isset($data[$fieldGroup][$fieldName]['status']) &&
+                $data[$fieldGroup][$fieldName]['status'] === 'tidak_sesuai') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Function to get validation notes for a field
+    function getValidationNotes($fieldGroup, $fieldName, $validationData) {
+        $notes = [];
+        foreach ($validationData as $role => $data) {
+            if (isset($data[$fieldGroup][$fieldName]['keterangan']) &&
+                !empty($data[$fieldGroup][$fieldName]['keterangan'])) {
+                $roleName = str_replace('_', ' ', ucfirst($role));
+                $notes[] = "<strong>{$roleName}:</strong> " . $data[$fieldGroup][$fieldName]['keterangan'];
+            }
+        }
+        return $notes;
+    }
+
+    // Function to get all validation notes for a field (for display)
+    function getAllValidationNotes($fieldGroup, $fieldName, $validationData) {
+        $notes = [];
+        foreach ($validationData as $role => $data) {
+            if (isset($data[$fieldGroup][$fieldName]['keterangan']) &&
+                !empty($data[$fieldGroup][$fieldName]['keterangan'])) {
+                $roleName = str_replace('_', ' ', ucfirst($role));
+                $notes[] = [
+                    'role' => $roleName,
+                    'note' => $data[$fieldGroup][$fieldName]['keterangan'],
+                    'status' => $data[$fieldGroup][$fieldName]['status'] ?? 'tidak_sesuai'
+                ];
+            }
+        }
+        return $notes;
+    }
 @endphp
 
-@section('title', $isEditMode ? 'Edit Usulan Jabatan' : 'Buat Usulan Jabatan')
+@section('title', $isShowMode ? 'Detail Usulan Jabatan' : ($isEditMode ? 'Edit Usulan Jabatan' : 'Buat Usulan Jabatan'))
 
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
@@ -28,18 +83,26 @@
             <div class="py-6 flex flex-wrap gap-4 justify-between items-center">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900">
-                        {{ $isEditMode ? 'Edit Usulan Jabatan' : 'Buat Usulan Jabatan' }}
+                        {{ $isShowMode ? 'Detail Usulan Jabatan' : ($isEditMode ? 'Edit Usulan Jabatan' : 'Buat Usulan Jabatan') }}
                     </h1>
                     <p class="mt-1 text-sm text-gray-500">
-                        {{ $isEditMode ? 'Perbarui usulan jabatan fungsional dosen' : 'Formulir pengajuan jabatan fungsional dosen' }}
+                        {{ $isShowMode ? 'Detail lengkap usulan jabatan fungsional dosen' : ($isEditMode ? 'Perbarui usulan jabatan fungsional dosen' : 'Formulir pengajuan jabatan fungsional dosen') }}
                     </p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <a href="{{ route('pegawai-unmul.usulan-jabatan.index') }}"
-                       class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        <i data-lucide="arrow-left" class="w-4 h-4 inline mr-2"></i>
-                        Kembali
-                    </a>
+                    @if($isShowMode)
+                        <a href="{{ route('pegawai-unmul.usulan-pegawai.dashboard') }}"
+                           class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i data-lucide="arrow-left" class="w-4 h-4 inline mr-2"></i>
+                            Kembali ke Usulan Saya
+                        </a>
+                    @else
+                        <a href="{{ route('pegawai-unmul.usulan-jabatan.index') }}"
+                           class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i data-lucide="arrow-left" class="w-4 h-4 inline mr-2"></i>
+                            Kembali
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>
@@ -47,6 +110,26 @@
 
     {{-- Main Content --}}
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {{-- Notification for revision status in edit mode --}}
+        @if($isEditMode && $usulan && $usulan->status_usulan === 'Perlu Perbaikan' && $usulan->catatan_verifikator)
+        <div class="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-amber-800">
+                        Usulan Dikembalikan untuk Perbaikan
+                    </h3>
+                    <div class="mt-2 text-sm text-amber-700">
+                        <p class="mb-2"><strong>Catatan dari Admin Fakultas:</strong></p>
+                        <p class="bg-white p-3 rounded border border-amber-200">{{ $usulan->catatan_verifikator }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         @php
             // Cek kelengkapan data profil
             $requiredFields = [
@@ -66,14 +149,14 @@
             $isProfileComplete = empty($missingFields);
             $canProceed = $isProfileComplete;
 
-            // Jika mode edit, pastikan form tetap ditampilkan
-            if ($isEditMode) {
+            // Jika mode edit atau show, pastikan form tetap ditampilkan
+            if ($isEditMode || $isShowMode) {
                 $canProceed = true;
             }
         @endphp
 
         {{-- Profile Completeness Check --}}
-        @if(!$isProfileComplete)
+        @if(!$isProfileComplete && !$isShowMode)
             <div class="bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-lg mb-6">
                 <div class="flex items-start gap-3">
                     <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600 mt-0.5"></i>
@@ -89,7 +172,7 @@
                             </ul>
                         </div>
                         <div class="mt-4">
-                            <a href="{{ route('pegawai-unmul.profile.edit') }}"
+                            <a href="{{ route('pegawai-unmul.usulan-pegawai.dashboard') }}"
                                class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
                                 <i data-lucide="edit" class="w-4 h-4 mr-2"></i>
                                 Lengkapi Profil
@@ -98,7 +181,7 @@
                     </div>
                 </div>
             </div>
-        @else
+        @elseif(!$isShowMode)
             {{-- Success Notification --}}
             <div class="bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-lg mb-6">
                 <div class="flex items-start gap-3">
@@ -112,7 +195,7 @@
         @endif
 
         {{-- Period Availability Check --}}
-        @if(!isset($daftarPeriode) || empty($daftarPeriode))
+        @if((!isset($daftarPeriode) || empty($daftarPeriode)) && !$isShowMode)
             <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 px-6 py-4 rounded-lg mb-6">
                 <div class="flex items-start gap-3">
                     <i data-lucide="clock" class="w-6 h-6 text-yellow-600 mt-0.5"></i>
@@ -126,7 +209,7 @@
         @endif
 
         {{-- Existing Usulan Check --}}
-        @if(isset($existingUsulan) && $existingUsulan && !$isEditMode)
+        @if(isset($existingUsulan) && $existingUsulan && !$isEditMode && !$isShowMode)
             <div class="bg-blue-50 border border-blue-200 text-blue-800 px-6 py-4 rounded-lg mb-6">
                 <div class="flex items-start gap-3">
                     <i data-lucide="info" class="w-6 h-6 text-blue-600 mt-0.5"></i>
@@ -152,7 +235,7 @@
                 <form id="usulan-form" action="{{ route('pegawai-unmul.usulan-jabatan.update', $usulan->id) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
-            @else
+            @elseif(!$isShowMode)
                 <form id="usulan-form" action="{{ route('pegawai-unmul.usulan-jabatan.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
             @endif
@@ -235,6 +318,7 @@
             @include('backend.layouts.views.pegawai-unmul.usul-jabatan.components.bkd-upload')
 
             {{-- Form Actions --}}
+            @if(!$isShowMode)
             <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
                 <div class="flex items-center justify-between">
                     <div class="text-sm text-gray-600">
@@ -254,11 +338,12 @@
                         <button type="submit" name="action" value="submit"
                                 class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
                             <i data-lucide="send" class="w-4 h-4"></i>
-                            {{ $isEditMode ? 'Update Usulan' : 'Kirim Usulan' }}
+                            Kirim Usulan
                         </button>
                     </div>
                 </div>
             </div>
+            @endif
 
             </form>
         @else

@@ -111,7 +111,7 @@ class AdminFakultasController extends Controller
 
             // OPTIMASI: Gunakan eager loading yang optimal
             $usulan->load([
-                'pegawai:id,nama_lengkap,email,nip,gelar_depan,gelar_belakang,pangkat_terakhir_id,jabatan_terakhir_id,unit_kerja_terakhir_id,jenis_pegawai,status_kepegawaian,nuptk,tempat_lahir,tanggal_lahir,jenis_kelamin,nomor_handphone,nomor_kartu_pegawai,tmt_pangkat,tmt_jabatan,tmt_cpns,tmt_pns,pendidikan_terakhir,mata_kuliah_diampu,ranting_ilmu_kepakaran,url_profil_sinta,predikat_kinerja_tahun_pertama,predikat_kinerja_tahun_kedua,nilai_konversi,ijazah_terakhir,transkrip_nilai_terakhir,sk_pangkat_terakhir,sk_jabatan_terakhir,skp_tahun_pertama,skp_tahun_kedua,pak_konversi,sk_cpns,sk_pns,sk_penyetaraan_ijazah,disertasi_thesis_terakhir',
+                'pegawai:id,nama_lengkap,email,nip,gelar_depan,gelar_belakang,pangkat_terakhir_id,jabatan_terakhir_id,unit_kerja_terakhir_id,jenis_pegawai,status_kepegawaian,nuptk,tempat_lahir,tanggal_lahir,jenis_kelamin,nomor_handphone,nomor_kartu_pegawai,tmt_pangkat,tmt_jabatan,tmt_cpns,tmt_pns,pendidikan_terakhir,nama_universitas_sekolah,nama_prodi_jurusan,mata_kuliah_diampu,ranting_ilmu_kepakaran,url_profil_sinta,predikat_kinerja_tahun_pertama,predikat_kinerja_tahun_kedua,nilai_konversi,ijazah_terakhir,transkrip_nilai_terakhir,sk_pangkat_terakhir,sk_jabatan_terakhir,skp_tahun_pertama,skp_tahun_kedua,pak_konversi,sk_cpns,sk_pns,sk_penyetaraan_ijazah,disertasi_thesis_terakhir',
                 'pegawai.pangkat:id,pangkat',
                 'pegawai.jabatan:id,jabatan',
                 'pegawai.unitKerja:id,nama,sub_unit_kerja_id',
@@ -151,10 +151,13 @@ class AdminFakultasController extends Controller
                 return $usulan->getBkdDisplayLabels();
             });
 
-            // OPTIMASI: Cache existing validation data
-            $existingValidation = Cache::remember("existing_validation_{$usulan->id}_admin_fakultas", 300, function () use ($usulan) {
-                return $usulan->getValidasiByRole('admin_fakultas');
-            });
+            // Get validation data directly from database (no cache for now)
+            $existingValidation = $usulan->getValidasiByRole('admin_fakultas');
+            \Log::info('Loading validation data directly', [
+                'usulan_id' => $usulan->id,
+                'validation_keys' => array_keys($existingValidation),
+                'has_validation_key' => isset($existingValidation['validation'])
+            ]);
 
             // OPTIMASI: Cache dokumen data
             $dokumenData = Cache::remember("dokumen_data_{$usulan->id}", 300, function () use ($usulan) {
@@ -193,6 +196,72 @@ class AdminFakultasController extends Controller
      * Menyimpan hasil validasi admin fakultas.
      */
     public function saveValidation(Request $request, Usulan $usulan)
+    {
+        // Dispatcher: prioritise explicit action_type (complex flows)
+        if ($request->filled('action_type')) {
+            return $this->saveComplexValidation($request, $usulan);
+        }
+
+        // Fallback to simple validation (legacy submit with 'action')
+        if ($request->has('validation')) {
+            return $this->saveSimpleValidation($request, $usulan);
+        }
+
+        return redirect()->back()->with('error', 'Permintaan tidak dikenali.');
+    }
+
+    /**
+     * Save simple validation form
+     */
+    private function saveSimpleValidation(Request $request, Usulan $usulan)
+    {
+        $validatedData = $request->validate([
+            'validation' => 'required|array',
+            'action' => 'required|in:save_draft,submit'
+        ]);
+
+        $adminId = Auth::id();
+        $action = $validatedData['action'];
+        $validationData = $validatedData['validation'];
+
+        DB::beginTransaction();
+        try {
+            // Save validation data
+            $usulan->setValidasiByRole('admin_fakultas', $validationData, $adminId);
+
+            // Update status based on action
+            if ($action === 'submit') {
+                $usulan->status_usulan = 'Diusulkan ke Universitas';
+                $logMessage = 'Usulan diteruskan ke universitas';
+            } else {
+                $logMessage = 'Draft validasi disimpan';
+            }
+
+            $usulan->save();
+
+            // Create log
+            $this->createUsulanLog($usulan, $usulan->status_usulan, $logMessage, $adminId);
+
+            DB::commit();
+
+            return redirect()->back()->with('success', $logMessage . ' berhasil.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Gagal menyimpan validasi: ' . $e->getMessage(), [
+                'usulan_id' => $usulan->id,
+                'admin_id' => $adminId,
+                'action' => $action
+            ]);
+
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menyimpan validasi.');
+        }
+    }
+
+    /**
+     * Save complex validation form (existing method)
+     */
+    private function saveComplexValidation(Request $request, Usulan $usulan)
     {
         // Ambil data awal yang dibutuhkan untuk semua aksi
         $actionType = $request->input('action_type', 'save_only');
@@ -321,16 +390,37 @@ class AdminFakultasController extends Controller
 
             DB::commit();
 
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $logMessage,
+                    'status' => $usulan->status_usulan,
+                ]);
+            }
+
             return redirect()->route('admin-fakultas.dashboard')->with('success', 'Aksi pada usulan berhasil diproses.');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             DB::rollBack();
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data yang dimasukkan tidak valid. Silakan periksa kembali.',
+                    'errors' => $e->errors(),
+                ], 422);
+            }
             // Penting: Mengembalikan ke halaman sebelumnya dengan error dan input lama
             return redirect()->back()->withErrors($e->errors())->withInput()->with('error', 'Data yang dimasukkan tidak valid. Silakan periksa kembali.');
         } catch (\Exception $e) {
             DB::rollBack();
 
             Log::error('Gagal menyimpan validasi: ' . $e->getMessage(), ['usulan_id' => $usulan->id]);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan sistem saat memproses validasi.',
+                ], 500);
+            }
             return redirect()->back()->with('error', 'Terjadi kesalahan sistem saat memproses validasi.');
         }
     }
@@ -759,37 +849,8 @@ class AdminFakultasController extends Controller
                 return response()->json(['error' => 'Unauthorized'], 403);
             }
 
-            // CRITICAL: Preserve existing validation data dan merge dengan data baru
-            $existingValidation = $usulan->validasi_data ?? [];
-            $adminFakultasValidation = $existingValidation['admin_fakultas'] ?? [];
-
-            // Get current validation data (preserve non-validation fields)
-            $currentValidationData = $adminFakultasValidation['validation'] ?? [];
-
-            // Merge dengan data baru - PENTING: jangan replace, tapi merge
-            $newValidationData = $validatedData['validation'];
-
-            // Deep merge: preserve existing categories dan fields
-            foreach ($newValidationData as $category => $fields) {
-                if (!isset($currentValidationData[$category])) {
-                    $currentValidationData[$category] = [];
-                }
-
-                foreach ($fields as $field => $fieldData) {
-                    $currentValidationData[$category][$field] = $fieldData;
-                }
-            }
-
-            // Update the complete validation structure
-            $adminFakultasValidation['validation'] = $currentValidationData;
-            $adminFakultasValidation['validated_by'] = $admin->id;
-            $adminFakultasValidation['validated_at'] = now();
-
-            // Preserve other admin_fakultas data (like dokumen_pendukung)
-            $existingValidation['admin_fakultas'] = $adminFakultasValidation;
-
-            // Save dengan complete data structure
-            $usulan->validasi_data = $existingValidation;
+            // Use the improved setValidasiByRole method for consistency
+            $usulan->setValidasiByRole('admin_fakultas', $validatedData['validation'], $admin->id);
 
             // Update status jika diperlukan (only on first save)
             if ($usulan->status_usulan === 'Diajukan') {
@@ -798,19 +859,39 @@ class AdminFakultasController extends Controller
 
             $usulan->save();
 
+            // Clear all related caches untuk memastikan data terbaru dimuat saat reload
+            Cache::forget("existing_validation_{$usulan->id}_admin_fakultas");
+            Cache::forget("validation_fields_{$usulan->id}_admin_fakultas");
+            Cache::forget("bkd_labels_{$usulan->id}");
+            Cache::forget("dokumen_data_{$usulan->id}");
+            Cache::forget("usulan_fakultas_{$usulan->id}");
+            Cache::forget("admin_fakultas_id_" . Auth::id());
+
+            // Clear all cache patterns related to this usulan
+            $cacheKeys = Cache::get('cache_keys') ?? [];
+            foreach ($cacheKeys as $key) {
+                if (str_contains($key, "{$usulan->id}") || str_contains($key, 'admin_fakultas')) {
+                    Cache::forget($key);
+                }
+            }
+
+            // Get the saved validation data for logging
+            $savedValidation = $usulan->getValidasiByRole('admin_fakultas');
+            $validationData = $savedValidation['validation'] ?? [];
+
             // Log success dengan detail
             \Log::info('Autosave successful', [
                 'usulan_id' => $usulan->id,
-                'saved_categories' => array_keys($currentValidationData),
-                'total_fields_saved' => array_sum(array_map('count', $currentValidationData)),
+                'saved_categories' => array_keys($validationData),
+                'total_fields_saved' => array_sum(array_map('count', $validationData)),
                 'status' => $usulan->status_usulan
             ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Data berhasil disimpan',
-                'saved_fields' => array_sum(array_map('count', $currentValidationData)),
-                'categories' => array_keys($currentValidationData)
+                'saved_fields' => array_sum(array_map('count', $validationData)),
+                'categories' => array_keys($validationData)
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {

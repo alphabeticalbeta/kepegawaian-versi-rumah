@@ -359,45 +359,79 @@ abstract class BaseUsulanController extends Controller
     }
 
     /**
-     * Get usulan logs
+     * Get usulan logs - SIMPLE HTML VIEW
      */
     protected function getUsulanLogs($usulan)
     {
         // Pastikan hanya pemilik usulan yang bisa melihat log
         if ($usulan->pegawai_id !== Auth::id()) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+            abort(403, 'Unauthorized');
         }
 
         try {
+            // Simple query without eager loading to avoid potential issues
             $logs = $usulan->logs()
-                ->with('dilakukanOleh')
                 ->orderBy('created_at', 'desc')
+                ->limit(50) // Limit to prevent infinite loops
                 ->get();
 
-            $formattedLogs = $logs->map(function($log) {
-                return [
+            $formattedLogs = [];
+
+            foreach ($logs as $log) {
+                // Get user name safely
+                $userName = 'System';
+                if ($log->dilakukan_oleh_id) {
+                    $user = Pegawai::find($log->dilakukan_oleh_id);
+                    if ($user) {
+                        $userName = $user->nama_lengkap;
+                    }
+                }
+
+                // Format date safely
+                $formattedDate = 'Unknown';
+                if ($log->created_at) {
+                    try {
+                        $formattedDate = $log->created_at->format('d F Y, H:i');
+                    } catch (\Exception $e) {
+                        $formattedDate = $log->created_at->toDateString();
+                    }
+                }
+
+                $formattedLogs[] = [
                     'id' => $log->id,
-                    'status' => $log->status_baru ?? $log->status_sebelumnya,
+                    'status' => $log->status_baru ?? $log->status_sebelumnya ?? 'Unknown',
                     'status_sebelumnya' => $log->status_sebelumnya,
                     'status_baru' => $log->status_baru,
-                    'keterangan' => $log->catatan,
-                    'user_name' => $log->dilakukanOleh ? $log->dilakukanOleh->nama_lengkap : 'System',
-                    'formatted_date' => $log->created_at->isoFormat('D MMMM YYYY, HH:mm'),
-                    'created_at' => $log->created_at->toISOString(),
+                    'keterangan' => $log->catatan ?? 'No description',
+                    'user_name' => $userName,
+                    'formatted_date' => $formattedDate,
+                    'created_at' => $log->created_at ? $log->created_at->toISOString() : null,
                 ];
-            });
+            }
 
-            return response()->json([
-                'success' => true,
-                'logs' => $formattedLogs
-            ]);
+                    // Load usulan with relationships for the view
+        $usulanWithRelations = $usulan->load([
+            'pegawai',
+            'periodeUsulan',
+            'jabatanLama',
+            'jabatanTujuan'
+        ]);
+
+        // Return simple HTML view instead of JSON
+        return view('backend.layouts.views.pegawai-unmul.logs-simple', [
+            'logs' => $formattedLogs,
+            'usulan' => $usulanWithRelations
+        ]);
 
         } catch (\Throwable $e) {
-            Log::error('Error getting usulan logs: ' . $e->getMessage());
+            Log::error('Error getting usulan logs: ' . $e->getMessage(), [
+                'usulan_id' => $usulan->id,
+                'user_id' => Auth::id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
 
-            return response()->json([
-                'error' => 'Gagal mengambil data log'
-            ], 500);
+            abort(500, 'Gagal mengambil data log: ' . $e->getMessage());
         }
     }
 }

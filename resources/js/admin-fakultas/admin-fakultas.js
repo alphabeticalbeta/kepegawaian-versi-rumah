@@ -124,13 +124,15 @@ class AdminFakultas {
     // DataTables initialization
     initializeDataTables() {
         // Initialize DataTables if available
-        if (typeof $.fn.DataTable !== 'undefined') {
+        if (typeof $ !== 'undefined' && typeof $.fn !== 'undefined' && typeof $.fn.DataTable !== 'undefined') {
             $('.datatable').DataTable({
                 responsive: true,
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.10.24/i18n/Indonesian.json'
                 }
             });
+        } else {
+            console.log('jQuery or DataTables not available, skipping DataTables initialization');
         }
     }
 

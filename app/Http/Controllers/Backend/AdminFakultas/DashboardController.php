@@ -72,17 +72,19 @@ class DashboardController extends Controller
     /**
      * Get periode usulans with statistics for faculty.
      *
-     * @param \App\Models\User $user
+     * @param \App\Models\BackendUnivUsulan\Pegawai $user
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
     private function getPeriodeUsulansWithStats($user)
     {
-        $faculty = $user->pegawai->unitKerja ?? null;
+        // Admin fakultas mengelola unit kerja (fakultas)
+        $unitKerja = $user->unitKerjaPengelola;
 
-        $periodeUsulans = PeriodeUsulan::with(['usulans' => function($query) use ($faculty) {
-            if ($faculty) {
-                $query->whereHas('pegawai.unitKerja', function($q) use ($faculty) {
-                    $q->where('id', $faculty->id);
+        $periodeUsulans = PeriodeUsulan::with(['usulans' => function($query) use ($unitKerja) {
+            if ($unitKerja) {
+                // Filter usulan berdasarkan pegawai yang berada di fakultas yang sama
+                $query->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function($q) use ($unitKerja) {
+                    $q->where('id', $unitKerja->id);
                 });
             }
         }])->paginate(10);

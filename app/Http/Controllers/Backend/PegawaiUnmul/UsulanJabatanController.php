@@ -99,7 +99,60 @@ class UsulanJabatanController extends BaseUsulanController
             abort(403, 'AKSES DITOLAK');
         }
 
-        return view('backend.layouts.views.pegawai-unmul.usul-jabatan.show', compact('usulan'));
+        // Eager load relasi yang dibutuhkan untuk tampilan detail
+        $usulan->load([
+            'pegawai.pangkat',
+            'pegawai.jabatan',
+            'pegawai.unitKerja.subUnitKerja.unitKerja',
+            'jabatanLama',
+            'jabatanTujuan',
+            'periodeUsulan',
+            'dokumens',
+            'logs' => function ($query) {
+                $query->with('dilakukanOleh')->latest();
+            }
+        ]);
+
+        // Reuse create-jabatan view in read-only mode
+        $pegawai = Auth::user();
+
+        $isReadOnly = true;
+        $canEdit = false;
+        $canProceed = true; // Force canProceed to true for show mode
+
+        // Get periode usulan
+        $jenisUsulanPeriode = $usulan->jenis_usulan;
+        $daftarPeriode = $usulan->periodeUsulan; // already eager loaded
+
+        // Get jabatan info
+        $jabatanLama = $pegawai->jabatan;
+        $jabatanTujuan = $this->getJabatanTujuan($pegawai, $jabatanLama);
+
+        // Determine jenjang type for display
+        $jenjangType = $this->determineJenjangType($pegawai, $jabatanLama, $jabatanTujuan);
+        $formConfig = $this->getFormConfigByJenjang($jenjangType);
+
+        $catatanPerbaikan = $usulan->getValidasiByRole('admin_fakultas');
+        $bkdSemesters = $this->generateBkdSemesterLabels($daftarPeriode);
+        $documentFields = $this->getDocumentKeys($pegawai->jenis_pegawai, $daftarPeriode);
+
+        return view('backend.layouts.views.pegawai-unmul.usul-jabatan.create-jabatan', [
+            'pegawai' => $pegawai,
+            'daftarPeriode' => $daftarPeriode,
+            'jabatanTujuan' => $jabatanTujuan,
+            'usulan' => $usulan,
+            'jenjangType' => $jenjangType,
+            'formConfig' => $formConfig,
+            'jenisUsulanPeriode' => $jenisUsulanPeriode,
+            'catatanPerbaikan' => $catatanPerbaikan,
+            'bkdSemesters' => $bkdSemesters,
+            'documentFields' => $documentFields,
+            'isReadOnly' => $isReadOnly,
+            'isEditMode' => $canEdit,
+            'existingUsulan' => $usulan,
+            'isShowMode' => true,
+            'canProceed' => $canProceed,
+        ]);
     }
 
     /**
@@ -350,6 +403,7 @@ class UsulanJabatanController extends BaseUsulanController
                     'jabatan_lama_id' => $jabatanLama?->id,
                     'jabatan_tujuan_id' => $jabatanTujuan?->id,
                     'status_usulan' => $statusUsulan,
+                    'status_kepegawaian' => $pegawai->status_kepegawaian,
                     'data_usulan' => $dataUsulan,
                     'catatan_verifikator' => null,
                 ];
@@ -497,25 +551,25 @@ class UsulanJabatanController extends BaseUsulanController
      * Show the form for editing the specified usulan jabatan
      * SIMPLIFIED: Back to standard {usulan} parameter
      */
-    public function edit(Usulan $usulanJabatan)
+    public function edit(Usulan $usulan)
     {
 
-        if ($usulanJabatan->pegawai_id !== Auth::id()) {
+        if ($usulan->pegawai_id !== Auth::id()) {
             abort(403, 'AKSES DITOLAK');
         }
 
         $pegawai = Auth::user();
 
-        $isReadOnly = in_array($usulanJabatan->status_usulan, [
+        $isReadOnly = in_array($usulan->status_usulan, [
             'Diajukan', 'Sedang Direview', 'Disetujui', 'Direkomendasikan'
         ]);
 
-        $canEdit = in_array($usulanJabatan->status_usulan, [
+        $canEdit = in_array($usulan->status_usulan, [
             'Draft', 'Perlu Perbaikan', 'Dikembalikan'
         ]);
 
         // Get periode usulan
-        $jenisUsulanPeriode = $usulanJabatan->jenis_usulan;
+        $jenisUsulanPeriode = $usulan->jenis_usulan;
         $daftarPeriode = $this->getActivePeriode($jenisUsulanPeriode);
 
         // Get jabatan info
@@ -526,18 +580,18 @@ class UsulanJabatanController extends BaseUsulanController
         $jenjangType = $this->determineJenjangType($pegawai, $jabatanLama, $jabatanTujuan);
         $formConfig = $this->getFormConfigByJenjang($jenjangType);
 
-        $catatanPerbaikan = $usulanJabatan->getValidasiByRole('admin_fakultas');
+        $catatanPerbaikan = $usulan->getValidasiByRole('admin_fakultas');
 
-        $bkdSemesters = $this->generateBkdSemesterLabels($usulanJabatan->periodeUsulan);
+        $bkdSemesters = $this->generateBkdSemesterLabels($usulan->periodeUsulan);
 
         // Get document fields for the form
-        $documentFields = $this->getDocumentKeys($pegawai->jenis_pegawai, $usulanJabatan->periodeUsulan);
+        $documentFields = $this->getDocumentKeys($pegawai->jenis_pegawai, $usulan->periodeUsulan);
 
         return view('backend.layouts.views.pegawai-unmul.usul-jabatan.create-jabatan', [
             'pegawai' => $pegawai,
             'daftarPeriode' => $daftarPeriode,
             'jabatanTujuan' => $jabatanTujuan,
-            'usulan' => $usulanJabatan,
+            'usulan' => $usulan,
             'jenjangType' => $jenjangType,
             'formConfig' => $formConfig,
             'jenisUsulanPeriode' => $jenisUsulanPeriode,
@@ -546,7 +600,7 @@ class UsulanJabatanController extends BaseUsulanController
             'documentFields' => $documentFields,
             'isReadOnly' => $isReadOnly,
             'isEditMode' => $canEdit,
-            'existingUsulan' => $usulanJabatan,
+            'existingUsulan' => $usulan,
         ]);
     }
 
@@ -636,6 +690,7 @@ class UsulanJabatanController extends BaseUsulanController
                 // Update usulan record
                 $updateData = [
                     'status_usulan' => $statusUsulan,
+                    'status_kepegawaian' => $pegawai->status_kepegawaian,
                     'data_usulan' => $dataUsulanLama,
                 ];
 
