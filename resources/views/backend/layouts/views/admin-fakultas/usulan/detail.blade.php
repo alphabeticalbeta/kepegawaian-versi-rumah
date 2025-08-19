@@ -5,7 +5,26 @@
 @php
     // Determine current role and permissions
     $currentRole = auth()->user()->roles->first()->name ?? 'admin-fakultas';
-    $canEdit = in_array($usulan->status_usulan, ['Diajukan', 'Sedang Direview', 'Diusulkan ke Universitas']);
+
+    // Define statuses that should be view-only (cannot be edited)
+    $viewOnlyStatuses = [
+        'Diusulkan ke Universitas',  // Already sent to university
+        'Sedang Direview',           // Under review
+        'Direkomendasikan',          // Recommended
+        'Disetujui',                 // Approved
+        'Ditolak',                   // Rejected
+        'Perbaikan Usulan'           // Under revision
+    ];
+
+    // Determine edit permissions based on role and status
+    if ($currentRole === 'Admin Fakultas') {
+        // Admin Fakultas can only edit if status is "Diajukan" (not yet processed)
+        $canEdit = !in_array($usulan->status_usulan, $viewOnlyStatuses) && $usulan->status_usulan === 'Diajukan';
+    } else {
+        // Other roles follow original logic but also respect view-only statuses
+        $editableStatuses = ['Diajukan', 'Sedang Direview', 'Diusulkan ke Universitas'];
+        $canEdit = in_array($usulan->status_usulan, $editableStatuses) && !in_array($usulan->status_usulan, $viewOnlyStatuses);
+    }
 
     // Role-specific configurations
     $roleConfigs = [
@@ -433,7 +452,7 @@
             </div>
         </div>
 
-        {{-- Action Bar: only two actions as requested --}}
+        {{-- Action Bar: View-only for Admin Fakultas, Edit mode for others --}}
         @if($canEdit)
         <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6 mt-6">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -441,7 +460,7 @@
                     <i data-lucide="refresh-cw" class="w-4 h-4 inline mr-1"></i>
                     Perubahan validasi tersimpan otomatis. Gunakan tombol berikut untuk melanjutkan proses.
                 </div>
-                <form id="action-form" action="{{ route('admin-fakultas.usulan.save-validation', $usulan->id) }}" method="POST" class="flex items-center gap-3">
+                <form id="action-form" action="{{ route('admin-fakultas.usulan.save-validation', $usulan->id) }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-3">
                     @csrf
                     <input type="hidden" name="action_type" id="action_type" value="save_only">
                     <input type="hidden" name="catatan_umum" id="catatan_umum" value="">
@@ -456,12 +475,193 @@
                 </form>
             </div>
         </div>
+
+        {{-- Forward Form Component --}}
+        @include('backend.components.usulan._forward-form')
+        @else
+        {{-- View-only mode --}}
+        <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6 mt-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="text-sm">
+                    @php
+                        $statusMessages = [
+                            'Diusulkan ke Universitas' => [
+                                'icon' => 'send',
+                                'color' => 'text-blue-600',
+                                'message' => 'Usulan sudah dikirim ke universitas. Data tidak dapat diubah lagi.'
+                            ],
+                            'Sedang Direview' => [
+                                'icon' => 'clock',
+                                'color' => 'text-yellow-600',
+                                'message' => 'Usulan sedang dalam proses review. Data tidak dapat diubah.'
+                            ],
+                            'Direkomendasikan' => [
+                                'icon' => 'thumbs-up',
+                                'color' => 'text-green-600',
+                                'message' => 'Usulan sudah direkomendasikan. Data tidak dapat diubah.'
+                            ],
+                            'Disetujui' => [
+                                'icon' => 'check-circle',
+                                'color' => 'text-green-600',
+                                'message' => 'Usulan sudah disetujui. Data tidak dapat diubah.'
+                            ],
+                            'Ditolak' => [
+                                'icon' => 'x-circle',
+                                'color' => 'text-red-600',
+                                'message' => 'Usulan sudah ditolak. Data tidak dapat diubah.'
+                            ],
+                            'Perbaikan Usulan' => [
+                                'icon' => 'edit-3',
+                                'color' => 'text-orange-600',
+                                'message' => 'Usulan sedang dalam perbaikan. Silakan tunggu pegawai melakukan revisi.'
+                            ]
+                        ];
+
+                        $statusInfo = $statusMessages[$usulan->status_usulan] ?? [
+                            'icon' => 'eye',
+                            'color' => 'text-gray-600',
+                            'message' => 'Mode tampilan detail usulan. Tidak dapat mengedit data.'
+                        ];
+                    @endphp
+
+                    <div class="{{ $statusInfo['color'] }}">
+                        <i data-lucide="{{ $statusInfo['icon'] }}" class="w-4 h-4 inline mr-2"></i>
+                        {{ $statusInfo['message'] }}
+                    </div>
+
+                    @if($usulan->status_usulan === 'Diusulkan ke Universitas')
+                        <div class="mt-2 text-xs text-gray-500">
+                            <i data-lucide="info" class="w-3 h-3 inline mr-1"></i>
+                            Usulan akan diproses oleh tim universitas selanjutnya.
+                        </div>
+                    @elseif($usulan->status_usulan === 'Perbaikan Usulan')
+                        <div class="mt-2 text-xs text-gray-500">
+                            <i data-lucide="info" class="w-3 h-3 inline mr-1"></i>
+                            Pegawai akan menerima notifikasi untuk melakukan perbaikan.
+                        </div>
+                    @endif
+                </div>
+                <a href="{{ route('admin-fakultas.usulan.index') }}" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    Kembali
+                </a>
+            </div>
+        </div>
         @endif
     </div>
 </div>
 
 @if($canEdit)
 <script>
+// ========================================
+// DETAIL PAGE SCRIPT - COMPLETE OVERRIDE SYSTEM (EDIT MODE)
+// ========================================
+console.log('=== DETAIL PAGE OVERRIDE SCRIPT LOADING (EDIT MODE) ===');
+
+// CRITICAL: Set override flag immediately
+window.__DETAIL_PAGE_OVERRIDE_ACTIVE = true;
+
+// CRITICAL: Override submitForwardForm BEFORE admin-fakultas.js loads
+window.submitForwardForm = async function() {
+    console.log('✅ Detail page submitForwardForm called - Override successful!');
+
+    // Validate forward form fields
+    const nomorSurat = document.getElementById('nomor_surat_usulan');
+    const fileSurat = document.getElementById('file_surat_usulan');
+    const nomorBerita = document.getElementById('nomor_berita_senat');
+    const fileBerita = document.getElementById('file_berita_senat');
+    const catatanForward = document.getElementById('catatan_forward');
+
+    if (!nomorSurat || !fileSurat || !nomorBerita || !fileBerita) {
+        alert('Elemen form tidak ditemukan.');
+        return false;
+    }
+
+    const nomorSuratValue = nomorSurat.value.trim();
+    const nomorBeritaValue = nomorBerita.value.trim();
+    const catatanValue = catatanForward ? catatanForward.value.trim() : '';
+
+    if (!nomorSuratValue || fileSurat.files.length === 0 || !nomorBeritaValue || fileBerita.files.length === 0) {
+        alert('Semua field dokumen fakultas wajib diisi.');
+        return false;
+    }
+
+    // Validate file sizes
+    const maxSizeInBytes = 1024 * 1024; // 1MB
+    if (fileSurat.files[0].size > maxSizeInBytes) {
+        alert('File surat usulan terlalu besar. Maksimal 1MB.');
+        return false;
+    }
+    if (fileBerita.files[0].size > maxSizeInBytes) {
+        alert('File berita acara terlalu besar. Maksimal 1MB.');
+        return false;
+    }
+
+    // Show detailed confirmation modal
+    window.showConfirmationModal(nomorSuratValue, fileSurat.files[0], nomorBeritaValue, fileBerita.files[0], catatanValue);
+};
+
+// CRITICAL: Override validateForwardForm to prevent errors
+window.validateForwardForm = function() {
+    console.log('Detail page validateForwardForm called - returning true');
+    return true;
+};
+
+console.log('✅ All overrides complete - Detail page override active');
+
+// CRITICAL: Final override after all scripts load
+window.addEventListener('load', function() {
+    console.log('=== FINAL OVERRIDE AFTER ALL SCRIPTS LOAD ===');
+
+    // Force override submitForwardForm one more time
+    window.submitForwardForm = async function() {
+        console.log('✅ FINAL OVERRIDE: Detail page submitForwardForm called!');
+
+        // Validate forward form fields
+        const nomorSurat = document.getElementById('nomor_surat_usulan');
+        const fileSurat = document.getElementById('file_surat_usulan');
+        const nomorBerita = document.getElementById('nomor_berita_senat');
+        const fileBerita = document.getElementById('file_berita_senat');
+        const catatanForward = document.getElementById('catatan_forward');
+
+        if (!nomorSurat || !fileSurat || !nomorBerita || !fileBerita) {
+            alert('Elemen form tidak ditemukan.');
+            return false;
+        }
+
+        const nomorSuratValue = nomorSurat.value.trim();
+        const nomorBeritaValue = nomorBerita.value.trim();
+        const catatanValue = catatanForward ? catatanForward.value.trim() : '';
+
+        if (!nomorSuratValue || fileSurat.files.length === 0 || !nomorBeritaValue || fileBerita.files.length === 0) {
+            alert('Semua field dokumen fakultas wajib diisi.');
+            return false;
+        }
+
+        // Validate file sizes
+        const maxSizeInBytes = 1024 * 1024; // 1MB
+        if (fileSurat.files[0].size > maxSizeInBytes) {
+            alert('File surat usulan terlalu besar. Maksimal 1MB.');
+            return false;
+        }
+        if (fileBerita.files[0].size > maxSizeInBytes) {
+            alert('File berita acara terlalu besar. Maksimal 1MB.');
+            return false;
+        }
+
+        // Show detailed confirmation modal
+        window.showConfirmationModal(nomorSuratValue, fileSurat.files[0], nomorBeritaValue, fileBerita.files[0], catatanValue);
+    };
+
+    // Force override validateForwardForm
+    window.validateForwardForm = function() {
+        console.log('FINAL OVERRIDE: validateForwardForm called - returning true');
+        return true;
+    };
+
+    console.log('✅ FINAL OVERRIDE COMPLETE - All functions secured');
+});
+
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-save configuration
     const AUTOSAVE_ENDPOINT = @json(route('admin-fakultas.usulan.autosave', $usulan->id));
@@ -704,77 +904,211 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (btnForward) {
         btnForward.addEventListener('click', function() {
-            // Create confirmation modal
-            const modal = document.createElement('div');
-            modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50';
-            modal.innerHTML = `
-                <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                    <div class="mt-3">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-medium text-gray-900">Konfirmasi Usulan</h3>
-                            <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.closest('.fixed').remove()">
-                                <i data-lucide="x" class="w-5 h-5"></i>
-                            </button>
-                        </div>
-                        <div class="mb-4">
-                            <div class="flex items-center mb-3">
-                                <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-500 mr-2"></i>
-                                <span class="text-sm text-gray-700">Pastikan validasi sudah lengkap sebelum melanjutkan.</span>
-                            </div>
-                            <p class="text-sm text-gray-600">Apakah Anda yakin ingin mengirim usulan ke Universitas?</p>
-                        </div>
-                        <div class="flex justify-end space-x-3">
-                            <button type="button"
-                                    class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors"
-                                    onclick="this.closest('.fixed').remove()">
-                                Batal
-                            </button>
-                            <button type="button"
-                                    id="submit-forward"
-                                    class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
-                                Kirim ke Universitas
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-
-            // Initialize Lucide icons
-            if (typeof lucide !== 'undefined') {
-                lucide.createIcons();
+            // Show forward form
+            const forwardForm = document.getElementById('forwardForm');
+            if (forwardForm) {
+                forwardForm.classList.remove('hidden');
+                // Scroll to form
+                forwardForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
-
-            // Handle submit
-            document.getElementById('submit-forward').addEventListener('click', async function() {
-                actionTypeInput.value = 'forward_to_university';
-                syncValidationToForm();
-
-                const formData = new FormData(actionForm);
-                const feedback = document.getElementById('action-feedback');
-                feedback.className = 'text-sm text-gray-600';
-                feedback.textContent = 'Mengirim ke Universitas...';
-
-                try {
-                    const res = await fetch(actionForm.action, {
-                        method: 'POST',
-                        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                        body: formData
-                    });
-                    let data = {};
-                    try { data = await res.json(); } catch (_) {}
-                    if (!res.ok || data.success === false) throw (data || { message: 'Gagal memproses.' });
-                    feedback.className = 'text-sm text-indigo-700';
-                    feedback.textContent = 'Usulan berhasil dikirim ke Universitas.';
-                    modal.remove();
-                } catch (err) {
-                    feedback.className = 'text-sm text-red-600';
-                    const msg = (err && err.message) ? err.message : (err && err.errors ? Object.values(err.errors).flat().join(', ') : 'Gagal mengirim usulan. Coba lagi.');
-                    feedback.textContent = msg;
-                }
-            });
         });
     }
+
+
+
+    window.showConfirmationModal = function(nomorSurat, fileSurat, nomorBerita, fileBerita, catatan) {
+        // Create detailed confirmation modal
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50';
+        modal.innerHTML = `
+            <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900 flex items-center gap-2">
+                            <i data-lucide="send" class="w-5 h-5 text-indigo-600"></i>
+                            Konfirmasi Kirim ke Universitas
+                        </h3>
+                        <button type="button" class="text-gray-400 hover:text-gray-600" onclick="this.closest('.fixed').remove()">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                            <div class="flex items-start">
+                                <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-600 mt-0.5 mr-3"></i>
+                                <div>
+                                    <h4 class="text-sm font-medium text-yellow-800">Perhatian</h4>
+                                    <p class="text-sm text-yellow-700 mt-1">
+                                        Setelah dikirim ke universitas, usulan tidak dapat diubah lagi dan akan masuk ke proses review tingkat universitas.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h4 class="text-sm font-medium text-gray-900 mb-3">Detail Dokumen yang Akan Dikirim:</h4>
+                            <div class="space-y-3 text-sm">
+                                <div class="flex items-start gap-3">
+                                    <i data-lucide="file-text" class="w-4 h-4 text-gray-500 mt-0.5"></i>
+                                    <div>
+                                        <div class="font-medium text-gray-700">Nomor Surat Usulan:</div>
+                                        <div class="text-gray-600">${nomorSurat}</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-3">
+                                    <i data-lucide="paperclip" class="w-4 h-4 text-gray-500 mt-0.5"></i>
+                                    <div>
+                                        <div class="font-medium text-gray-700">File Surat Usulan:</div>
+                                        <div class="text-gray-600">${fileSurat.name} (${(fileSurat.size / 1024).toFixed(1)} KB)</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-3">
+                                    <i data-lucide="file-text" class="w-4 h-4 text-gray-500 mt-0.5"></i>
+                                    <div>
+                                        <div class="font-medium text-gray-700">Nomor Berita Acara Senat:</div>
+                                        <div class="text-gray-600">${nomorBerita}</div>
+                                    </div>
+                                </div>
+                                <div class="flex items-start gap-3">
+                                    <i data-lucide="paperclip" class="w-4 h-4 text-gray-500 mt-0.5"></i>
+                                    <div>
+                                        <div class="font-medium text-gray-700">File Berita Acara Senat:</div>
+                                        <div class="text-gray-600">${fileBerita.name} (${(fileBerita.size / 1024).toFixed(1)} KB)</div>
+                                    </div>
+                                </div>
+                                ${catatan ? `
+                                <div class="flex items-start gap-3">
+                                    <i data-lucide="message-square" class="w-4 h-4 text-gray-500 mt-0.5"></i>
+                                    <div>
+                                        <div class="font-medium text-gray-700">Catatan Tambahan:</div>
+                                        <div class="text-gray-600">${catatan}</div>
+                                    </div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <div class="mt-4 bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                            <div class="flex items-start">
+                                <i data-lucide="info" class="w-5 h-5 text-indigo-600 mt-0.5 mr-3"></i>
+                                <div>
+                                    <h4 class="text-sm font-medium text-indigo-800">Proses Selanjutnya</h4>
+                                    <p class="text-sm text-indigo-700 mt-1">
+                                        Usulan akan diteruskan ke Admin Universitas untuk review dan validasi lebih lanjut.
+                                        Status usulan akan berubah menjadi "Diusulkan ke Universitas".
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-3">
+                        <button type="button"
+                                class="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors flex items-center gap-2"
+                                onclick="this.closest('.fixed').remove()">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                            Batal
+                        </button>
+                        <button type="button"
+                                id="confirm-send-university"
+                                class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
+                            <i data-lucide="send" class="w-4 h-4"></i>
+                            Ya, Kirim ke Universitas
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        // Initialize Lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
+        // Handle final confirmation
+        document.getElementById('confirm-send-university').addEventListener('click', async function() {
+            modal.remove();
+            await window.processForwardSubmission(nomorSurat, fileSurat, nomorBerita, fileBerita, catatan);
+        });
+    }
+
+    window.processForwardSubmission = async function(nomorSurat, fileSurat, nomorBerita, fileBerita, catatan) {
+        // Set action type and sync validation
+        actionTypeInput.value = 'forward_to_university';
+        syncValidationToForm();
+
+        // Add forward form data to action form
+        const actionForm = document.getElementById('action-form');
+        const formData = new FormData(actionForm);
+
+        // Add forward form fields
+        formData.append('nomor_surat_usulan', nomorSurat);
+        formData.append('file_surat_usulan', fileSurat);
+        formData.append('nomor_berita_senat', nomorBerita);
+        formData.append('file_berita_senat', fileBerita);
+        if (catatan) {
+            formData.append('catatan_forward', catatan);
+        }
+
+        const feedback = document.getElementById('action-feedback');
+        feedback.className = 'text-sm text-gray-600';
+        feedback.textContent = 'Mengirim ke Universitas...';
+
+        try {
+            const res = await fetch(actionForm.action, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            });
+            let data = {};
+            try { data = await res.json(); } catch (_) {}
+            if (!res.ok || data.success === false) throw (data || { message: 'Gagal memproses.' });
+
+            feedback.className = 'text-sm text-indigo-700';
+            feedback.textContent = 'Usulan berhasil dikirim ke Universitas.';
+            hideForwardForm();
+
+            // Show success message
+            setTimeout(() => {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Berhasil!',
+                        text: 'Usulan berhasil dikirim ke Universitas.',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    });
+                } else {
+                    alert('Usulan berhasil dikirim ke Universitas.');
+                }
+            }, 500);
+
+        } catch (err) {
+            feedback.className = 'text-sm text-red-600';
+            const msg = (err && err.message) ? err.message : (err && err.errors ? Object.values(err.errors).flat().join(', ') : 'Gagal mengirim usulan. Coba lagi.');
+            feedback.textContent = msg;
+
+            // Show error message
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Gagal!',
+                    text: msg,
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            } else {
+                alert('Error: ' + msg);
+            }
+        }
+    }
+
+    window.hideForwardForm = function() {
+        const forwardForm = document.getElementById('forwardForm');
+        if (forwardForm) {
+            forwardForm.classList.add('hidden');
+        }
+    };
 
     // Initial setup for keterangan fields
     document.querySelectorAll('.validation-status').forEach(select => {
@@ -791,6 +1125,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+</script>
+@else
+<script>
+// ========================================
+// DETAIL PAGE SCRIPT - VIEW ONLY MODE
+// ========================================
+console.log('=== DETAIL PAGE VIEW ONLY MODE ===');
+
+// Disable all interactive functionality for view-only mode
+window.submitForwardForm = function() {
+    console.log('View-only mode: submitForwardForm disabled');
+    return false;
+};
+
+window.validateForwardForm = function() {
+    console.log('View-only mode: validateForwardForm disabled');
+    return false;
+};
+
+// Prevent any admin-fakultas.js conflicts
+window.__DETAIL_PAGE_OVERRIDE_ACTIVE = true;
+
+console.log('✅ View-only mode activated - All edit functions disabled');
 </script>
 @endif
 @endsection

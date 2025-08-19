@@ -459,6 +459,14 @@ Route::middleware(['web', 'auth:pegawai'])->group(function () {
             Route::get('/dashboard', [App\Http\Controllers\Backend\AdminFakultas\DashboardController::class, 'index'])
                 ->name('dashboard');
 
+            // Dashboard Khusus Usulan Jabatan
+            Route::get('/dashboard-jabatan', [App\Http\Controllers\Backend\AdminFakultas\AdminFakultasController::class, 'dashboardJabatan'])
+                ->name('dashboard-jabatan');
+
+            // Dashboard Khusus Usulan Pangkat
+            Route::get('/dashboard-pangkat', [App\Http\Controllers\Backend\AdminFakultas\AdminFakultasController::class, 'dashboardPangkat'])
+                ->name('dashboard-pangkat');
+
             // =====================================================
             // USULAN ROUTES
             // =====================================================

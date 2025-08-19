@@ -54,6 +54,178 @@ class AdminFakultasController extends Controller
     }
 
     /**
+     * Dashboard khusus untuk usulan jabatan.
+     */
+    public function dashboardJabatan()
+    {
+        /** @var \App\Models\BackendUnivUsulan\Pegawai $admin */
+        $admin = Auth::user();
+
+        // Gunakan helper method untuk mendapatkan unit kerja
+        $unitKerja = $this->getAdminUnitKerja($admin);
+
+        if (!$unitKerja) {
+            return view('backend.layouts.views.admin-fakultas.usulan.dashboard-jabatan', [
+                'periodeUsulans' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10),
+                'unitKerja' => null,
+                'statistics' => [
+                    'total_periode' => 0,
+                    'total_usulan' => 0,
+                    'menunggu_validasi' => 0,
+                    'dikirim_universitas' => 0,
+                    'perbaikan' => 0,
+                    'disetujui' => 0,
+                    'ditolak' => 0
+                ]
+            ]);
+        }
+
+        $unitKerjaId = $unitKerja->id;
+
+        // Get periode usulan khusus jabatan - Show all periods for jabatan
+        $periodeUsulans = PeriodeUsulan::query()
+            ->whereIn('jenis_usulan', ['jabatan', 'Usulan Jabatan', 'usulan-jabatan-dosen', 'usulan-jabatan-tendik'])
+            ->withCount([
+                'usulans as total_usulan' => function ($query) use ($unitKerjaId) {
+                    $query->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
+                        $subQuery->where('id', $unitKerjaId);
+                    });
+                },
+                'usulans as menunggu_validasi' => function ($query) use ($unitKerjaId) {
+                    $query->whereIn('status_usulan', ['Diajukan', 'Draft', 'Menunggu Verifikasi'])
+                        ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
+                            $subQuery->where('id', $unitKerjaId);
+                        });
+                },
+                'usulans as dikirim_universitas' => function ($query) use ($unitKerjaId) {
+                    $query->whereIn('status_usulan', ['Diusulkan ke Universitas', 'Sedang Direview'])
+                        ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
+                            $subQuery->where('id', $unitKerjaId);
+                        });
+                },
+                'usulans as perbaikan' => function ($query) use ($unitKerjaId) {
+                    $query->whereIn('status_usulan', ['Perbaikan Usulan', 'Dikembalikan'])
+                        ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
+                            $subQuery->where('id', $unitKerjaId);
+                        });
+                },
+                'usulans as disetujui' => function ($query) use ($unitKerjaId) {
+                    $query->whereIn('status_usulan', ['Disetujui', 'Direkomendasikan'])
+                        ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
+                            $subQuery->where('id', $unitKerjaId);
+                        });
+                },
+                'usulans as ditolak' => function ($query) use ($unitKerjaId) {
+                    $query->whereIn('status_usulan', ['Ditolak', 'Tidak Disetujui'])
+                        ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
+                            $subQuery->where('id', $unitKerjaId);
+                        });
+                }
+            ])
+            ->latest()
+            ->paginate(10);
+
+        // Calculate statistics
+        $statistics = [
+            'total_periode' => $periodeUsulans->total(),
+            'total_usulan' => $periodeUsulans->sum('total_usulan'),
+            'menunggu_validasi' => $periodeUsulans->sum('menunggu_validasi'),
+            'dikirim_universitas' => $periodeUsulans->sum('dikirim_universitas'),
+            'perbaikan' => $periodeUsulans->sum('perbaikan'),
+            'disetujui' => $periodeUsulans->sum('disetujui'),
+            'ditolak' => $periodeUsulans->sum('ditolak')
+        ];
+
+        return view('backend.layouts.views.admin-fakultas.usulan.dashboard-jabatan', compact('periodeUsulans', 'unitKerja', 'statistics'));
+    }
+
+    /**
+     * Dashboard khusus untuk usulan pangkat.
+     */
+    public function dashboardPangkat()
+    {
+        /** @var \App\Models\BackendUnivUsulan\Pegawai $admin */
+        $admin = Auth::user();
+
+        // Gunakan helper method untuk mendapatkan unit kerja
+        $unitKerja = $this->getAdminUnitKerja($admin);
+
+        if (!$unitKerja) {
+            return view('backend.layouts.views.admin-fakultas.usulan.dashboard-pangkat', [
+                'periodeUsulans' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10),
+                'unitKerja' => null,
+                'statistics' => [
+                    'total_periode' => 0,
+                    'total_usulan' => 0,
+                    'menunggu_validasi' => 0,
+                    'dikirim_universitas' => 0,
+                    'perbaikan' => 0,
+                    'disetujui' => 0,
+                    'ditolak' => 0
+                ]
+            ]);
+        }
+
+        $unitKerjaId = $unitKerja->id;
+
+        // Get periode usulan khusus pangkat - Show all periods for pangkat
+        $periodeUsulans = PeriodeUsulan::query()
+            ->whereIn('jenis_usulan', ['pangkat', 'Usulan Kepangkatan', 'kepangkatan'])
+            ->withCount([
+                'usulans as total_usulan' => function ($query) use ($unitKerjaId) {
+                    $query->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
+                        $subQuery->where('id', $unitKerjaId);
+                    });
+                },
+                'usulans as menunggu_validasi' => function ($query) use ($unitKerjaId) {
+                    $query->whereIn('status_usulan', ['Diajukan', 'Draft', 'Menunggu Verifikasi'])
+                        ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
+                            $subQuery->where('id', $unitKerjaId);
+                        });
+                },
+                'usulans as dikirim_universitas' => function ($query) use ($unitKerjaId) {
+                    $query->whereIn('status_usulan', ['Diusulkan ke Universitas', 'Sedang Direview'])
+                        ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
+                            $subQuery->where('id', $unitKerjaId);
+                        });
+                },
+                'usulans as perbaikan' => function ($query) use ($unitKerjaId) {
+                    $query->whereIn('status_usulan', ['Perbaikan Usulan', 'Dikembalikan'])
+                        ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
+                            $subQuery->where('id', $unitKerjaId);
+                        });
+                },
+                'usulans as disetujui' => function ($query) use ($unitKerjaId) {
+                    $query->whereIn('status_usulan', ['Disetujui', 'Direkomendasikan'])
+                        ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
+                            $subQuery->where('id', $unitKerjaId);
+                        });
+                },
+                'usulans as ditolak' => function ($query) use ($unitKerjaId) {
+                    $query->whereIn('status_usulan', ['Ditolak', 'Tidak Disetujui'])
+                        ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
+                            $subQuery->where('id', $unitKerjaId);
+                        });
+                }
+            ])
+            ->latest()
+            ->paginate(10);
+
+        // Calculate statistics
+        $statistics = [
+            'total_periode' => $periodeUsulans->total(),
+            'total_usulan' => $periodeUsulans->sum('total_usulan'),
+            'menunggu_validasi' => $periodeUsulans->sum('menunggu_validasi'),
+            'dikirim_universitas' => $periodeUsulans->sum('dikirim_universitas'),
+            'perbaikan' => $periodeUsulans->sum('perbaikan'),
+            'disetujui' => $periodeUsulans->sum('disetujui'),
+            'ditolak' => $periodeUsulans->sum('ditolak')
+        ];
+
+        return view('backend.layouts.views.admin-fakultas.usulan.dashboard-pangkat', compact('periodeUsulans', 'unitKerja', 'statistics'));
+    }
+
+    /**
      * Menampilkan daftar periode usulan KHUSUS JABATAN.
      */
     public function indexUsulanJabatan()

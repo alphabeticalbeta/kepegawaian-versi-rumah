@@ -27,20 +27,52 @@
                 </div>
             </div>
 
-            <div class="px-4 relative">
-                <a href="{{ route('admin-fakultas.usulan.jabatan') }}"
-                   class="flex items-center px-3 py-2.5 rounded-lg {{ request()->routeIs('admin-fakultas.usulan.jabatan') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100' }}">
-                    <i data-lucide="briefcase" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-                    <span class="font-medium sidebar-text">Jabatan</span>
-                </a>
-            </div>
+            <!-- Usulan Dropdown -->
+            <div class="px-4 relative" x-data="{ open: false }">
+                <button @click="open = !open"
+                        class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 focus:outline-none">
+                    <div class="flex items-center">
+                        <i data-lucide="file-text" class="w-5 h-5 mr-3 flex-shrink-0"></i>
+                        <span class="font-medium sidebar-text">Usulan</span>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-4 h-4 transition-transform"
+                       :class="{ 'rotate-180': open }"></i>
+                </button>
 
-            <div class="px-4 relative">
-                <a href="{{ route('admin-fakultas.usulan.pangkat') }}"
-                   class="flex items-center px-3 py-2.5 rounded-lg {{ request()->routeIs('admin-fakultas.usulan.pangkat') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-700 hover:bg-gray-100' }}">
-                    <i data-lucide="award" class="w-5 h-5 mr-3 flex-shrink-0"></i>
-                    <span class="font-medium sidebar-text">Pangkat</span>
-                </a>
+                <!-- Dropdown Menu -->
+                <div x-show="open"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 transform scale-95"
+                     x-transition:enter-end="opacity-100 transform scale-100"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 transform scale-100"
+                     x-transition:leave-end="opacity-0 transform scale-95"
+                     class="mt-2 space-y-1">
+
+                    <!-- Usulan Jabatan -->
+                    <div class="ml-6 border-l border-gray-200 pl-4 space-y-1">
+                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wider px-3 py-1">
+                            Jabatan
+                        </div>
+                        <a href="{{ route('admin-fakultas.dashboard-jabatan') }}"
+                           class="flex items-center px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin-fakultas.dashboard-jabatan') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-100' }}">
+                            <i data-lucide="bar-chart-3" class="w-4 h-4 mr-2"></i>
+                            <span class="sidebar-text">Dashboard Jabatan</span>
+                        </a>
+                    </div>
+
+                    <!-- Usulan Pangkat -->
+                    <div class="ml-6 border-l border-gray-200 pl-4 space-y-1">
+                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wider px-3 py-1">
+                            Pangkat
+                        </div>
+                        <a href="{{ route('admin-fakultas.dashboard-pangkat') }}"
+                           class="flex items-center px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin-fakultas.dashboard-pangkat') ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-100' }}">
+                            <i data-lucide="award" class="w-4 h-4 mr-2"></i>
+                            <span class="sidebar-text">Dashboard Pangkat</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>

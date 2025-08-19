@@ -306,7 +306,9 @@ class AdminFakultas {
             form.appendChild(actionInput);
 
             // Show loading state
-            this.showLoadingState();
+            if (window.showLoadingState) {
+                window.showLoadingState();
+            }
         };
 
         window.showReturnForm = function() {
@@ -314,7 +316,9 @@ class AdminFakultas {
             document.getElementById('forwardForm').classList.add('hidden');
 
             // Update validation issue summary
-            this.updateValidationIssueSummary();
+            if (window.updateValidationIssueSummary) {
+                window.updateValidationIssueSummary();
+            }
         };
 
         window.hideReturnForm = function() {
@@ -372,14 +376,72 @@ class AdminFakultas {
             catatanInput.value = catatanUmum;
             mainForm.appendChild(catatanInput);
 
-            this.showLoadingState();
+            if (window.showLoadingState) {
+                window.showLoadingState();
+            }
             mainForm.submit();
         };
 
-        // Updated submitForwardForm function
+        // Helper functions - DEFINE FIRST
+        window.validateForwardForm = function() {
+            const requiredFields = ['nomor_surat_usulan', 'file_surat_usulan', 'nomor_berita_senat', 'file_berita_senat'];
+            let missingFields = [];
+
+            requiredFields.forEach(fieldName => {
+                const field = document.getElementById(fieldName);
+                if (!field || (field.type === 'file' && field.files.length === 0) || (field.type !== 'file' && !field.value.trim())) {
+                    missingFields.push(fieldName);
+                }
+            });
+
+            if (missingFields.length > 0) {
+                alert('Mohon lengkapi semua field yang diperlukan: ' + missingFields.join(', '));
+                return false;
+            }
+
+            return true;
+        };
+
+        // Updated submitForwardForm function - SAFE VERSION
         window.submitForwardForm = function() {
-            // Validate form first
-            if (!this.validateForwardForm()) {
+            // CRITICAL: Check if detail page override is active
+            if (window.__DETAIL_PAGE_OVERRIDE_ACTIVE) {
+                console.log('Detail page override active - skipping admin-fakultas.js submitForwardForm');
+                return;
+            }
+
+            // Check if we're on the detail page (which has its own implementation)
+            if (document.getElementById('action-form')) {
+                console.log('Detail page detected - skipping admin-fakultas.js submitForwardForm');
+                return;
+            }
+
+            // Check if we're on a page with forward form
+            if (document.getElementById('forwardForm')) {
+                console.log('Forward form detected - skipping admin-fakultas.js submitForwardForm');
+                return;
+            }
+
+            // Only proceed if we're on a page that actually needs this functionality
+            if (!document.getElementById('validationForm')) {
+                console.log('No validation form found - skipping admin-fakultas.js submitForwardForm');
+                return;
+            }
+
+            // Validate form first - SAFE VERSION
+            if (typeof window.validateForwardForm !== 'function') {
+                console.error('validateForwardForm function not found or not a function');
+                alert('Sistem validasi tidak tersedia. Silakan refresh halaman.');
+                return false;
+            }
+
+            try {
+                if (!window.validateForwardForm()) {
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error in validateForwardForm:', error);
+                alert('Terjadi kesalahan dalam validasi form.');
                 return false;
             }
 
@@ -409,57 +471,23 @@ class AdminFakultas {
                     reverseButtons: true
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        this.processForwardSubmission();
+                        if (window.processForwardSubmission) {
+                            window.processForwardSubmission();
+                        }
                     }
                 });
             } else {
                 if (confirm('Apakah Anda yakin ingin mengirim usulan ini ke universitas?')) {
-                    this.processForwardSubmission();
+                    if (window.processForwardSubmission) {
+                        window.processForwardSubmission();
+                    }
                 }
             }
         };
 
-        // Helper functions
-        this.validateForwardForm = function() {
-            const requiredFields = ['nomor_surat_usulan', 'file_surat_usulan', 'nomor_berita_senat', 'file_berita_senat'];
-            let missingFields = [];
+        // Helper functions - validateForwardForm is now defined above
 
-            requiredFields.forEach(fieldName => {
-                const field = document.getElementById(fieldName);
-                if (!field) {
-                    missingFields.push(fieldName);
-                    return;
-                }
-
-                if (field.type === 'file') {
-                    if (field.files.length === 0) {
-                        missingFields.push(fieldName);
-                    }
-                } else {
-                    if (!field.value.trim()) {
-                        missingFields.push(fieldName);
-                    }
-                }
-            });
-
-            if (missingFields.length > 0) {
-                if (typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Data Tidak Lengkap',
-                        text: 'Semua field dokumen fakultas wajib diisi.',
-                        confirmButtonText: 'OK'
-                    });
-                } else {
-                    alert('Data tidak lengkap. Semua field dokumen fakultas wajib diisi.');
-                }
-                return false;
-            }
-
-            return true;
-        };
-
-        this.processForwardSubmission = function() {
+        window.processForwardSubmission = function() {
             const mainForm = document.getElementById('validationForm');
             const forwardForm = document.getElementById('forwardUsulanForm');
             const progressDiv = document.getElementById('uploadProgress');
@@ -468,7 +496,9 @@ class AdminFakultas {
             // Show progress
             if (progressDiv) {
                 progressDiv.classList.remove('hidden');
-                this.animateProgress(progressBar, 0, 30, 500); // 0-30% in 500ms
+                if (window.animateProgress) {
+                    window.animateProgress(progressBar, 0, 30, 500); // 0-30% in 500ms
+                }
             }
 
             // Validate file sizes
@@ -477,7 +507,9 @@ class AdminFakultas {
             const maxSizeBytes = 1 * 1024 * 1024; // 1MB
 
             if (fileSurat.files.length > 0 && fileSurat.files[0].size > maxSizeBytes) {
-                this.hideProgress();
+                if (window.hideProgress) {
+                    window.hideProgress();
+                }
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: 'error',
@@ -492,7 +524,9 @@ class AdminFakultas {
             }
 
             if (fileBerita.files.length > 0 && fileBerita.files[0].size > maxSizeBytes) {
-                this.hideProgress();
+                if (window.hideProgress) {
+                    window.hideProgress();
+                }
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         icon: 'error',
@@ -521,7 +555,9 @@ class AdminFakultas {
 
             // Update progress
             if (progressBar) {
-                this.animateProgress(progressBar, 30, 85, 500); // 30-85% in 500ms
+                if (window.animateProgress) {
+                    window.animateProgress(progressBar, 30, 85, 500); // 30-85% in 500ms
+                }
             }
 
             // Clone forward form inputs to main form
@@ -536,18 +572,24 @@ class AdminFakultas {
 
             // Complete progress and submit
             if (progressBar) {
-                this.animateProgress(progressBar, 85, 100, 300); // 85-100% in 300ms
+                if (window.animateProgress) {
+                    window.animateProgress(progressBar, 85, 100, 300); // 85-100% in 300ms
+                }
                 setTimeout(() => {
-                    this.showLoadingState();
+                    if (window.showLoadingState) {
+                        window.showLoadingState();
+                    }
                     mainForm.submit();
                 }, 300);
             } else {
-                this.showLoadingState();
+                if (window.showLoadingState) {
+                    window.showLoadingState();
+                }
                 mainForm.submit();
             }
         };
 
-        this.animateProgress = function(progressBar, startPercent, endPercent, duration) {
+        window.animateProgress = function(progressBar, startPercent, endPercent, duration) {
             if (!progressBar) return;
 
             const startTime = performance.now();
@@ -568,7 +610,7 @@ class AdminFakultas {
             requestAnimationFrame(updateProgress);
         };
 
-        this.hideProgress = function() {
+        window.hideProgress = function() {
             const progressDiv = document.getElementById('uploadProgress');
             if (progressDiv) {
                 progressDiv.classList.add('hidden');
@@ -579,7 +621,7 @@ class AdminFakultas {
             }
         };
 
-        this.updateValidationIssueSummary = function() {
+        window.updateValidationIssueSummary = function() {
             const issueList = document.getElementById('issueList');
             const summaryContainer = document.getElementById('validationIssueSummary');
 
@@ -596,7 +638,7 @@ class AdminFakultas {
                     if (fieldParts) {
                         const category = fieldParts[1];
                         const field = fieldParts[2];
-                        const label = this.ucwords(category.replace(/_/g, ' ')) + ' - ' + this.ucwords(field.replace(/_/g, ' '));
+                        const label = window.ucwords(category.replace(/_/g, ' ')) + ' - ' + window.ucwords(field.replace(/_/g, ' '));
                         invalidItems.push(label);
                     }
                 }
@@ -615,7 +657,7 @@ class AdminFakultas {
             }
         };
 
-        this.showLoadingState = function() {
+        window.showLoadingState = function() {
             // Create loading overlay
             const overlay = document.createElement('div');
             overlay.id = 'loadingOverlay';
@@ -633,7 +675,7 @@ class AdminFakultas {
             document.body.appendChild(overlay);
         };
 
-        this.ucwords = function(str) {
+        window.ucwords = function(str) {
             return str.replace(/\b\w/g, function(l) {
                 return l.toUpperCase();
             });
@@ -663,19 +705,23 @@ class AdminFakultas {
 
             if (fileSuratInput) {
                 fileSuratInput.addEventListener('change', function(e) {
-                    this.validateFileInput(e.target, 2);
-                }.bind(this));
+                    if (window.validateFileInput) {
+                        window.validateFileInput(e.target, 2);
+                    }
+                });
             }
 
             if (fileBeritaInput) {
                 fileBeritaInput.addEventListener('change', function(e) {
-                    this.validateFileInput(e.target, 5);
-                }.bind(this));
+                    if (window.validateFileInput) {
+                        window.validateFileInput(e.target, 5);
+                    }
+                });
             }
         });
 
         // Validate file input
-        this.validateFileInput = function(input, maxSizeMB) {
+        window.validateFileInput = function(input, maxSizeMB) {
             if (input.files.length > 0) {
                 const file = input.files[0];
                 const maxSizeBytes = maxSizeMB * 1024 * 1024;
