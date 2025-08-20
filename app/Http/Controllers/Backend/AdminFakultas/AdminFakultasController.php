@@ -464,7 +464,7 @@ class AdminFakultasController extends Controller
                     // Check if this is initial submission or resend
                     $currentValidasi = $usulan->validasi_data;
                     $dokumenPendukung = $currentValidasi['admin_fakultas']['dokumen_pendukung'] ?? [];
-                    $isInitialSubmission = empty($dokumenPendukung);
+                    $isInitialSubmission = empty($dokumenPendukung) || !isset($dokumenPendukung['file_surat_usulan_path']);
 
                     $rules = [
                         'validation' => 'required|array',
