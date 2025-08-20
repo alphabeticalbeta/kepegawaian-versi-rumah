@@ -5,11 +5,11 @@
 
         {{-- Header Section --}}
         <div class="mb-8">
-            <a href="{{ route('admin-fakultas.usulan.index') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500 inline-flex items-center mb-4">
+            <a href="{{ route('admin-fakultas.dashboard') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500 inline-flex items-center mb-4">
                 <svg class="h-5 w-5 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
                 </svg>
-                Kembali ke Daftar Periode
+                Kembali ke Dashboard
             </a>
 
             <h1 class="text-3xl font-bold text-gray-900">
@@ -41,7 +41,7 @@
         @endif
 
         {{-- Summary Card --}}
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
             <div class="bg-white overflow-hidden shadow-lg rounded-lg border border-gray-200">
                 <div class="p-5">
                     <div class="flex items-center">
@@ -90,6 +90,24 @@
                             <dl>
                                 <dt class="text-sm font-medium text-gray-500 truncate">Sedang Direview</dt>
                                 <dd class="text-lg font-medium text-gray-900">{{ $usulans->where('status_usulan', 'Sedang Direview')->count() }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow-lg rounded-lg border border-gray-200">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                            </svg>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">Perbaikan</dt>
+                                <dd class="text-lg font-medium text-gray-900">{{ $usulans->whereIn('status_usulan', ['Perbaikan Usulan', 'Dikembalikan'])->count() }}</dd>
                             </dl>
                         </div>
                     </div>
@@ -171,10 +189,10 @@
                                         $statusConfig = [
                                             'Diajukan' => ['bg-yellow-100 text-yellow-800', 'clock'],
                                             'Sedang Direview' => ['bg-blue-100 text-blue-800', 'eye'],
-                                            'Perlu Perbaikan' => ['bg-orange-100 text-orange-800', 'exclamation-triangle'],
+                                            'Perbaikan Usulan' => ['bg-orange-100 text-orange-800', 'exclamation-triangle'],
                                             'Diusulkan ke Universitas' => ['bg-purple-100 text-purple-800', 'arrow-up'],
                                             'Direkomendasikan' => ['bg-green-100 text-green-800', 'check-circle'],
-                                            'Belum Direkomendasikan' => ['bg-red-100 text-red-800', 'x-circle']
+                                            'Ditolak' => ['bg-red-100 text-red-800', 'x-circle']
                                         ];
                                         $config = $statusConfig[$usulan->status_usulan] ?? ['bg-gray-100 text-gray-800', 'question-mark-circle'];
                                     @endphp

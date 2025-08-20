@@ -7,13 +7,14 @@
             <i data-lucide="file-check-2" class="w-6 h-6 mr-3"></i>
             Beban Kinerja Dosen (BKD)
             @php
-                // Hitung total error di section BKD
+                // Hitung total error di section BKD dari semua role
                 $bkdErrors = 0;
                 if (isset($bkdSemesters) && !empty($bkdSemesters)) {
                     foreach($bkdSemesters as $bkd) {
                         $slug = $bkd['slug'];
-                        $validation = $catatanPerbaikan['dokumen_usulan'][$slug] ?? null;
-                        if ($validation && $validation['status'] === 'tidak_sesuai') {
+
+                        // Use hybrid approach for validation checking
+                        if (isFieldInvalid('bkd', $slug, $validationData ?? [], $catatanPerbaikan ?? [])) {
                             $bkdErrors++;
                         }
                     }
@@ -55,9 +56,9 @@
                     $slug = $bkd['slug'];
                     $label = $bkd['label'];
 
-                    // Cek validasi untuk BKD ini
-                    $validation = $catatanPerbaikan['dokumen_usulan'][$slug] ?? null;
-                    $isInvalid = $validation && $validation['status'] === 'tidak_sesuai';
+                    // Use hybrid approach for validation checking
+                    $isInvalid = isFieldInvalid('bkd', $slug, $validationData ?? [], $catatanPerbaikan ?? []);
+                    $validationNotes = getFieldValidationNotes('bkd', $slug, $validationData ?? [], $catatanPerbaikan ?? []);
 
                     // Cek apakah file sudah ada
                     $fileExists = isset($usulan) && !empty($usulan->data_usulan['dokumen_usulan'][$slug]['path']);
@@ -101,16 +102,20 @@
 
                     @error($slug)<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
 
-                    {{-- Tampilkan catatan spesifik dari admin jika tidak valid --}}
-                    @if($isInvalid)
-                        <div class="mt-3 text-xs text-red-700 bg-red-100 p-3 rounded border-l-2 border-red-400">
-                            <div class="flex items-start gap-2">
-                                <i data-lucide="message-square" class="w-4 h-4 mt-0.5 text-red-600"></i>
-                                <div>
-                                    <strong>Catatan Perbaikan:</strong><br>
-                                    {{ $validation['keterangan'] }}
+                    {{-- Tampilkan catatan dari semua role jika tidak valid --}}
+                    @if($isInvalid && !empty($validationNotes))
+                        <div class="mt-3 space-y-2">
+                            @foreach($validationNotes as $note)
+                                <div class="text-xs text-red-700 bg-red-100 p-3 rounded border-l-2 border-red-400">
+                                    <div class="flex items-start gap-2">
+                                        <i data-lucide="message-square" class="w-4 h-4 mt-0.5 text-red-600"></i>
+                                        <div>
+                                            <strong>{{ $note['role'] }}:</strong><br>
+                                            {{ $note['note'] }}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            @endforeach
                         </div>
                     @endif
                 </div>
@@ -123,12 +128,9 @@
                 if ($formConfig['show_syarat_khusus'] && $formConfig['required_documents']['bukti_syarat_guru_besar']) {
                     $totalBkd += 2; // syarat_guru_besar + bukti_syarat_guru_besar
 
-                    // Hitung error untuk Syarat Khusus Guru Besar
-                    $syaratGuruBesarValidation = $catatanPerbaikan['syarat_khusus']['syarat_guru_besar'] ?? null;
-                    $isSyaratGuruBesarInvalid = $syaratGuruBesarValidation && $syaratGuruBesarValidation['status'] === 'tidak_sesuai';
-
-                    $buktiGuruBesarValidation = $catatanPerbaikan['dokumen_usulan']['bukti_syarat_guru_besar'] ?? null;
-                    $isBuktiGuruBesarInvalid = $buktiGuruBesarValidation && $buktiGuruBesarValidation['status'] === 'tidak_sesuai';
+                    // Hitung error untuk Syarat Khusus Guru Besar menggunakan hybrid approach
+                    $isSyaratGuruBesarInvalid = isFieldInvalid('syarat_guru_besar', 'syarat_guru_besar', $validationData ?? [], $catatanPerbaikan ?? []);
+                    $isBuktiGuruBesarInvalid = isFieldInvalid('dokumen_usulan', 'bukti_syarat_guru_besar', $validationData ?? [], $catatanPerbaikan ?? []);
 
                     if ($isSyaratGuruBesarInvalid) $bkdErrors++;
                     if ($isBuktiGuruBesarInvalid) $bkdErrors++;
@@ -245,11 +247,12 @@
     {{-- SYARAT KHUSUS GURU BESAR --}}
     @if($formConfig['show_syarat_khusus'] && $formConfig['required_documents']['bukti_syarat_guru_besar'])
         @php
-            $syaratGuruBesarValidation = $catatanPerbaikan['syarat_khusus']['syarat_guru_besar'] ?? null;
-            $isSyaratGuruBesarInvalid = $syaratGuruBesarValidation && $syaratGuruBesarValidation['status'] === 'tidak_sesuai';
+            // Use hybrid approach for validation checking
+            $isSyaratGuruBesarInvalid = isFieldInvalid('syarat_guru_besar', 'syarat_guru_besar', $validationData ?? [], $catatanPerbaikan ?? []);
+            $isBuktiGuruBesarInvalid = isFieldInvalid('dokumen_usulan', 'bukti_syarat_guru_besar', $validationData ?? [], $catatanPerbaikan ?? []);
 
-            $buktiGuruBesarValidation = $catatanPerbaikan['dokumen_usulan']['bukti_syarat_guru_besar'] ?? null;
-            $isBuktiGuruBesarInvalid = $buktiGuruBesarValidation && $buktiGuruBesarValidation['status'] === 'tidak_sesuai';
+            $syaratGuruBesarNotes = getFieldValidationNotes('syarat_guru_besar', 'syarat_guru_besar', $validationData ?? [], $catatanPerbaikan ?? []);
+            $buktiGuruBesarNotes = getFieldValidationNotes('dokumen_usulan', 'bukti_syarat_guru_besar', $validationData ?? [], $catatanPerbaikan ?? []);
 
             $buktiGuruBesarExists = false;
             if (isset($usulan)) {
@@ -283,8 +286,8 @@
                     @endif
                 </label>
                 <select name="syarat_guru_besar" id="syarat_guru_besar"
-                    class="block w-full px-4 py-3 text-gray-900 border-2 bg-white rounded-xl shadow-sm
-                        @if($isReadOnly) bg-gray-50 text-gray-600 @endif
+                    class="block w-full px-4 py-3 border-2 rounded-xl shadow-sm
+                        @if($isReadOnly) bg-gray-50 text-gray-600 @else text-gray-900 bg-white @endif
                         @if($isSyaratGuruBesarInvalid) border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-200 @endif"
                     @if($isReadOnly) disabled @endif
                     @if(!$isReadOnly) required @endif>
@@ -303,16 +306,20 @@
                     </option>
                 </select>
 
-                {{-- Tampilkan catatan spesifik dari admin jika tidak valid --}}
-                @if($isSyaratGuruBesarInvalid)
-                    <div class="mt-2 text-xs text-red-700 bg-red-100 p-3 rounded border-l-2 border-red-400">
-                        <div class="flex items-start gap-2">
-                            <i data-lucide="message-square" class="w-4 h-4 mt-0.5 text-red-600"></i>
-                            <div>
-                                <strong>Catatan Perbaikan:</strong><br>
-                                {{ $syaratGuruBesarValidation['keterangan'] }}
+                {{-- Tampilkan catatan dari semua role jika tidak valid --}}
+                @if($isSyaratGuruBesarInvalid && !empty($syaratGuruBesarNotes))
+                    <div class="mt-2 space-y-2">
+                        @foreach($syaratGuruBesarNotes as $note)
+                            <div class="text-xs text-red-700 bg-red-100 p-3 rounded border-l-2 border-red-400">
+                                <div class="flex items-start gap-2">
+                                    <i data-lucide="message-square" class="w-4 h-4 mt-0.5 text-red-600"></i>
+                                    <div>
+                                        <strong>{{ $note['role'] }}:</strong><br>
+                                        {{ $note['note'] }}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        @endforeach
                     </div>
                 @endif
 
@@ -350,16 +357,20 @@
                     <p class="mt-1 text-xs {{ $isBuktiGuruBesarInvalid ? 'text-red-600' : 'text-gray-500' }}">File harus dalam format PDF, maksimal 1MB.</p>
                 @endif
 
-                {{-- Tampilkan catatan spesifik dari admin jika tidak valid --}}
-                @if($isBuktiGuruBesarInvalid)
-                    <div class="mt-2 text-xs text-red-700 bg-red-100 p-3 rounded border-l-2 border-red-400">
-                        <div class="flex items-start gap-2">
-                            <i data-lucide="message-square" class="w-4 h-4 mt-0.5 text-red-600"></i>
-                            <div>
-                                <strong>Catatan Perbaikan:</strong><br>
-                                {{ $buktiGuruBesarValidation['keterangan'] }}
+                {{-- Tampilkan catatan dari semua role jika tidak valid --}}
+                @if($isBuktiGuruBesarInvalid && !empty($buktiGuruBesarNotes))
+                    <div class="mt-2 space-y-2">
+                        @foreach($buktiGuruBesarNotes as $note)
+                            <div class="text-xs text-red-700 bg-red-100 p-3 rounded border-l-2 border-red-400">
+                                <div class="flex items-start gap-2">
+                                    <i data-lucide="message-square" class="w-4 h-4 mt-0.5 text-red-600"></i>
+                                    <div>
+                                        <strong>{{ $note['role'] }}:</strong><br>
+                                        {{ $note['note'] }}
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        @endforeach
                     </div>
                 @endif
 

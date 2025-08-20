@@ -296,8 +296,8 @@ abstract class BaseUsulanController extends Controller
             ProcessUsulanDocuments::dispatch($usulan)
                 ->delay(now()->addSeconds(10));
 
-            // Send notifications and generate reports (only for submitted)
-            if ($status === 'Diajukan') {
+            // Send notifications and generate reports (for submitted and university submissions)
+            if (in_array($status, ['Diajukan', 'Diusulkan ke Universitas'])) {
                 SendUsulanNotification::dispatch($usulan, 'submitted')
                     ->delay(now()->addSeconds(5));
 

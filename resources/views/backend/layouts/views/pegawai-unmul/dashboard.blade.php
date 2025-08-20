@@ -6,7 +6,7 @@
 
     @php
     // Cek apakah ada usulan yang perlu diperbaiki
-        $usulanPerluPerbaikan = $usulans->firstWhere('status_usulan', 'Perlu Perbaikan');
+        $usulanPerluPerbaikan = $usulans->firstWhere('status_usulan', 'Perbaikan Usulan');
     @endphp
 
     @if($usulanPerluPerbaikan)
@@ -69,7 +69,7 @@
                                             'Draft' => 'bg-gray-100 text-gray-800',
                                             'Diajukan' => 'bg-blue-100 text-blue-800',
                                             'Sedang Direview' => 'bg-yellow-100 text-yellow-800',
-                                            'Perlu Perbaikan' => 'bg-orange-100 text-orange-800',
+                                            'Perbaikan Usulan' => 'bg-orange-100 text-orange-800',
                                             'Dikembalikan' => 'bg-red-100 text-red-800',
                                             'Disetujui' => 'bg-green-100 text-green-800',
                                             'Direkomendasikan' => 'bg-purple-100 text-purple-800',
@@ -104,11 +104,11 @@
                                             };
 
                                             // Tentukan apakah bisa edit atau hanya lihat detail
-                                            $canEdit = in_array($usulan->status_usulan, ['Draft', 'Perlu Perbaikan', 'Dikembalikan ke Pegawai']);
+                                            $canEdit = in_array($usulan->status_usulan, ['Draft', 'Perbaikan Usulan', 'Dikembalikan ke Pegawai']);
                                             $actionRoute = $canEdit ? $routeName . '.edit' : $routeName . '.show';
                                         @endphp
 
-                                        @if($usulan->status_usulan == 'Perlu Perbaikan')
+                                        @if($usulan->status_usulan == 'Perbaikan Usulan')
                                             <a href="{{ route($actionRoute, $usulan) }}"
                                             class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-orange-600 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 hover:text-orange-700 transition-colors duration-200">
                                                 <i data-lucide="edit" class="w-3 h-3 mr-1"></i>

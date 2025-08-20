@@ -51,7 +51,7 @@ Menambahkan field `nama_universitas_sekolah` dan `nama_prodi_jurusan` pada halam
         <input type="text" name="nama_universitas_sekolah"
                value="{{ old('nama_universitas_sekolah', $pegawai->nama_universitas_sekolah) }}"
                placeholder="Universitas Mulawarman"
-               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 @error('nama_universitas_sekolah') border-red-500 @enderror">
+               class="w-full px-3 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500 @error('nama_universitas_sekolah') border-red-500 @else border-gray-300 @enderror">
         @error('nama_universitas_sekolah')
             <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
         @enderror
@@ -70,7 +70,7 @@ Menambahkan field `nama_universitas_sekolah` dan `nama_prodi_jurusan` pada halam
         <input type="text" name="nama_prodi_jurusan"
                value="{{ old('nama_prodi_jurusan', $pegawai->nama_prodi_jurusan) }}"
                placeholder="Teknik Informatika"
-               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 @error('nama_prodi_jurusan') border-red-500 @enderror">
+               class="w-full px-3 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500 @error('nama_prodi_jurusan') border-red-500 @else border-gray-300 @enderror">
         @error('nama_prodi_jurusan')
             <p class="text-red-600 text-sm mt-1">{{ $message }}</p>
         @enderror

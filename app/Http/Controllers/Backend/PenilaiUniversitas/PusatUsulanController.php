@@ -12,15 +12,11 @@ class PusatUsulanController extends Controller
 {
     public function index(Request $request)
     {
-        // OPTIMASI: Gunakan Eloquent relationship instead of raw DB query
-        $pegawaiId = Auth::user()->id;
-
+        // Get usulans with status 'Sedang Direview' for penilai
         $query = Usulan::query()
-            ->whereHas('penilais', function ($q) use ($pegawaiId) {
-                $q->where('penilai_id', $pegawaiId);
-            })
+            ->where('status_usulan', 'Sedang Direview')
             ->with([
-                'pegawai:id,nama_lengkap,email',
+                'pegawai:id,nama_lengkap,email,nip',
                 'jabatanLama:id,jabatan',
                 'jabatanTujuan:id,jabatan',
                 'periodeUsulan:id,nama_periode'
@@ -70,7 +66,7 @@ class PusatUsulanController extends Controller
         // Determine if can edit based on status
         $canEdit = in_array($usulan->status_usulan, [
             'Diusulkan ke Universitas',
-            'Sedang Direview Universitas',
+            'Sedang Direview',
         ]);
 
         return view('backend.layouts.views.penilai-universitas.pusat-usulan.detail-usulan', [

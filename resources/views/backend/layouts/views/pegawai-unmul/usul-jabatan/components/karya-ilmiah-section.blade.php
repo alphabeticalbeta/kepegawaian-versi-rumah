@@ -15,9 +15,19 @@
     <!-- Jenis Karya Ilmiah -->
     <div class="mb-8">
         @php
-            // Cek validasi untuk field jenis karya ilmiah
-            $karyaIlmiahValidation = $catatanPerbaikan['karya_ilmiah']['jenis_karya'] ?? null;
-            $isKaryaIlmiahInvalid = $karyaIlmiahValidation && $karyaIlmiahValidation['status'] === 'tidak_sesuai';
+            // Cek validasi untuk field jenis karya ilmiah dari semua role
+            $karyaIlmiahValidation = null;
+            $isKaryaIlmiahInvalid = false;
+            $allValidationNotes = [];
+
+            if (isset($validationData) && !empty($validationData)) {
+                $allValidationNotes = getAllValidationNotes('karya_ilmiah', 'jenis_karya', $validationData);
+                $isKaryaIlmiahInvalid = hasValidationIssue('karya_ilmiah', 'jenis_karya', $validationData);
+            } else {
+                // Fallback to old structure
+                $karyaIlmiahValidation = $catatanPerbaikan['karya_ilmiah']['jenis_karya'] ?? null;
+                $isKaryaIlmiahInvalid = $karyaIlmiahValidation && $karyaIlmiahValidation['status'] === 'tidak_sesuai';
+            }
         @endphp
 
         <div class="bg-gray-50 rounded-lg p-6 border-l-4 {{ $isKaryaIlmiahInvalid ? 'border-red-500 bg-red-50' : 'border-indigo-500' }}">
@@ -35,9 +45,9 @@
                 @endif
             </label>
             <select id="karya_ilmiah" name="karya_ilmiah"
-                class="block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4 bg-white
-                    @if($isReadOnly) bg-gray-50 text-gray-600 @endif
-                    @if($isKaryaIlmiahInvalid) border-red-300 focus:border-red-500 focus:ring-red-500 @endif"
+                class="block w-full border rounded-lg shadow-sm py-3 px-4
+                    @if($isReadOnly) bg-gray-50 text-gray-600 @else bg-white @endif
+                    @if($isKaryaIlmiahInvalid) border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @endif"
                 @if($isReadOnly) disabled @endif
                 @if($formConfig['karya_ilmiah_required'] && !$isReadOnly) required @endif>
                 <option value="">-- Pilih Jenis Karya Ilmiah --</option>
@@ -50,8 +60,23 @@
             </select>
             @error('karya_ilmiah')<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
 
-            {{-- Tampilkan catatan spesifik dari admin jika tidak valid --}}
-            @if($isKaryaIlmiahInvalid)
+            {{-- Tampilkan catatan dari semua role jika tidak valid --}}
+            @if($isKaryaIlmiahInvalid && !empty($allValidationNotes))
+                <div class="mt-3 space-y-2">
+                    @foreach($allValidationNotes as $note)
+                        <div class="text-xs text-red-700 bg-red-100 p-3 rounded border-l-2 border-red-400">
+                            <div class="flex items-start gap-2">
+                                <i data-lucide="message-square" class="w-4 h-4 mt-0.5 text-red-600"></i>
+                                <div>
+                                    <strong>{{ $note['role'] }}:</strong><br>
+                                    {{ $note['note'] }}
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @elseif($isKaryaIlmiahInvalid && $karyaIlmiahValidation)
+                {{-- Fallback untuk struktur data lama --}}
                 <div class="mt-3 text-xs text-red-700 bg-red-100 p-3 rounded border-l-2 border-red-400">
                     <div class="flex items-start gap-2">
                         <i data-lucide="message-square" class="w-4 h-4 mt-0.5 text-red-600"></i>
@@ -117,11 +142,21 @@
 
             {{-- PERULANGAN UNTUK INPUT TEKS --}}
             @foreach ($textFields as $name => [$label, $placeholder, $icon, $colSpan])
-                @php
-                    // Cek validasi untuk field ini
-                    $fieldValidation = $catatanPerbaikan['karya_ilmiah'][$name] ?? null;
-                    $isFieldInvalid = $fieldValidation && $fieldValidation['status'] === 'tidak_sesuai';
-                @endphp
+                                    @php
+                        // Cek validasi untuk field ini dari semua role
+                        $fieldValidation = null;
+                        $isFieldInvalid = false;
+                        $fieldValidationNotes = [];
+
+                        if (isset($validationData) && !empty($validationData)) {
+                            $fieldValidationNotes = getAllValidationNotes('karya_ilmiah', $name, $validationData);
+                            $isFieldInvalid = hasValidationIssue('karya_ilmiah', $name, $validationData);
+                        } else {
+                            // Fallback to old structure
+                            $fieldValidation = $catatanPerbaikan['karya_ilmiah'][$name] ?? null;
+                            $isFieldInvalid = $fieldValidation && $fieldValidation['status'] === 'tidak_sesuai';
+                        }
+                    @endphp
 
                 <div class="{{ $colSpan }}">
                     <label for="{{ $name }}" class="block text-sm font-medium {{ $isFieldInvalid ? 'text-red-700' : 'text-gray-700' }} mb-2">
@@ -139,9 +174,9 @@
                     </label>
                     <input id="{{ $name }}" name="{{ $name }}" type="text"
                         value="{{ old($name, $usulan->data_usulan['karya_ilmiah'][$name] ?? '') }}"
-                        class="block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4
-                            @if($isReadOnly) bg-gray-50 text-gray-600 @endif
-                            @if($isFieldInvalid) border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50 @endif"
+                        class="block w-full border rounded-lg shadow-sm py-3 px-4
+                            @if($isReadOnly) bg-gray-50 text-gray-600 @else bg-white @endif
+                            @if($isFieldInvalid) border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50 @else border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @endif"
                         placeholder="{{ $placeholder }}"
                         @if($formConfig['karya_ilmiah_required'] && !$isReadOnly) required @endif
                         @if($isReadOnly) readonly @endif>
@@ -165,9 +200,19 @@
             {{-- PERULANGAN UNTUK INPUT LINK --}}
             @foreach ($linkFields as $name => [$label, $placeholder, $icon, $colSpan, $isRequired])
                 @php
-                    // Cek validasi untuk field link ini
-                    $fieldValidation = $catatanPerbaikan['karya_ilmiah'][$name] ?? null;
-                    $isFieldInvalid = $fieldValidation && $fieldValidation['status'] === 'tidak_sesuai';
+                    // Cek validasi untuk field link ini dari semua role
+                    $fieldValidation = null;
+                    $isFieldInvalid = false;
+                    $fieldValidationNotes = [];
+
+                    if (isset($validationData) && !empty($validationData)) {
+                        $fieldValidationNotes = getAllValidationNotes('karya_ilmiah', $name, $validationData);
+                        $isFieldInvalid = hasValidationIssue('karya_ilmiah', $name, $validationData);
+                    } else {
+                        // Fallback to old structure
+                        $fieldValidation = $catatanPerbaikan['karya_ilmiah'][$name] ?? null;
+                        $isFieldInvalid = $fieldValidation && $fieldValidation['status'] === 'tidak_sesuai';
+                    }
 
                     $fieldMapping = [
                         'link_artikel' => 'artikel',
@@ -203,16 +248,31 @@
                     </label>
                     <input id="{{ $name }}" name="{{ $name }}" type="url"
                         value="{{ old($name, $fieldValue) }}"
-                        class="block w-full border-gray-300 rounded-lg shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4
-                            @if($isReadOnly) bg-gray-50 text-gray-600 @endif
-                            @if($isFieldInvalid) border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50 @endif"
+                        class="block w-full border rounded-lg shadow-sm py-3 px-4
+                            @if($isReadOnly) bg-gray-50 text-gray-600 @else bg-white @endif
+                            @if($isFieldInvalid) border-red-300 focus:border-red-500 focus:ring-red-500 bg-red-50 @else border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 @endif"
                         placeholder="{{ $placeholder }}"
                         @if(($isRequired || $formConfig['karya_ilmiah_required']) && !$isReadOnly) required @endif
                         @if($isReadOnly) readonly @endif>
                     @error($name)<p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
 
-                    {{-- Tampilkan catatan spesifik dari admin jika tidak valid --}}
-                    @if($isFieldInvalid)
+                    {{-- Tampilkan catatan dari semua role jika tidak valid --}}
+                    @if($isFieldInvalid && !empty($fieldValidationNotes))
+                        <div class="mt-2 space-y-1">
+                            @foreach($fieldValidationNotes as $note)
+                                <div class="text-xs text-red-700 bg-red-100 p-2 rounded border-l-2 border-red-400">
+                                    <div class="flex items-start gap-1">
+                                        <i data-lucide="message-square" class="w-3 h-3 mt-0.5 text-red-600"></i>
+                                        <div>
+                                            <strong>{{ $note['role'] }}:</strong><br>
+                                            {{ $note['note'] }}
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @elseif($isFieldInvalid && $fieldValidation)
+                        {{-- Fallback untuk struktur data lama --}}
                         <div class="mt-2 text-xs text-red-700 bg-red-100 p-2 rounded border-l-2 border-red-400">
                             <div class="flex items-start gap-1">
                                 <i data-lucide="message-square" class="w-3 h-3 mt-0.5 text-red-600"></i>
@@ -230,11 +290,26 @@
 
     <!-- Jenjang-specific info with validation awareness -->
     @php
-        // Cek apakah ada error di section karya ilmiah
-        $hasKaryaIlmiahErrors = collect($catatanPerbaikan['karya_ilmiah'] ?? [])
-            ->contains(function ($validation) {
-                return $validation['status'] === 'tidak_sesuai';
-            });
+        // Cek apakah ada error di section karya ilmiah dari semua role
+        $hasKaryaIlmiahErrors = false;
+        if (isset($validationData) && !empty($validationData)) {
+            foreach ($validationData as $role => $data) {
+                if (isset($data['karya_ilmiah'])) {
+                    foreach ($data['karya_ilmiah'] as $field => $validation) {
+                        if (isset($validation['status']) && $validation['status'] === 'tidak_sesuai') {
+                            $hasKaryaIlmiahErrors = true;
+                            break 2;
+                        }
+                    }
+                }
+            }
+        } else {
+            // Fallback to old structure
+            $hasKaryaIlmiahErrors = collect($catatanPerbaikan['karya_ilmiah'] ?? [])
+                ->contains(function ($validation) {
+                    return $validation['status'] === 'tidak_sesuai';
+                });
+        }
     @endphp
 
     @if($jenjangType === 'tenaga-pengajar-to-asisten-ahli')

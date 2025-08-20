@@ -148,11 +148,11 @@ class Usulan extends Model
     }
 
     /**
-     * Relasi many-to-many ke Pegawai (sebagai Penilai).
+     * Relasi many-to-many ke Penilai.
      */
     public function penilais(): BelongsToMany
     {
-        return $this->belongsToMany(Pegawai::class, 'usulan_penilai', 'usulan_id', 'penilai_id')
+        return $this->belongsToMany(Penilai::class, 'usulan_penilai', 'usulan_id', 'penilai_id')
                     ->withPivot('status_penilaian', 'catatan_penilaian')
                     ->withTimestamps();
     }
@@ -640,12 +640,12 @@ class Usulan extends Model
             }
         }
 
-        // Update validation structure
-        $currentValidasi[$role] = [
+        // Update validation structure - preserve existing data like dokumen_pendukung
+        $currentValidasi[$role] = array_merge($existingValidation, [
             'validation' => $existingValidationData,
             'validated_by' => $validatedBy,
             'validated_at' => now()->toISOString()
-        ];
+        ]);
 
         $this->validasi_data = $currentValidasi;
     }
@@ -682,7 +682,7 @@ class Usulan extends Model
         $validasi = $this->getValidasiByRole($role);
 
         foreach ($validasi as $category => $fields) {
-            if (in_array($category, ['validated_by', 'validated_at'])) {
+            if (in_array($category, ['validated_by', 'validated_at', 'dokumen_pendukung'])) {
                 continue;
             }
 

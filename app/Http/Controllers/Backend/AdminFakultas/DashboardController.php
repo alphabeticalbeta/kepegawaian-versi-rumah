@@ -27,7 +27,16 @@ class DashboardController extends Controller
                 return view('backend.layouts.views.admin-fakultas.dashboard', [
                     'unitKerja' => null,
                     'periodeUsulans' => collect(),
-                    'user' => null
+                    'user' => null,
+                    'statistics' => [
+                        'total_periode' => 0,
+                        'total_pengusul' => 0,
+                        'total_perbaikan' => 0,
+                        'total_usulan' => 0,
+                        'unit_kerja_name' => 'Tidak diketahui',
+                        'has_pending_review' => false,
+                        'has_perbaikan' => false
+                    ]
                 ]);
             }
 
@@ -37,7 +46,16 @@ class DashboardController extends Controller
                     'unitKerja' => null,
                     'periodeUsulans' => collect(),
                     'user' => $user,
-                    'error' => 'Unit kerja tidak ditemukan. Periksa pengaturan akun Anda.'
+                    'error' => 'Unit kerja tidak ditemukan. Periksa pengaturan akun Anda.',
+                    'statistics' => [
+                        'total_periode' => 0,
+                        'total_pengusul' => 0,
+                        'total_perbaikan' => 0,
+                        'total_usulan' => 0,
+                        'unit_kerja_name' => 'Tidak diketahui',
+                        'has_pending_review' => false,
+                        'has_perbaikan' => false
+                    ]
                 ]);
             }
 
@@ -47,10 +65,14 @@ class DashboardController extends Controller
             // Get periode usulans with statistics
             $periodeUsulans = $this->getPeriodeUsulansWithStats($user);
 
+            // Calculate dashboard statistics
+            $statistics = $this->getDashboardStatistics($periodeUsulans, $unitKerja);
+
             return view('backend.layouts.views.admin-fakultas.dashboard', [
                 'unitKerja' => $unitKerja,
                 'periodeUsulans' => $periodeUsulans,
-                'user' => $user
+                'user' => $user,
+                'statistics' => $statistics
             ]);
         } catch (\Exception $e) {
             // Log error for debugging
@@ -64,7 +86,16 @@ class DashboardController extends Controller
                 'unitKerja' => null,
                 'periodeUsulans' => collect(),
                 'user' => Auth::guard('pegawai')->user(),
-                'error' => 'Terjadi kesalahan saat memuat dashboard. Silakan coba lagi.'
+                'error' => 'Terjadi kesalahan saat memuat dashboard. Silakan coba lagi.',
+                'statistics' => [
+                    'total_periode' => 0,
+                    'total_pengusul' => 0,
+                    'total_perbaikan' => 0,
+                    'total_usulan' => 0,
+                    'unit_kerja_name' => 'Tidak diketahui',
+                    'has_pending_review' => false,
+                    'has_perbaikan' => false
+                ]
             ]);
         }
     }
@@ -80,21 +111,56 @@ class DashboardController extends Controller
         // Admin fakultas mengelola unit kerja (fakultas)
         $unitKerja = $user->unitKerjaPengelola;
 
-        $periodeUsulans = PeriodeUsulan::with(['usulans' => function($query) use ($unitKerja) {
-            if ($unitKerja) {
-                // Filter usulan berdasarkan pegawai yang berada di fakultas yang sama
-                $query->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function($q) use ($unitKerja) {
-                    $q->where('id', $unitKerja->id);
-                });
-            }
-        }])->paginate(10);
-
-        // Add statistics to each periode
-        foreach ($periodeUsulans as $periode) {
-            $periode->jumlah_pengusul = $periode->usulans->whereIn('status_usulan', ['Diajukan', 'Sedang Direview'])->count();
-            $periode->total_usulan = $periode->usulans->count();
+        if (!$unitKerja) {
+            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
         }
 
+        $unitKerjaId = $unitKerja->id;
+
+        $periodeUsulans = PeriodeUsulan::withCount([
+            'usulans as jumlah_pengusul' => function ($query) use ($unitKerjaId) {
+                $query->whereIn('status_usulan', ['Diajukan', 'Sedang Direview'])
+                    ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
+                        $subQuery->where('id', $unitKerjaId);
+                    });
+            },
+            'usulans as perbaikan' => function ($query) use ($unitKerjaId) {
+                $query->whereIn('status_usulan', ['Perbaikan Usulan', 'Dikembalikan'])
+                    ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
+                        $subQuery->where('id', $unitKerjaId);
+                    });
+            },
+            'usulans as total_usulan' => function ($query) use ($unitKerjaId) {
+                $query->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
+                    $subQuery->where('id', $unitKerjaId);
+                });
+            }
+        ])->latest()->paginate(10);
+
         return $periodeUsulans;
+    }
+
+    /**
+     * Get dashboard statistics
+     *
+     * @param \Illuminate\Contracts\Pagination\LengthAwarePaginator $periodeUsulans
+     * @param \App\Models\BackendUnivUsulan\UnitKerja|null $unitKerja
+     * @return array
+     */
+    private function getDashboardStatistics($periodeUsulans, $unitKerja)
+    {
+        $totalPengusul = collect($periodeUsulans->items())->sum('jumlah_pengusul');
+        $totalPerbaikan = collect($periodeUsulans->items())->sum('perbaikan');
+        $totalUsulan = collect($periodeUsulans->items())->sum('total_usulan');
+
+        return [
+            'total_periode' => $periodeUsulans->total(),
+            'total_pengusul' => $totalPengusul,
+            'total_perbaikan' => $totalPerbaikan,
+            'total_usulan' => $totalUsulan,
+            'unit_kerja_name' => $unitKerja ? $unitKerja->nama : 'Tidak diketahui',
+            'has_pending_review' => $totalPengusul > 0,
+            'has_perbaikan' => $totalPerbaikan > 0
+        ];
     }
 }

@@ -565,7 +565,7 @@ class UsulanJabatanController extends BaseUsulanController
         ]);
 
         $canEdit = in_array($usulan->status_usulan, [
-            'Draft', 'Perlu Perbaikan', 'Dikembalikan'
+            'Draft', 'Perbaikan Usulan', 'Dikembalikan'
         ]);
 
         // Get periode usulan
@@ -580,7 +580,16 @@ class UsulanJabatanController extends BaseUsulanController
         $jenjangType = $this->determineJenjangType($pegawai, $jabatanLama, $jabatanTujuan);
         $formConfig = $this->getFormConfigByJenjang($jenjangType);
 
-        $catatanPerbaikan = $usulan->getValidasiByRole('admin_fakultas');
+        // Get validation data from all roles for comprehensive feedback
+        $catatanPerbaikan = [];
+        $roles = ['admin_fakultas', 'admin_universitas', 'tim_penilai'];
+
+        foreach ($roles as $role) {
+            $roleData = $usulan->getValidasiByRole($role);
+            if (!empty($roleData) && isset($roleData['validation'])) {
+                $catatanPerbaikan[$role] = $roleData['validation'];
+            }
+        }
 
         $bkdSemesters = $this->generateBkdSemesterLabels($usulan->periodeUsulan);
 
@@ -601,6 +610,7 @@ class UsulanJabatanController extends BaseUsulanController
             'isReadOnly' => $isReadOnly,
             'isEditMode' => $canEdit,
             'existingUsulan' => $usulan,
+            'validationData' => $catatanPerbaikan, // Pass validation data for field highlighting
         ]);
     }
 
@@ -635,6 +645,8 @@ class UsulanJabatanController extends BaseUsulanController
         $action = $request->input('action');
         $statusUsulan = match($action) {
             'submit' => 'Diajukan',
+            'submit_to_fakultas' => 'Diajukan', // Back to Admin Fakultas
+            'submit_to_university' => 'Diusulkan ke Universitas', // Back to Admin Universitas
             'save_draft' => 'Draft',
             default => 'Draft'
         };
@@ -710,10 +722,10 @@ class UsulanJabatanController extends BaseUsulanController
             });
 
             // Dispatch background jobs (outside transaction)
-            if ($updatedUsulan && $oldStatus !== 'Diajukan' && $statusUsulan === 'Diajukan') {
+            if ($updatedUsulan && $oldStatus !== $statusUsulan) {
                 try {
                     $this->dispatchUsulanJobs($updatedUsulan, $statusUsulan);
-                    Log::info('Background jobs dispatched', ['usulan_id' => $updatedUsulan->id]);
+                    Log::info('Background jobs dispatched', ['usulan_id' => $updatedUsulan->id, 'status' => $statusUsulan]);
                 } catch (\Throwable $e) {
                     Log::error('Failed to dispatch background jobs', [
                         'usulan_id' => $updatedUsulan->id,
@@ -724,6 +736,8 @@ class UsulanJabatanController extends BaseUsulanController
 
             $message = match($action) {
                 'submit' => 'Usulan kenaikan jabatan berhasil diperbarui dan diajukan. Tim verifikasi akan meninjau usulan Anda.',
+                'submit_to_fakultas' => 'Usulan berhasil dikembalikan ke Admin Fakultas untuk ditinjau kembali.',
+                'submit_to_university' => 'Usulan berhasil dikembalikan ke Admin Universitas untuk ditinjau kembali.',
                 'save_draft' => 'Perubahan pada usulan Anda berhasil disimpan sebagai Draft.',
                 default => 'Perubahan pada usulan Anda berhasil disimpan.'
             };

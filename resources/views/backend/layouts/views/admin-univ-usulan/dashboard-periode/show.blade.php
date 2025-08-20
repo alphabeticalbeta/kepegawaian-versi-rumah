@@ -156,30 +156,6 @@
         </div>
     </div>
 
-    <!-- Timeline Chart -->
-    @if($timelineData->count() > 0)
-        <div class="bg-white/90 backdrop-blur-xl rounded-2xl shadow-xl border border-white/30 p-6 mb-8">
-            <h3 class="text-lg font-semibold text-slate-800 mb-4">Timeline Usulan per Bulan</h3>
-            <div class="flex items-end space-x-2 h-40">
-                @foreach($timelineData as $data)
-                    @php
-                        $maxCount = $timelineData->max('count');
-                        $height = $maxCount > 0 ? ($data['count'] / $maxCount) * 100 : 0;
-                    @endphp
-                    <div class="flex-1 flex flex-col items-center">
-                        <div class="w-full bg-indigo-500 rounded-t hover:bg-indigo-600 transition-colors relative group"
-                             style="height: {{ $height }}%">
-                            <div class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                                {{ $data['count'] }} usulan
-                            </div>
-                        </div>
-                        <div class="text-xs text-slate-500 mt-2 text-center">{{ $data['label'] }}</div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    @endif
-
     <!-- Action Buttons -->
     <div class="flex flex-wrap gap-4 mb-6">
         <a href="{{ route('backend.admin-univ-usulan.periode-usulan.edit', $periode) }}"

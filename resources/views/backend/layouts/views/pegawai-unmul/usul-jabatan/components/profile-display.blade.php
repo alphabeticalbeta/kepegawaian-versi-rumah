@@ -61,14 +61,12 @@
 
                 @foreach ($dataPribadi as $key => [$label, $value, $icon])
                     @php
-                        // Cek apakah ada catatan perbaikan untuk field ini
-                        $fieldValidation = $catatanPerbaikan['data_pribadi'][$key] ?? null;
-                        $isFieldInvalid = $fieldValidation && $fieldValidation['status'] === 'tidak_sesuai';
-
-                        // Get all validation notes for this field if in edit mode
+                        // Use hybrid approach for validation checking
+                        $isFieldInvalid = isFieldInvalid('data_pribadi', $key, $validationData ?? [], $catatanPerbaikan ?? []);
                         $allValidationNotes = [];
-                        if (isset($isEditMode) && $isEditMode && isset($validationData) && !empty($validationData)) {
-                            $allValidationNotes = getAllValidationNotes('data_pribadi', $key, $validationData);
+
+                        if (isset($isEditMode) && $isEditMode) {
+                            $allValidationNotes = getFieldValidationNotes('data_pribadi', $key, $validationData ?? [], $catatanPerbaikan ?? []);
                         }
                     @endphp
 
@@ -145,14 +143,12 @@
 
                 @foreach ($dataKepegawaian as $key => [$label, $value, $icon])
                     @php
-                        // Cek apakah ada catatan perbaikan untuk field ini
-                        $fieldValidation = $catatanPerbaikan['data_kepegawaian'][$key] ?? null;
-                        $isFieldInvalid = $fieldValidation && $fieldValidation['status'] === 'tidak_sesuai';
-
-                        // Get all validation notes for this field if in edit mode
+                        // Use hybrid approach for validation checking
+                        $isFieldInvalid = isFieldInvalid('data_kepegawaian', $key, $validationData ?? [], $catatanPerbaikan ?? []);
                         $allValidationNotes = [];
-                        if (isset($isEditMode) && $isEditMode && isset($validationData) && !empty($validationData)) {
-                            $allValidationNotes = getAllValidationNotes('data_kepegawaian', $key, $validationData);
+
+                        if (isset($isEditMode) && $isEditMode) {
+                            $allValidationNotes = getFieldValidationNotes('data_kepegawaian', $key, $validationData ?? [], $catatanPerbaikan ?? []);
                         }
                     @endphp
 
@@ -229,14 +225,12 @@
 
                 @foreach ($dataPendidikan as $key => [$label, $value, $icon])
                     @php
-                        // Cek apakah ada catatan perbaikan untuk field ini
-                        $fieldValidation = $catatanPerbaikan['data_pendidikan'][$key] ?? null;
-                        $isFieldInvalid = $fieldValidation && $fieldValidation['status'] === 'tidak_sesuai';
-
-                        // Get all validation notes for this field if in edit mode
+                        // Use hybrid approach for validation checking
+                        $isFieldInvalid = isFieldInvalid('data_pendidikan', $key, $validationData ?? [], $catatanPerbaikan ?? []);
                         $allValidationNotes = [];
-                        if (isset($isEditMode) && $isEditMode && isset($validationData) && !empty($validationData)) {
-                            $allValidationNotes = getAllValidationNotes('data_pendidikan', $key, $validationData);
+
+                        if (isset($isEditMode) && $isEditMode) {
+                            $allValidationNotes = getFieldValidationNotes('data_pendidikan', $key, $validationData ?? [], $catatanPerbaikan ?? []);
                         }
                     @endphp
 
@@ -264,16 +258,20 @@
                                 @endif
                             </dd>
 
-                            {{-- Tampilkan catatan spesifik dari admin jika tidak valid --}}
-                            @if($isFieldInvalid)
-                                <div class="mt-2 text-xs text-red-700 bg-red-100 p-2 rounded border-l-2 border-red-400">
-                                    <div class="flex items-start gap-1">
-                                        <i data-lucide="message-square" class="w-3 h-3 mt-0.5 text-red-600"></i>
-                                        <div>
-                                            <strong>Catatan Perbaikan:</strong><br>
-                                            {{ $fieldValidation['keterangan'] }}
+                            {{-- Tampilkan catatan dari semua role jika tidak valid --}}
+                            @if($isFieldInvalid && !empty($allValidationNotes))
+                                <div class="mt-2 space-y-2">
+                                    @foreach($allValidationNotes as $note)
+                                        <div class="text-xs text-red-700 bg-red-100 p-2 rounded border-l-2 border-red-400">
+                                            <div class="flex items-start gap-1">
+                                                <i data-lucide="message-square" class="w-3 h-3 mt-0.5 text-red-600"></i>
+                                                <div>
+                                                    <strong>{{ $note['role'] }}:</strong><br>
+                                                    {{ $note['note'] }}
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
+                                    @endforeach
                                 </div>
                             @endif
 
@@ -303,14 +301,12 @@
 
                 @foreach ($dataKinerja as $key => [$label, $value, $icon])
                     @php
-                        // Cek apakah ada catatan perbaikan untuk field ini
-                        $fieldValidation = $catatanPerbaikan['data_kinerja'][$key] ?? null;
-                        $isFieldInvalid = $fieldValidation && $fieldValidation['status'] === 'tidak_sesuai';
-
-                        // Get all validation notes for this field if in edit mode
+                        // Use hybrid approach for validation checking
+                        $isFieldInvalid = isFieldInvalid('data_kinerja', $key, $validationData ?? [], $catatanPerbaikan ?? []);
                         $allValidationNotes = [];
-                        if (isset($isEditMode) && $isEditMode && isset($validationData) && !empty($validationData)) {
-                            $allValidationNotes = getAllValidationNotes('data_kinerja', $key, $validationData);
+
+                        if (isset($isEditMode) && $isEditMode) {
+                            $allValidationNotes = getFieldValidationNotes('data_kinerja', $key, $validationData ?? [], $catatanPerbaikan ?? []);
                         }
                     @endphp
 
@@ -400,9 +396,13 @@
 
                     @foreach ($dokumenProfil as $key => [$label, $icon])
                         @php
-                            // Cek apakah ada catatan perbaikan untuk dokumen ini
-                            $fieldValidation = $catatanPerbaikan['dokumen_profil'][$key] ?? null;
-                            $isFieldInvalid = $fieldValidation && $fieldValidation['status'] === 'tidak_sesuai';
+                            // Use hybrid approach for validation checking
+                            $isFieldInvalid = isFieldInvalid('dokumen_profil', $key, $validationData ?? [], $catatanPerbaikan ?? []);
+                            $allValidationNotes = [];
+
+                            if (isset($isEditMode) && $isEditMode) {
+                                $allValidationNotes = getFieldValidationNotes('dokumen_profil', $key, $validationData ?? [], $catatanPerbaikan ?? []);
+                            }
                         @endphp
 
                         <div class="group flex items-center justify-between p-4 {{ $isFieldInvalid ? 'bg-red-50 border border-red-200' : 'bg-slate-50' }} hover:{{ $isFieldInvalid ? 'bg-red-100' : 'bg-slate-100' }} rounded-lg transition-all duration-200">
@@ -426,16 +426,20 @@
                                         <p class="text-xs text-slate-400 italic mt-1">Belum diunggah</p>
                                     @endif
 
-                                    {{-- Tampilkan catatan spesifik dari admin jika tidak valid --}}
-                                    @if($isFieldInvalid)
-                                        <div class="mt-2 text-xs text-red-700 bg-red-100 p-2 rounded border-l-2 border-red-400">
-                                            <div class="flex items-start gap-1">
-                                                <i data-lucide="message-square" class="w-3 h-3 mt-0.5 text-red-600"></i>
-                                                <div>
-                                                    <strong>Catatan Perbaikan:</strong><br>
-                                                    {{ $fieldValidation['keterangan'] }}
+                                                                    {{-- Tampilkan catatan dari semua role jika tidak valid --}}
+                                    @if($isFieldInvalid && !empty($allValidationNotes))
+                                        <div class="mt-2 space-y-2">
+                                            @foreach($allValidationNotes as $note)
+                                                <div class="text-xs text-red-700 bg-red-100 p-2 rounded border-l-2 border-red-400">
+                                                    <div class="flex items-start gap-1">
+                                                        <i data-lucide="message-square" class="w-3 h-3 mt-0.5 text-red-600"></i>
+                                                        <div>
+                                                            <strong>{{ $note['role'] }}:</strong><br>
+                                                            {{ $note['note'] }}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            @endforeach
                                         </div>
                                     @endif
                                 </div>

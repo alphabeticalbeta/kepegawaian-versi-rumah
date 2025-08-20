@@ -12,6 +12,13 @@
         <div class="space-y-1">
 
             <div class="px-4 relative">
+                <a href="{{ route('penilai-universitas.dashboard') }}" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
+                    <i data-lucide="home" class="w-5 h-5 mr-3 flex-shrink-0"></i>
+                    <span class="font-medium sidebar-text">Dashboard</span>
+                </a>
+            </div>
+
+            <div class="px-4 relative">
                 <a href="{{ route('penilai-universitas.pusat-usulan.index') }}" class="flex items-center px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100">
                     <i data-lucide="file-user" class="w-5 h-5 mr-3 flex-shrink-0"></i>
                     <span class="font-medium sidebar-text">Usulan Jabatan</span>

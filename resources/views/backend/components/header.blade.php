@@ -21,7 +21,7 @@
                     $availableDashboards['Admin Universitas'] = route('admin-universitas.dashboard');
                 }
                 if ($roles->contains('Admin Universitas Usulan')) {
-                    $availableDashboards['Admin Usulan'] = route('backend.admin-univ-usulan.dashboard');
+                    $availableDashboards['Admin Usulan'] = route('admin-univ-usulan.dashboard');
                 }
                 if ($roles->contains('Admin Fakultas')) {
                     $availableDashboards['Admin Fakultas'] = route('admin-fakultas.dashboard');
@@ -33,7 +33,7 @@
                     $availableDashboards['Tim Senat'] = route('tim-senat.dashboard');
                 }
                 if ($roles->contains('Penilai Universitas')) {
-                    $availableDashboards['Penilai'] = route('penilai-universitas.dashboard-penilai-universitas');
+                    $availableDashboards['Penilai'] = route('penilai-universitas.dashboard');
                 }
 
                 // Selalu tambahkan dashboard default Pegawai

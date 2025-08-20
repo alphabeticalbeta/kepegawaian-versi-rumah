@@ -6,10 +6,24 @@
         <i data-lucide="upload" class="w-5 h-5 mr-2 text-indigo-600"></i>
         Upload Dokumen Pendukung
         @php
-            // Hitung total error di section dokumen
-            $dokumenErrors = collect($catatanPerbaikan['dokumen_usulan'] ?? [])
-                ->where('status', 'tidak_sesuai')
-                ->count();
+            // Hitung total error di section dokumen dari semua role
+            $dokumenErrors = 0;
+            if (isset($validationData) && !empty($validationData)) {
+                foreach ($validationData as $role => $data) {
+                    if (isset($data['dokumen_usulan'])) {
+                        foreach ($data['dokumen_usulan'] as $field => $validation) {
+                            if (isset($validation['status']) && $validation['status'] === 'tidak_sesuai') {
+                                $dokumenErrors++;
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Fallback to old structure
+                $dokumenErrors = collect($catatanPerbaikan['dokumen_usulan'] ?? [])
+                    ->where('status', 'tidak_sesuai')
+                    ->count();
+            }
         @endphp
         @if($dokumenErrors > 0)
             <span class="ml-3 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
@@ -42,8 +56,18 @@
         {{-- PAKTA INTEGRITAS (Wajib untuk semua jenjang) --}}
         @if($formConfig['required_documents']['pakta_integritas'])
             @php
-                $paktaValidation = $catatanPerbaikan['dokumen_usulan']['pakta_integritas'] ?? null;
-                $isPaktaInvalid = $paktaValidation && $paktaValidation['status'] === 'tidak_sesuai';
+                $paktaValidation = null;
+                $isPaktaInvalid = false;
+                $paktaValidationNotes = [];
+
+                if (isset($validationData) && !empty($validationData)) {
+                    $paktaValidationNotes = getAllValidationNotes('dokumen_usulan', 'pakta_integritas', $validationData);
+                    $isPaktaInvalid = hasValidationIssue('dokumen_usulan', 'pakta_integritas', $validationData);
+                } else {
+                    // Fallback to old structure
+                    $paktaValidation = $catatanPerbaikan['dokumen_usulan']['pakta_integritas'] ?? null;
+                    $isPaktaInvalid = $paktaValidation && $paktaValidation['status'] === 'tidak_sesuai';
+                }
 
                 $paktaExists = false;
                 if (isset($usulan)) {
@@ -88,8 +112,23 @@
                     <p class="mt-2 text-xs {{ $isPaktaInvalid ? 'text-red-600' : 'text-gray-500' }}">File harus dalam format PDF, maksimal 1MB.</p>
                 @endif
 
-                {{-- Tampilkan catatan spesifik dari admin jika tidak valid --}}
-                @if($isPaktaInvalid)
+                {{-- Tampilkan catatan dari semua role jika tidak valid --}}
+                @if($isPaktaInvalid && !empty($paktaValidationNotes))
+                    <div class="mt-3 space-y-2">
+                        @foreach($paktaValidationNotes as $note)
+                            <div class="text-xs text-red-700 bg-red-100 p-3 rounded border-l-2 border-red-400">
+                                <div class="flex items-start gap-2">
+                                    <i data-lucide="message-square" class="w-4 h-4 mt-0.5 text-red-600"></i>
+                                    <div>
+                                        <strong>{{ $note['role'] }}:</strong><br>
+                                        {{ $note['note'] }}
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @elseif($isPaktaInvalid && $paktaValidation)
+                    {{-- Fallback untuk struktur data lama --}}
                     <div class="mt-3 text-xs text-red-700 bg-red-100 p-3 rounded border-l-2 border-red-400">
                         <div class="flex items-start gap-2">
                             <i data-lucide="message-square" class="w-4 h-4 mt-0.5 text-red-600"></i>
@@ -108,8 +147,13 @@
         {{-- BUKTI KORESPONDENSI (Conditional based on jenjang) --}}
         @if($formConfig['required_documents']['bukti_korespondensi'])
             @php
-                $korespondensiValidation = $catatanPerbaikan['dokumen_usulan']['bukti_korespondensi'] ?? null;
-                $isKorespondensiInvalid = $korespondensiValidation && $korespondensiValidation['status'] === 'tidak_sesuai';
+                $korespondensiValidation = null;
+                $isKorespondensiInvalid = false;
+                $korespondensiValidationNotes = [];
+
+                // Use hybrid approach for validation checking
+                $isKorespondensiInvalid = isFieldInvalid('dokumen_usulan', 'bukti_korespondensi', $validationData ?? [], $catatanPerbaikan ?? []);
+                $korespondensiValidationNotes = getFieldValidationNotes('dokumen_usulan', 'bukti_korespondensi', $validationData ?? [], $catatanPerbaikan ?? []);
 
                 $korespondensiExists = false;
                 if (isset($usulan)) {
@@ -154,8 +198,23 @@
                     <p class="mt-2 text-xs {{ $isKorespondensiInvalid ? 'text-red-600' : 'text-gray-500' }}">File harus dalam format PDF, maksimal 1MB.</p>
                 @endif
 
-                {{-- Tampilkan catatan spesifik dari admin jika tidak valid --}}
-                @if($isKorespondensiInvalid)
+                {{-- Tampilkan catatan dari semua role jika tidak valid --}}
+                @if($isKorespondensiInvalid && !empty($korespondensiValidationNotes))
+                    <div class="mt-3 space-y-2">
+                        @foreach($korespondensiValidationNotes as $note)
+                            <div class="text-xs text-red-700 bg-red-100 p-3 rounded border-l-2 border-red-400">
+                                <div class="flex items-start gap-2">
+                                    <i data-lucide="message-square" class="w-4 h-4 mt-0.5 text-red-600"></i>
+                                    <div>
+                                        <strong>{{ $note['role'] }}:</strong><br>
+                                        {{ $note['note'] }}
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @elseif($isKorespondensiInvalid && $korespondensiValidation)
+                    {{-- Fallback untuk struktur data lama --}}
                     <div class="mt-3 text-xs text-red-700 bg-red-100 p-3 rounded border-l-2 border-red-400">
                         <div class="flex items-start gap-2">
                             <i data-lucide="message-square" class="w-4 h-4 mt-0.5 text-red-600"></i>
@@ -174,8 +233,13 @@
         {{-- TURNITIN (Conditional based on jenjang) --}}
         @if($formConfig['required_documents']['turnitin'])
             @php
-                $turnitinValidation = $catatanPerbaikan['dokumen_usulan']['turnitin'] ?? null;
-                $isTurnitinInvalid = $turnitinValidation && $turnitinValidation['status'] === 'tidak_sesuai';
+                $turnitinValidation = null;
+                $isTurnitinInvalid = false;
+                $turnitinValidationNotes = [];
+
+                // Use hybrid approach for validation checking
+                $isTurnitinInvalid = isFieldInvalid('dokumen_usulan', 'turnitin', $validationData ?? [], $catatanPerbaikan ?? []);
+                $turnitinValidationNotes = getFieldValidationNotes('dokumen_usulan', 'turnitin', $validationData ?? [], $catatanPerbaikan ?? []);
 
                 $turnitinExists = false;
                 if (isset($usulan)) {
@@ -220,8 +284,23 @@
                     <p class="mt-2 text-xs {{ $isTurnitinInvalid ? 'text-red-600' : 'text-gray-500' }}">File harus dalam format PDF, maksimal 1MB.</p>
                 @endif
 
-                {{-- Tampilkan catatan spesifik dari admin jika tidak valid --}}
-                @if($isTurnitinInvalid)
+                {{-- Tampilkan catatan dari semua role jika tidak valid --}}
+                @if($isTurnitinInvalid && !empty($turnitinValidationNotes))
+                    <div class="mt-3 space-y-2">
+                        @foreach($turnitinValidationNotes as $note)
+                            <div class="text-xs text-red-700 bg-red-100 p-3 rounded border-l-2 border-red-400">
+                                <div class="flex items-start gap-2">
+                                    <i data-lucide="message-square" class="w-4 h-4 mt-0.5 text-red-600"></i>
+                                    <div>
+                                        <strong>{{ $note['role'] }}:</strong><br>
+                                        {{ $note['note'] }}
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @elseif($isTurnitinInvalid && $turnitinValidation)
+                    {{-- Fallback untuk struktur data lama --}}
                     <div class="mt-3 text-xs text-red-700 bg-red-100 p-3 rounded border-l-2 border-red-400">
                         <div class="flex items-start gap-2">
                             <i data-lucide="message-square" class="w-4 h-4 mt-0.5 text-red-600"></i>
@@ -240,8 +319,13 @@
         {{-- UPLOAD ARTIKEL (Conditional based on jenjang) --}}
         @if($formConfig['required_documents']['upload_artikel'])
             @php
-                $artikelValidation = $catatanPerbaikan['dokumen_usulan']['upload_artikel'] ?? null;
-                $isArtikelInvalid = $artikelValidation && $artikelValidation['status'] === 'tidak_sesuai';
+                $artikelValidation = null;
+                $isArtikelInvalid = false;
+                $artikelValidationNotes = [];
+
+                // Use hybrid approach for validation checking
+                $isArtikelInvalid = isFieldInvalid('dokumen_usulan', 'upload_artikel', $validationData ?? [], $catatanPerbaikan ?? []);
+                $artikelValidationNotes = getFieldValidationNotes('dokumen_usulan', 'upload_artikel', $validationData ?? [], $catatanPerbaikan ?? []);
 
                 $artikelExists = false;
                 if (isset($usulan)) {
@@ -286,8 +370,23 @@
                     <p class="mt-2 text-xs {{ $isArtikelInvalid ? 'text-red-600' : 'text-gray-500' }}">File harus dalam format PDF, maksimal 1MB.</p>
                 @endif
 
-                {{-- Tampilkan catatan spesifik dari admin jika tidak valid --}}
-                @if($isArtikelInvalid)
+                {{-- Tampilkan catatan dari semua role jika tidak valid --}}
+                @if($isArtikelInvalid && !empty($artikelValidationNotes))
+                    <div class="mt-3 space-y-2">
+                        @foreach($artikelValidationNotes as $note)
+                            <div class="text-xs text-red-700 bg-red-100 p-3 rounded border-l-2 border-red-400">
+                                <div class="flex items-start gap-2">
+                                    <i data-lucide="message-square" class="w-4 h-4 mt-0.5 text-red-600"></i>
+                                    <div>
+                                        <strong>{{ $note['role'] }}:</strong><br>
+                                        {{ $note['note'] }}
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @elseif($isArtikelInvalid && $artikelValidation)
+                    {{-- Fallback untuk struktur data lama --}}
                     <div class="mt-3 text-xs text-red-700 bg-red-100 p-3 rounded border-l-2 border-red-400">
                         <div class="flex items-start gap-2">
                             <i data-lucide="message-square" class="w-4 h-4 mt-0.5 text-red-600"></i>

@@ -83,7 +83,10 @@ class UsulanController extends Controller
             }
         ]);
 
-        return view('backend.layouts.views.admin-univ-usulan.usulan.show', compact('usulan'));
+        // Get existing validation data
+        $existingValidation = $usulan->getValidasiByRole('admin_universitas') ?? [];
+
+        return view('backend.layouts.views.admin-univ-usulan.usulan.detail', compact('usulan', 'existingValidation'));
     }
 
     /**

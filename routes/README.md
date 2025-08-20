@@ -171,9 +171,6 @@ Route::prefix('admin-fakultas')
 - `GET /admin-fakultas/dashboard` - Dashboard Admin Fakultas
 
 #### **Usulan**
-- `GET /admin-fakultas/usulan` - Index Usulan
-- `GET /admin-fakultas/usulan/jabatan` - Usulan Jabatan
-- `GET /admin-fakultas/usulan/pangkat` - Usulan Pangkat
 - `GET /admin-fakultas/usulan/{adminUsulan}` - Show Usulan
 - `POST /admin-fakultas/usulan/{adminUsulan}/validasi` - Save Validation
 - `POST /admin-fakultas/usulan/{usulan}/autosave` - Autosave Validation

@@ -78,7 +78,7 @@ class StoreJabatanUsulanRequest extends FormRequest
             'catatan' => 'nullable|string|max:1000',
 
             // ACTION - Keep required
-            'action' => 'required|string|in:save_draft,submit',
+            'action' => 'required|string|in:save_draft,submit,submit_to_university,submit_to_fakultas',
         ];
 
         return $rules;

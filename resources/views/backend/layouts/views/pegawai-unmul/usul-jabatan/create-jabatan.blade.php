@@ -25,14 +25,20 @@
 
         foreach ($roles as $role) {
             $roleData = $usulan->getValidasiByRole($role);
-            if (!empty($roleData['validation'])) {
+            if (!empty($roleData) && isset($roleData['validation']) && !empty($roleData['validation'])) {
                 $validationData[$role] = $roleData['validation'];
             }
         }
+
+
     }
 
-    // Function to check if field has validation issues
+        // Function to check if field has validation issues - ENHANCED
     function hasValidationIssue($fieldGroup, $fieldName, $validationData) {
+        if (empty($validationData)) {
+            return false;
+        }
+
         foreach ($validationData as $role => $data) {
             if (isset($data[$fieldGroup][$fieldName]['status']) &&
                 $data[$fieldGroup][$fieldName]['status'] === 'tidak_sesuai') {
@@ -45,6 +51,10 @@
     // Function to get validation notes for a field
     function getValidationNotes($fieldGroup, $fieldName, $validationData) {
         $notes = [];
+        if (empty($validationData)) {
+            return $notes;
+        }
+
         foreach ($validationData as $role => $data) {
             if (isset($data[$fieldGroup][$fieldName]['keterangan']) &&
                 !empty($data[$fieldGroup][$fieldName]['keterangan'])) {
@@ -58,6 +68,10 @@
     // Function to get all validation notes for a field (for display)
     function getAllValidationNotes($fieldGroup, $fieldName, $validationData) {
         $notes = [];
+        if (empty($validationData)) {
+            return $notes;
+        }
+
         foreach ($validationData as $role => $data) {
             if (isset($data[$fieldGroup][$fieldName]['keterangan']) &&
                 !empty($data[$fieldGroup][$fieldName]['keterangan'])) {
@@ -70,6 +84,43 @@
             }
         }
         return $notes;
+    }
+
+    // Function to get legacy validation for backwards compatibility
+    function getLegacyValidation($fieldGroup, $fieldName, $catatanPerbaikan) {
+        return $catatanPerbaikan[$fieldGroup][$fieldName] ?? null;
+    }
+
+    // Function to check if field is invalid (hybrid approach)
+    function isFieldInvalid($fieldGroup, $fieldName, $validationData, $catatanPerbaikan) {
+        // First, try new validation data structure
+        if (!empty($validationData)) {
+            return hasValidationIssue($fieldGroup, $fieldName, $validationData);
+        }
+
+        // Fallback to legacy structure
+        $legacy = getLegacyValidation($fieldGroup, $fieldName, $catatanPerbaikan);
+        return $legacy && isset($legacy['status']) && $legacy['status'] === 'tidak_sesuai';
+    }
+
+    // Function to get field validation notes (hybrid approach)
+    function getFieldValidationNotes($fieldGroup, $fieldName, $validationData, $catatanPerbaikan) {
+        // First, try new validation data structure
+        if (!empty($validationData)) {
+            return getAllValidationNotes($fieldGroup, $fieldName, $validationData);
+        }
+
+        // Fallback to legacy structure
+        $legacy = getLegacyValidation($fieldGroup, $fieldName, $catatanPerbaikan);
+        if ($legacy && isset($legacy['keterangan']) && !empty($legacy['keterangan'])) {
+            return [[
+                'role' => 'Admin Fakultas',
+                'note' => $legacy['keterangan'],
+                'status' => $legacy['status'] ?? 'tidak_sesuai'
+            ]];
+        }
+
+        return [];
     }
 @endphp
 
@@ -110,25 +161,6 @@
 
     {{-- Main Content --}}
     <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {{-- Notification for revision status in edit mode --}}
-        @if($isEditMode && $usulan && $usulan->status_usulan === 'Perlu Perbaikan' && $usulan->catatan_verifikator)
-        <div class="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <div class="flex items-start">
-                <div class="flex-shrink-0">
-                    <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600"></i>
-                </div>
-                <div class="ml-3">
-                    <h3 class="text-sm font-medium text-amber-800">
-                        Usulan Dikembalikan untuk Perbaikan
-                    </h3>
-                    <div class="mt-2 text-sm text-amber-700">
-                        <p class="mb-2"><strong>Catatan dari Admin Fakultas:</strong></p>
-                        <p class="bg-white p-3 rounded border border-amber-200">{{ $usulan->catatan_verifikator }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        @endif
 
         @php
             // Cek kelengkapan data profil
@@ -155,79 +187,7 @@
             }
         @endphp
 
-        {{-- Profile Completeness Check --}}
-        @if(!$isProfileComplete && !$isShowMode)
-            <div class="bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-lg mb-6">
-                <div class="flex items-start gap-3">
-                    <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600 mt-0.5"></i>
-                    <div class="flex-1">
-                        <h3 class="font-semibold text-lg">Profil Belum Lengkap</h3>
-                        <p class="text-sm mt-1">Anda harus melengkapi data profil terlebih dahulu sebelum dapat membuat usulan jabatan.</p>
-                        <div class="mt-3">
-                            <h4 class="font-medium text-sm">Field yang perlu dilengkapi:</h4>
-                            <ul class="text-sm mt-1 list-disc list-inside space-y-1">
-                                @foreach($missingFields as $field)
-                                    <li class="capitalize">{{ str_replace('_', ' ', $field) }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                        <div class="mt-4">
-                            <a href="{{ route('pegawai-unmul.usulan-pegawai.dashboard') }}"
-                               class="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                                <i data-lucide="edit" class="w-4 h-4 mr-2"></i>
-                                Lengkapi Profil
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @elseif(!$isShowMode)
-            {{-- Success Notification --}}
-            <div class="bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-lg mb-6">
-                <div class="flex items-start gap-3">
-                    <i data-lucide="check-circle" class="w-6 h-6 text-green-600 mt-0.5"></i>
-                    <div class="flex-1">
-                        <h3 class="font-semibold text-lg">Profil Lengkap</h3>
-                        <p class="text-sm mt-1">Data profil Anda sudah lengkap. Anda dapat melanjutkan untuk membuat usulan jabatan.</p>
-                    </div>
-                </div>
-            </div>
-        @endif
 
-        {{-- Period Availability Check --}}
-        @if((!isset($daftarPeriode) || empty($daftarPeriode)) && !$isShowMode)
-            <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 px-6 py-4 rounded-lg mb-6">
-                <div class="flex items-start gap-3">
-                    <i data-lucide="clock" class="w-6 h-6 text-yellow-600 mt-0.5"></i>
-                    <div class="flex-1">
-                        <h3 class="font-semibold text-lg">Tidak Ada Periode Aktif</h3>
-                        <p class="text-sm mt-1">Saat ini tidak ada periode usulan yang sedang berlangsung. Silakan cek kembali nanti.</p>
-                    </div>
-                </div>
-            </div>
-            @php $canProceed = false; @endphp
-        @endif
-
-        {{-- Existing Usulan Check --}}
-        @if(isset($existingUsulan) && $existingUsulan && !$isEditMode && !$isShowMode)
-            <div class="bg-blue-50 border border-blue-200 text-blue-800 px-6 py-4 rounded-lg mb-6">
-                <div class="flex items-start gap-3">
-                    <i data-lucide="info" class="w-6 h-6 text-blue-600 mt-0.5"></i>
-                    <div class="flex-1">
-                        <h3 class="font-semibold text-lg">Usulan Sudah Ada</h3>
-                        <p class="text-sm mt-1">Anda sudah memiliki usulan jabatan untuk periode ini dengan status: <strong>{{ $existingUsulan->status_usulan }}</strong></p>
-                        <div class="mt-3">
-                            <a href="{{ route('pegawai-unmul.usulan-jabatan.edit', $existingUsulan->id) }}"
-                               class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                <i data-lucide="edit" class="w-4 h-4 mr-2"></i>
-                                Edit Usulan
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @php $canProceed = false; @endphp
-        @endif
 
         {{-- Form Content --}}
         @if($canProceed)
@@ -238,6 +198,43 @@
             @elseif(!$isShowMode)
                 <form id="usulan-form" action="{{ route('pegawai-unmul.usulan-jabatan.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
+            @endif
+
+            {{-- Notification for Revision Status --}}
+            @if($isEditMode && $usulan && $usulan->status_usulan === 'Perbaikan Usulan')
+            @php
+                // Determine which role sent the revision request
+                $adminUnivValidation = $usulan->getValidasiByRole('admin_universitas');
+                $adminFakultasValidation = $usulan->getValidasiByRole('admin_fakultas');
+
+                $revisionFromRole = 'Admin Fakultas'; // Default
+                $revisionFromRoleColor = 'amber';
+
+                if (!empty($adminUnivValidation)) {
+                    $revisionFromRole = 'Admin Universitas';
+                    $revisionFromRoleColor = 'blue';
+                } elseif (!empty($adminFakultasValidation)) {
+                    $revisionFromRole = 'Admin Fakultas';
+                    $revisionFromRoleColor = 'amber';
+                }
+            @endphp
+
+            <div class="mb-6 bg-{{ $revisionFromRoleColor }}-50 border border-{{ $revisionFromRoleColor }}-200 rounded-lg p-4">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <i data-lucide="alert-triangle" class="w-5 h-5 text-{{ $revisionFromRoleColor }}-600"></i>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-{{ $revisionFromRoleColor }}-800">
+                            Usulan Dikembalikan untuk Perbaikan
+                        </h3>
+                        <div class="mt-2 text-sm text-{{ $revisionFromRoleColor }}-700">
+                            <p class="mb-2"><strong>Catatan dari {{ $revisionFromRole }}:</strong></p>
+                            <p class="bg-white p-3 rounded border border-{{ $revisionFromRoleColor }}-200">{{ $usulan->catatan_verifikator ?? 'Tidak ada catatan spesifik' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
             @endif
 
             {{-- Informasi Periode Usulan --}}
@@ -306,19 +303,52 @@
             </div>
 
             {{-- Profile Display Component --}}
-            @include('backend.layouts.views.pegawai-unmul.usul-jabatan.components.profile-display')
+            @include('backend.layouts.views.pegawai-unmul.usul-jabatan.components.profile-display', [
+                'validationData' => $validationData ?? []
+            ])
 
             {{-- Karya Ilmiah Section Component --}}
-            @include('backend.layouts.views.pegawai-unmul.usul-jabatan.components.karya-ilmiah-section')
+            @include('backend.layouts.views.pegawai-unmul.usul-jabatan.components.karya-ilmiah-section', [
+                'validationData' => $validationData ?? []
+            ])
 
             {{-- Dokumen Upload Component --}}
-            @include('backend.layouts.views.pegawai-unmul.usul-jabatan.components.dokumen-upload')
+            @include('backend.layouts.views.pegawai-unmul.usul-jabatan.components.dokumen-upload', [
+                'validationData' => $validationData ?? []
+            ])
 
             {{-- BKD Upload Component --}}
-            @include('backend.layouts.views.pegawai-unmul.usul-jabatan.components.bkd-upload')
+            @include('backend.layouts.views.pegawai-unmul.usul-jabatan.components.bkd-upload', [
+                'validationData' => $validationData ?? []
+            ])
 
             {{-- Form Actions --}}
             @if(!$isShowMode)
+            @php
+                // Determine who sent the revision request based on validation data
+                $isRevisionFromUniversity = false;
+                $isRevisionFromFakultas = false;
+
+                if ($isEditMode && $usulan && $usulan->status_usulan === 'Perbaikan Usulan') {
+                    // Check validation data to determine source of revision
+                    $adminUnivValidation = $usulan->getValidasiByRole('admin_universitas');
+                    $adminFakultasValidation = $usulan->getValidasiByRole('admin_fakultas');
+
+                    // If Admin Universitas has validation data, revision is from university
+                    if (!empty($adminUnivValidation)) {
+                        $isRevisionFromUniversity = true;
+                    }
+                    // If only Admin Fakultas has validation data, revision is from fakultas
+                    elseif (!empty($adminFakultasValidation)) {
+                        $isRevisionFromFakultas = true;
+                    }
+                    // Default: if uncertain, assume from fakultas
+                    else {
+                        $isRevisionFromFakultas = true;
+                    }
+                }
+            @endphp
+
             <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
                 <div class="flex items-center justify-between">
                     <div class="text-sm text-gray-600">
@@ -330,124 +360,77 @@
                                 class="px-6 py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                             Batal
                         </button>
+
+                        {{-- Save Draft Button (always available) --}}
                         <button type="submit" name="action" value="save_draft"
                                 class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
                             <i data-lucide="save" class="w-4 h-4"></i>
                             Simpan Usulan
                         </button>
-                        <button type="submit" name="action" value="submit"
-                                class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
-                            <i data-lucide="send" class="w-4 h-4"></i>
-                            Kirim Usulan
-                        </button>
+
+                        {{-- Conditional Submit Buttons --}}
+                        @if($isEditMode && $usulan && $usulan->status_usulan === 'Perbaikan Usulan')
+                            {{-- Revision Mode: Show appropriate button based on who requested revision --}}
+                            @if($isRevisionFromUniversity)
+                                <button type="submit" name="action" value="submit_to_university"
+                                        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                    <i data-lucide="send" class="w-4 h-4"></i>
+                                    Kirim ke Universitas
+                                </button>
+                            @elseif($isRevisionFromFakultas)
+                                <button type="submit" name="action" value="submit_to_fakultas"
+                                        class="px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-2">
+                                    <i data-lucide="send" class="w-4 h-4"></i>
+                                    Kirim ke Fakultas
+                                </button>
+                            @endif
+                        @else
+                            {{-- Normal Mode: Submit to fakultas --}}
+                            <button type="submit" name="action" value="submit"
+                                    class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                                Kirim Usulan
+                            </button>
+                        @endif
                     </div>
                 </div>
             </div>
             @endif
 
             </form>
-        @else
-            {{-- Cannot Proceed Message --}}
-            <div class="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-                <i data-lucide="alert-circle" class="w-16 h-16 text-gray-400 mx-auto mb-4"></i>
-                <h3 class="text-lg font-semibold text-gray-700 mb-2">Tidak Dapat Melanjutkan</h3>
-                <p class="text-gray-600">Silakan perbaiki masalah di atas terlebih dahulu sebelum dapat membuat usulan jabatan.</p>
-            </div>
         @endif
+
     </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Form validation - SIMPLIFIED FOR TESTING
+    // Form validation - SIMPLIFIED
     const form = document.getElementById('usulan-form');
     if (form) {
-        console.log('Form found, simplified validation for testing');
+        console.log('Form found, validation active');
 
-        // Add debug logging
         form.addEventListener('submit', function(e) {
             console.log('Form submission attempted');
             console.log('Form action:', form.action);
             console.log('Form method:', form.method);
 
-            // Log all form data
-            const formData = new FormData(form);
-            console.log('Form data entries:');
-            for (let [key, value] of formData.entries()) {
-                console.log(key + ': ' + value);
-            }
-
-            // SIMPLIFIED VALIDATION - Only check basic required fields
-            const basicRequiredFields = form.querySelectorAll('input[name="periode_usulan_id"], input[name="action"]');
-            let isValid = true;
-
-            basicRequiredFields.forEach(field => {
-                if (!field.value.trim()) {
-                    isValid = false;
-                    console.log('Basic required field empty:', field.name);
-                }
-            });
-
-            if (!isValid) {
+            // Check if action is selected
+            const actionField = form.querySelector('input[name="action"]:checked, button[name="action"][type="submit"]');
+            if (!actionField) {
                 e.preventDefault();
-                console.log('Basic validation failed - preventing submission');
-                alert('Mohon pilih periode dan action.');
-            } else {
-                console.log('Basic validation passed - allowing submission');
-                // Don't prevent default - let form submit
+                console.log('No action selected - preventing submission');
+                alert('Mohon pilih aksi (Simpan Usulan, Kirim Usulan, atau Kirim ke Universitas/Fakultas).');
+                return;
             }
+
+            console.log('Action selected:', actionField.value);
+            console.log('Basic validation passed - allowing submission');
         });
     } else {
         console.log('Form not found');
     }
 });
-
-// Test form submission function
-function testFormSubmission() {
-    console.log('=== TEST FORM SUBMISSION ===');
-
-    const form = document.getElementById('usulan-form');
-    if (!form) {
-        console.log('Form not found');
-        return;
-    }
-
-    // Collect form data
-    const formData = new FormData(form);
-    const data = {};
-
-    for (let [key, value] of formData.entries()) {
-        data[key] = value;
-    }
-
-    console.log('Form data to submit:', data);
-
-    // Submit via AJAX to test route
-    fetch('/test-usulan-submission', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => {
-        console.log('Response status:', response.status);
-        return response.json();
-    })
-    .then(data => {
-        console.log('Response data:', data);
-        if (data.success) {
-            alert('✅ Test submission successful! Usulan ID: ' + data.usulan_id);
-        } else {
-            alert('❌ Test submission failed: ' + (data.error || 'Unknown error'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('❌ Test submission error: ' + error.message);
-    });
-}
 </script>
 @endsection
+

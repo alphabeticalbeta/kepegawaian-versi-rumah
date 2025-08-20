@@ -44,6 +44,61 @@
                 </div>
             </div>
         @else
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Total Periode -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                            <i data-lucide="calendar" class="w-6 h-6"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Periode</p>
+                            <p class="text-2xl font-semibold text-gray-900">{{ $statistics['total_periode'] }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Menunggu Review -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                            <i data-lucide="clock" class="w-6 h-6"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Menunggu Review</p>
+                            <p class="text-2xl font-semibold text-gray-900">{{ $statistics['total_pengusul'] }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Perbaikan -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-orange-100 text-orange-600">
+                            <i data-lucide="edit-3" class="w-6 h-6"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Perbaikan</p>
+                            <p class="text-2xl font-semibold text-gray-900">{{ $statistics['total_perbaikan'] }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Usulan -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-green-100 text-green-600">
+                            <i data-lucide="file-text" class="w-6 h-6"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Usulan</p>
+                            <p class="text-2xl font-semibold text-gray-900">{{ $statistics['total_usulan'] }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Info Panel Sukses -->
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <div class="flex items-center">
@@ -55,9 +110,10 @@
                     <div class="ml-3">
                         <p class="text-sm text-blue-700">
                             <strong>{{ $unitKerja->nama }}</strong> |
-                            Total periode: {{ $periodeUsulans->total() }} |
-                            Total usulan menunggu review: {{ $periodeUsulans->sum('jumlah_pengusul') }} |
-                            Total usulan: {{ $periodeUsulans->sum('total_usulan') }}
+                            Total periode: {{ $statistics['total_periode'] }} |
+                            Menunggu review: {{ $statistics['total_pengusul'] }} |
+                            Perbaikan: {{ $statistics['total_perbaikan'] }} |
+                            Total usulan: {{ $statistics['total_usulan'] }}
                         </p>
                     </div>
                 </div>
@@ -69,7 +125,7 @@
             <div class="px-6 py-4 border-b border-gray-200">
                 <h3 class="text-lg font-medium leading-6 text-gray-900">Daftar Periode Usulan</h3>
                 <p class="mt-1 text-sm text-gray-500">
-                    Angka pada kolom "Review" menunjukkan jumlah usulan yang menunggu verifikasi. Klik tombol aksi untuk melihat semua usulan periode tersebut.
+                    Angka pada kolom "Review" menunjukkan jumlah usulan yang menunggu verifikasi, dan kolom "Perbaikan" menunjukkan usulan yang dikembalikan untuk perbaikan. Klik tombol aksi untuk melihat semua usulan periode tersebut.
                 </p>
             </div>
 
@@ -83,6 +139,7 @@
                             <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Jadwal Usulan</th>
                             <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Review</th>
+                            <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Perbaikan</th>
                             <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                         </tr>
                     </thead>
@@ -133,6 +190,27 @@
                                         </div>
                                     @endif
                                 </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    @if($periode->perbaikan > 0)
+                                        <div class="relative group">
+                                            <span class="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-black bg-orange-600 rounded-full cursor-help">
+                                                {{ $periode->perbaikan }}
+                                            </span>
+                                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                                {{ $periode->perbaikan }} usulan perlu perbaikan
+                                            </div>
+                                        </div>
+                                    @else
+                                        <div class="relative group">
+                                            <span class="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-gray-100 bg-gray-600 rounded-full cursor-help">
+                                                0
+                                            </span>
+                                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                                                Tidak ada perbaikan
+                                            </div>
+                                        </div>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                     <a href="{{ route('admin-fakultas.periode.pendaftar', $periode->id) }}"
                                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
@@ -150,7 +228,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-12 text-center">
+                                <td colspan="7" class="px-6 py-12 text-center">
                                     <div class="text-center">
                                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                                             <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2z" />

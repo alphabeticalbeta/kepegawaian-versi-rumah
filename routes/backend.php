@@ -205,18 +205,18 @@ Route::middleware(['web', 'auth:pegawai'])->group(function () {
             });
 
             // =====================================================
-            // USULAN MANAGEMENT ROUTES
+            // USULAN MANAGEMENT ROUTES (REMOVED - Using UsulanValidationController instead)
             // =====================================================
-            Route::prefix('usulan')->name('usulan.')->group(function () {
-                Route::get('/', [App\Http\Controllers\Backend\AdminUnivUsulan\UsulanController::class, 'index'])
-                    ->name('index');
-                Route::get('/create', [App\Http\Controllers\Backend\AdminUnivUsulan\UsulanController::class, 'create'])
-                    ->name('create');
-                Route::get('/{usulan}', [App\Http\Controllers\Backend\AdminUnivUsulan\UsulanController::class, 'show'])
-                    ->name('show');
-                Route::post('/toggle-periode', [App\Http\Controllers\Backend\AdminUnivUsulan\UsulanController::class, 'togglePeriode'])
-                    ->name('toggle-periode');
-            });
+            // Route::prefix('usulan')->name('usulan.')->group(function () {
+            //     Route::get('/', [App\Http\Controllers\Backend\AdminUnivUsulan\UsulanController::class, 'index'])
+            //         ->name('index');
+            //     Route::get('/create', [App\Http\Controllers\Backend\AdminUnivUsulan\UsulanController::class, 'create'])
+            //         ->name('create');
+            //     Route::get('/{usulan}', [App\Http\Controllers\Backend\AdminUnivUsulan\UsulanController::class, 'show'])
+            //         ->name('show');
+            //     Route::post('/toggle-periode', [App\Http\Controllers\Backend\AdminUnivUsulan\UsulanController::class, 'togglePeriode'])
+            //         ->name('toggle-periode');
+            // });
 
             // =====================================================
             // PERIODE USULAN ROUTES
@@ -471,14 +471,6 @@ Route::middleware(['web', 'auth:pegawai'])->group(function () {
             // USULAN ROUTES
             // =====================================================
             Route::prefix('usulan')->name('usulan.')->group(function () {
-                // Daftar Periode Usulan Jabatan
-                Route::get('/jabatan', [App\Http\Controllers\Backend\AdminFakultas\AdminFakultasController::class, 'usulanJabatan'])
-                    ->name('jabatan');
-                Route::get('/pangkat', [App\Http\Controllers\Backend\AdminFakultas\AdminFakultasController::class, 'usulanPangkat'])
-                    ->name('pangkat');
-                Route::get('/', [App\Http\Controllers\Backend\AdminFakultas\AdminFakultasController::class, 'indexUsulanJabatan'])
-                    ->name('index');
-
                 // Detail Usulan untuk Validasi
                 Route::get('/{adminUsulan}', [App\Http\Controllers\Backend\AdminFakultas\AdminFakultasController::class, 'show'])
                     ->name('show');
@@ -536,7 +528,7 @@ Route::middleware(['web', 'auth:pegawai'])->group(function () {
 
             // Dashboard
             Route::get('/dashboard', [App\Http\Controllers\Backend\PenilaiUniversitas\DashboardController::class, 'index'])
-                ->name('dashboard-penilai-universitas');
+                ->name('dashboard');
 
             // =====================================================
             // PUSAT USULAN ROUTES (Khusus Penilai)
@@ -651,6 +643,60 @@ Route::bind('usulan', function ($value) {
         });
 
     // ======================================================================
+    // ADMIN UNIVERSITAS ROUTES
+    // ======================================================================
+    Route::prefix('admin-univ-usulan')
+        ->name('admin-univ-usulan.')
+        ->middleware(['role:Admin Universitas'])
+        ->group(function () {
+
+            // Dashboard
+            Route::get('/dashboard', [App\Http\Controllers\Backend\AdminUnivUsulan\DashboardController::class, 'index'])
+                ->name('dashboard');
+
+            // Usulan Routes
+            Route::prefix('usulan')->name('usulan.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Backend\AdminUnivUsulan\UsulanValidationController::class, 'index'])
+                    ->name('index');
+                Route::get('/{id}', [App\Http\Controllers\Backend\AdminUnivUsulan\UsulanValidationController::class, 'show'])
+                    ->name('show');
+                Route::post('/{id}/save-validation', [App\Http\Controllers\Backend\AdminUnivUsulan\UsulanValidationController::class, 'saveValidation'])
+                    ->name('save-validation');
+                Route::get('/{usulanId}/document/{field}', [App\Http\Controllers\Backend\AdminUnivUsulan\UsulanValidationController::class, 'showDocument'])
+                    ->name('show-document');
+                Route::get('/{usulanId}/pegawai-document/{field}', [App\Http\Controllers\Backend\AdminUnivUsulan\UsulanValidationController::class, 'showPegawaiDocument'])
+                    ->name('show-pegawai-document');
+            });
+        });
+
+    // ======================================================================
+    // TIM PENILAI ROUTES
+    // ======================================================================
+    Route::prefix('tim-penilai')
+        ->name('tim-penilai.')
+        ->middleware(['role:Tim Penilai'])
+        ->group(function () {
+
+            // Dashboard
+            Route::get('/dashboard', [App\Http\Controllers\Backend\TimPenilai\DashboardController::class, 'index'])
+                ->name('dashboard');
+
+            // Usulan Routes
+            Route::prefix('usulan')->name('usulan.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Backend\TimPenilai\UsulanController::class, 'index'])
+                    ->name('index');
+                Route::get('/{id}', [App\Http\Controllers\Backend\TimPenilai\UsulanController::class, 'show'])
+                    ->name('show');
+                Route::post('/{id}/save-validation', [App\Http\Controllers\Backend\TimPenilai\UsulanController::class, 'saveValidation'])
+                    ->name('save-validation');
+                Route::get('/{usulanId}/document/{field}', [App\Http\Controllers\Backend\TimPenilai\UsulanController::class, 'showDocument'])
+                    ->name('show-document');
+                Route::get('/{usulanId}/pegawai-document/{field}', [App\Http\Controllers\Backend\TimPenilai\UsulanController::class, 'showPegawaiDocument'])
+                    ->name('show-pegawai-document');
+            });
+        });
+
+    // ======================================================================
     // TIM SENAT ROUTES
     // ======================================================================
     Route::prefix('tim-senat')
@@ -669,6 +715,20 @@ Route::bind('usulan', function ($value) {
             // Keputusan Senat
             Route::get('/keputusan-senat', [App\Http\Controllers\Backend\TimSenat\KeputusanSenatController::class, 'index'])
                 ->name('keputusan-senat.index');
+
+            // Usulan Routes
+            Route::prefix('usulan')->name('usulan.')->group(function () {
+                Route::get('/', [App\Http\Controllers\Backend\TimSenat\UsulanController::class, 'index'])
+                    ->name('index');
+                Route::get('/{id}', [App\Http\Controllers\Backend\TimSenat\UsulanController::class, 'show'])
+                    ->name('show');
+                Route::post('/{id}/save-validation', [App\Http\Controllers\Backend\TimSenat\UsulanController::class, 'saveValidation'])
+                    ->name('save-validation');
+                Route::get('/{usulanId}/document/{field}', [App\Http\Controllers\Backend\TimSenat\UsulanController::class, 'showDocument'])
+                    ->name('show-document');
+                Route::get('/{usulanId}/pegawai-document/{field}', [App\Http\Controllers\Backend\TimSenat\UsulanController::class, 'showPegawaiDocument'])
+                    ->name('show-pegawai-document');
+            });
         });
 
 // ======================================================================

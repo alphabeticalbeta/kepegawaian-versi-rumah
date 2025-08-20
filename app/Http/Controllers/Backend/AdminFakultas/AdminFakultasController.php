@@ -225,46 +225,7 @@ class AdminFakultasController extends Controller
         return view('backend.layouts.views.admin-fakultas.usulan.dashboard-pangkat', compact('periodeUsulans', 'unitKerja', 'statistics'));
     }
 
-    /**
-     * Menampilkan daftar periode usulan KHUSUS JABATAN.
-     */
-    public function indexUsulanJabatan()
-    {
-        /** @var \App\Models\BackendUnivUsulan\Pegawai $admin */
-        $admin = Auth::user()->load('unitKerjaPengelola');
-        $unitKerja = $admin->unitKerjaPengelola;
 
-        if (!$unitKerja) {
-                    return view('backend.layouts.views.admin-fakultas.usulan.index', [
-            'periodeUsulans' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10),
-            'unitKerja' => null
-        ]);
-        }
-
-        $unitKerjaId = $unitKerja->id;
-
-        $periodeUsulans = PeriodeUsulan::query()
-            ->where('jenis_usulan', 'jabatan')
-            ->withCount([
-                // Count semua usulan yang memerlukan review (status Diajukan atau Sedang Direview)
-                'usulans as jumlah_pengusul' => function ($query) use ($unitKerjaId) {
-                    $query->whereIn('status_usulan', ['Diajukan', 'Sedang Direview'])
-                        ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
-                            $subQuery->where('id', $unitKerjaId);
-                        });
-                },
-                // Count semua usulan untuk informasi total
-                'usulans as total_usulan' => function ($query) use ($unitKerjaId) {
-                    $query->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
-                        $subQuery->where('id', $unitKerjaId);
-                    });
-                }
-            ])
-            ->latest()
-            ->paginate(10);
-
-        return view('backend.layouts.views.admin-fakultas.usulan.index', compact('periodeUsulans', 'unitKerja'));
-    }
 
     /**
      * Menampilkan detail satu usulan spesifik untuk VALIDASI.
@@ -367,16 +328,16 @@ class AdminFakultasController extends Controller
     /**
      * Menyimpan hasil validasi admin fakultas.
      */
-    public function saveValidation(Request $request, Usulan $usulan)
+    public function saveValidation(Request $request, Usulan $adminUsulan)
     {
         // Dispatcher: prioritise explicit action_type (complex flows)
         if ($request->filled('action_type')) {
-            return $this->saveComplexValidation($request, $usulan);
+            return $this->saveComplexValidation($request, $adminUsulan);
         }
 
         // Fallback to simple validation (legacy submit with 'action')
         if ($request->has('validation')) {
-            return $this->saveSimpleValidation($request, $usulan);
+            return $this->saveSimpleValidation($request, $adminUsulan);
         }
 
         return redirect()->back()->with('error', 'Permintaan tidak dikenali.');
@@ -469,7 +430,7 @@ class AdminFakultasController extends Controller
                     $catatanLengkap = implode("\n", $catatanDetail);
 
                     // Update usulan
-                    $usulan->status_usulan = 'Perlu Perbaikan';
+                    $usulan->status_usulan = 'Perbaikan Usulan';
                     $usulan->catatan_verifikator = $catatanLengkap;
                     $logMessage = 'Usulan dikembalikan ke Pegawai untuk perbaikan.';
                     break;
@@ -493,25 +454,38 @@ class AdminFakultasController extends Controller
                     $catatanLengkap = implode("\n", $catatanDetail);
 
                     // Update usulan - mencegah submit di periode ini
-                    $usulan->status_usulan = 'Belum Direkomendasikan';
+                    $usulan->status_usulan = 'Ditolak';
                     $usulan->catatan_verifikator = $catatanLengkap;
                     $logMessage = 'Usulan ditandai belum direkomendasikan oleh Admin Fakultas.';
                     break;
 
                 case 'forward_to_university':
                     // Validasi khusus untuk aksi 'teruskan ke universitas'
-                    $validatedData = $request->validate([
+                    // Check if this is initial submission or resend
+                    $currentValidasi = $usulan->validasi_data;
+                    $dokumenPendukung = $currentValidasi['admin_fakultas']['dokumen_pendukung'] ?? [];
+                    $isInitialSubmission = empty($dokumenPendukung);
+
+                    $rules = [
                         'validation' => 'required|array',
-                        'nomor_surat_usulan' => 'required|string|max:255',
-                        'file_surat_usulan' => 'required|file|mimes:pdf|max:1024', // 1MB = 1024KB
-                        'nomor_berita_senat' => 'required|string|max:255',
-                        'file_berita_senat' => 'required|file|mimes:pdf|max:1024', // 1MB = 1024KB,
-                    ], [
-                        'nomor_surat_usulan.required' => 'Nomor surat usulan wajib diisi.',
-                        'file_surat_usulan.required' => 'File surat usulan wajib diunggah.',
-                        'nomor_berita_senat.required' => 'Nomor surat senat wajib diisi.',
-                        'file_berita_senat.required' => 'File surat senat wajib diunggah.',
-                    ]);
+                        'dokumen_pendukung.nomor_surat_usulan' => 'required|string|max:255',
+                        'dokumen_pendukung.nomor_berita_senat' => 'required|string|max:255',
+                    ];
+
+                    $messages = [
+                        'dokumen_pendukung.nomor_surat_usulan.required' => 'Nomor surat usulan wajib diisi.',
+                        'dokumen_pendukung.nomor_berita_senat.required' => 'Nomor berita senat wajib diisi.',
+                    ];
+
+                    // Only require files for initial submission
+                    if ($isInitialSubmission) {
+                        $rules['dokumen_pendukung.file_surat_usulan'] = 'required|file|mimes:pdf|max:1024';
+                        $rules['dokumen_pendukung.file_berita_senat'] = 'required|file|mimes:pdf|max:1024';
+                        $messages['dokumen_pendukung.file_surat_usulan.required'] = 'File surat usulan wajib diunggah.';
+                        $messages['dokumen_pendukung.file_berita_senat.required'] = 'File berita senat wajib diunggah.';
+                    }
+
+                    $validatedData = $request->validate($rules, $messages);
 
                     $usulan->setValidasiByRole('admin_fakultas', $validatedData['validation'], $adminId);
 
@@ -522,20 +496,100 @@ class AdminFakultasController extends Controller
                         ]);
                     }
 
-                    // Simpan dokumen pendukung fakultas
-                    $dokumenPendukung = [
-                        'nomor_surat_usulan' => $validatedData['nomor_surat_usulan'],
-                        'nomor_berita_senat' => $validatedData['nomor_berita_senat'],
-                        'file_surat_usulan_path' => $request->file('file_surat_usulan')->store('dokumen-fakultas/surat-usulan', 'public'),
-                        'file_berita_senat_path' => $request->file('file_berita_senat')->store('dokumen-fakultas/berita-senat', 'public'),
-                    ];
+                                        // Simpan dokumen pendukung fakultas
                     $currentValidasi = $usulan->validasi_data;
-                    $currentValidasi['admin_fakultas']['dokumen_pendukung'] = $dokumenPendukung;
+                    $currentDokumenPendukung = $currentValidasi['admin_fakultas']['dokumen_pendukung'] ?? [];
+
+                    // Update text fields
+                    $currentDokumenPendukung['nomor_surat_usulan'] = $validatedData['dokumen_pendukung']['nomor_surat_usulan'];
+                    $currentDokumenPendukung['nomor_berita_senat'] = $validatedData['dokumen_pendukung']['nomor_berita_senat'];
+
+                    // Handle file uploads only if provided
+                    if ($request->hasFile('dokumen_pendukung[file_surat_usulan]')) {
+                        $currentDokumenPendukung['file_surat_usulan_path'] = $request->file('dokumen_pendukung[file_surat_usulan]')->store('dokumen-fakultas/surat-usulan', 'public');
+                    }
+
+                    if ($request->hasFile('dokumen_pendukung[file_berita_senat]')) {
+                        $currentDokumenPendukung['file_berita_senat_path'] = $request->file('dokumen_pendukung[file_berita_senat]')->store('dokumen-fakultas/berita-senat', 'public');
+                    }
+
+                    $currentValidasi['admin_fakultas']['dokumen_pendukung'] = $currentDokumenPendukung;
                     $usulan->validasi_data = $currentValidasi;
+
+                    // Final check untuk memastikan file sudah ada (only for initial submission)
+                    if ($isInitialSubmission && (empty($currentDokumenPendukung['file_surat_usulan_path']) || empty($currentDokumenPendukung['file_berita_senat_path']))) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'file_upload' => 'File surat usulan dan file berita senat harus diunggah sebelum mengirim ke universitas.'
+                        ]);
+                    }
 
                     // Update status usulan
                     $usulan->status_usulan = 'Diusulkan ke Universitas';
                     $logMessage = 'Usulan divalidasi dan diteruskan ke Universitas.';
+                    break;
+
+                                case 'resend_to_university':
+                    // Validasi lengkap untuk memastikan semua data valid
+                    $validatedData = $request->validate([
+                        'validation' => 'required|array',
+                        'dokumen_pendukung' => 'nullable|array',
+                        'dokumen_pendukung.nomor_surat_usulan' => 'nullable|string|max:255',
+                        'dokumen_pendukung.nomor_berita_senat' => 'nullable|string|max:255',
+                        'dokumen_pendukung.file_surat_usulan' => 'nullable|file|mimes:pdf|max:1024',
+                        'dokumen_pendukung.file_berita_senat' => 'nullable|file|mimes:pdf|max:1024'
+                    ]);
+
+                    // Simpan validasi data
+                    $usulan->setValidasiByRole('admin_fakultas', $validatedData['validation'], $adminId);
+
+                    // Cek apakah masih ada field yang tidak valid
+                    if ($usulan->hasInvalidFields('admin_fakultas')) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'validation' => 'Tidak dapat mengirim kembali usulan. Masih ada item yang tidak sesuai dalam validasi.'
+                        ]);
+                    }
+
+                    // Cek apakah dokumen pendukung sudah diisi
+                    $currentValidasi = $usulan->validasi_data;
+                    $dokumenPendukung = $currentValidasi['admin_fakultas']['dokumen_pendukung'] ?? [];
+
+                    if (empty($dokumenPendukung) ||
+                        empty($dokumenPendukung['nomor_surat_usulan']) ||
+                        empty($dokumenPendukung['file_surat_usulan_path'])) {
+                        throw \Illuminate\Validation\ValidationException::withMessages([
+                            'dokumen_pendukung' => 'Dokumen pendukung (Nomor Surat Usulan dan File Surat Usulan) harus diisi sebelum mengirim ke universitas.'
+                        ]);
+                    }
+
+                    // Update dokumen pendukung jika ada
+                    if (!empty($validatedData['dokumen_pendukung'])) {
+                        $currentValidasi = $usulan->validasi_data;
+                        $currentDokumenPendukung = $currentValidasi['admin_fakultas']['dokumen_pendukung'] ?? [];
+
+                        // Update text fields
+                        if (isset($validatedData['dokumen_pendukung']['nomor_surat_usulan'])) {
+                            $currentDokumenPendukung['nomor_surat_usulan'] = $validatedData['dokumen_pendukung']['nomor_surat_usulan'];
+                        }
+                        if (isset($validatedData['dokumen_pendukung']['nomor_berita_senat'])) {
+                            $currentDokumenPendukung['nomor_berita_senat'] = $validatedData['dokumen_pendukung']['nomor_berita_senat'];
+                        }
+
+                        // Handle file uploads
+                        if ($request->hasFile('dokumen_pendukung[file_surat_usulan]')) {
+                            $currentDokumenPendukung['file_surat_usulan_path'] = $request->file('dokumen_pendukung[file_surat_usulan]')->store('dokumen-fakultas/surat-usulan', 'public');
+                        }
+                        if ($request->hasFile('dokumen_pendukung[file_berita_senat]')) {
+                            $currentDokumenPendukung['file_berita_senat_path'] = $request->file('dokumen_pendukung[file_berita_senat]')->store('dokumen-fakultas/berita-senat', 'public');
+                        }
+
+                        $currentValidasi['admin_fakultas']['dokumen_pendukung'] = $currentDokumenPendukung;
+                        $usulan->validasi_data = $currentValidasi;
+                    }
+
+                    // Update status usulan
+                    $usulan->status_usulan = 'Diusulkan ke Universitas';
+
+                    $logMessage = 'Usulan berhasil diperbaiki dan dikirim kembali ke Universitas.';
                     break;
 
                 default: // save_only
@@ -546,9 +600,7 @@ class AdminFakultasController extends Controller
 
                     $usulan->setValidasiByRole('admin_fakultas', $validatedData['validation'], $adminId);
 
-                    if ($usulan->status_usulan === 'Diajukan') {
-                        $usulan->status_usulan = 'Sedang Direview';
-                    }
+                    // DON'T change status automatically - keep it as 'Diajukan' until dokumen pendukung is filled
                     $logMessage = 'Hasil validasi disimpan oleh Admin Fakultas.';
                     break;
             }
@@ -813,6 +865,17 @@ class AdminFakultasController extends Controller
                         ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerja) {
                             $subQuery->where('id', $unitKerja->id);
                         });
+                },
+                'usulans as perbaikan' => function ($query) use ($unitKerja) {
+                    $query->whereIn('status_usulan', ['Perbaikan Usulan', 'Dikembalikan'])
+                        ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerja) {
+                            $subQuery->where('id', $unitKerja->id);
+                        });
+                },
+                'usulans as total_usulan' => function ($query) use ($unitKerja) {
+                    $query->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerja) {
+                        $subQuery->where('id', $unitKerja->id);
+                    });
                 }
             ])->latest()->paginate(10);
         } catch (\Exception $e) {
@@ -826,147 +889,16 @@ class AdminFakultasController extends Controller
         return [
             'total_periode' => $periodeUsulans->total(),
             'total_pengusul' => $periodeUsulans->sum('jumlah_pengusul'),
+            'total_perbaikan' => $periodeUsulans->sum('perbaikan'),
+            'total_usulan' => $periodeUsulans->sum('total_usulan'),
             'unit_kerja_name' => $unitKerja ? $unitKerja->nama : 'Tidak diketahui',
-            'has_pending_review' => $periodeUsulans->sum('jumlah_pengusul') > 0
+            'has_pending_review' => $periodeUsulans->sum('jumlah_pengusul') > 0,
+            'has_perbaikan' => $periodeUsulans->sum('perbaikan') > 0
         ];
     }
 
-    public function usulanJabatan()
-    {
-        try {
-            /** @var \App\Models\BackendUnivUsulan\Pegawai $admin */
-            $admin = Auth::user();
-            $unitKerja = $this->getAdminUnitKerja($admin);
 
-            // SIMPLE QUERY untuk testing
-            $periodeUsulans = \App\Models\BackendUnivUsulan\PeriodeUsulan::query()
-                ->where('jenis_usulan', 'usulan-jabatan-dosen') // Fixed: gunakan jenis usulan yang benar
-                ->latest()
-                ->paginate(10);
 
-            // GUNAKAN VIEW YANG SUDAH ADA (sama dengan indexUsulanJabatan)
-            return view('backend.layouts.views.admin-fakultas.usulan.index', compact('periodeUsulans', 'unitKerja'));
-
-        } catch (\Exception $e) {
-            \Log::error('usulanJabatan error: ' . $e->getMessage());
-
-            return redirect()->route('admin-fakultas.dashboard')
-                ->with('error', 'Terjadi kesalahan saat memuat data usulan jabatan.');
-        }
-    }
-
-    /**
-     * Menampilkan usulan pangkat dengan shared view
-     */
-    public function usulanPangkat()
-    {
-        return $this->showUsulanData('pangkat');
-    }
-
-    /**
-     * Shared method untuk menampilkan data usulan berdasarkan type
-     */
-    private function showUsulanData($type)
-    {
-        /** @var \App\Models\BackendUnivUsulan\Pegawai $admin */
-        $admin = Auth::user();
-        $unitKerja = $this->getAdminUnitKerja($admin);
-
-        // Configuration untuk setiap type
-        $config = $this->getUsulanConfig($type, $unitKerja);
-
-        return view('backend.layouts.views.admin-fakultas.usulan.index-dynamic', compact('config', 'unitKerja'));
-    }
-
-    /**
-     * Get configuration untuk setiap type usulan
-     */
-    private function getUsulanConfig($type, $unitKerja)
-    {
-        $baseConfig = [
-            'type' => $type,
-            'unitKerja' => $unitKerja,
-            'breadcrumbs' => [
-                ['name' => 'Dashboard', 'url' => route('admin-fakultas.dashboard')],
-                ['name' => 'Usulan ' . ucfirst($type), 'url' => null]
-            ]
-        ];
-
-        switch ($type) {
-            case 'jabatan':
-                return array_merge($baseConfig, [
-                    'title' => 'Usulan Jabatan',
-                    'description' => 'Daftar usulan kenaikan jabatan dari pegawai fakultas',
-                    'icon' => 'briefcase',
-                    'color' => 'indigo',
-                    'data' => $this->getJabatanData($unitKerja),
-                    'columns' => [
-                        'nama_periode' => 'Nama Periode',
-                        'jenis_usulan' => 'Jenis',
-                        'tanggal' => 'Jadwal Usulan',
-                        'status' => 'Status',
-                        'jumlah_pengusul' => 'Review'
-                    ]
-                ]);
-
-            case 'pangkat':
-                return array_merge($baseConfig, [
-                    'title' => 'Usulan Pangkat',
-                    'description' => 'Daftar usulan kenaikan pangkat dari pegawai fakultas',
-                    'icon' => 'award',
-                    'color' => 'emerald',
-                    'data' => $this->getPangkatData($unitKerja),
-                    'columns' => [
-                        'nama_periode' => 'Nama Periode',
-                        'jenis_usulan' => 'Jenis',
-                        'tanggal' => 'Jadwal Usulan',
-                        'status' => 'Status',
-                        'jumlah_pengusul' => 'Review'
-                    ]
-                ]);
-
-            default:
-                return array_merge($baseConfig, [
-                    'title' => 'Data Tidak Ditemukan',
-                    'description' => 'Type data tidak dikenali',
-                    'icon' => 'alert-circle',
-                    'color' => 'red',
-                    'data' => collect(),
-                    'columns' => []
-                ]);
-        }
-    }
-
-    private function getJabatanData($unitKerja)
-    {
-        try {
-            // SIMPLE QUERY untuk testing
-            return \App\Models\BackendUnivUsulan\PeriodeUsulan::query()
-                ->where('jenis_usulan', 'jabatan')
-                ->latest()
-                ->paginate(5);
-        } catch (\Exception $e) {
-            \Log::error('Error: ' . $e->getMessage());
-            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, 5);
-        }
-}
-
-    /**
-     * Get data pangkat untuk admin fakultas
-     */
-    private function getPangkatData($unitKerja)
-    {
-        try {
-            // SIMPLE QUERY untuk testing
-            return \App\Models\BackendUnivUsulan\PeriodeUsulan::query()
-                ->where('jenis_usulan', 'pangkat')
-                ->latest()
-                ->paginate(5);
-        } catch (\Exception $e) {
-            \Log::error('Error: ' . $e->getMessage());
-            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, 5);
-        }
-    }
 
     /**
      * Get formatted status badge untuk UI
@@ -1024,10 +956,8 @@ class AdminFakultasController extends Controller
             // Use the improved setValidasiByRole method for consistency
             $usulan->setValidasiByRole('admin_fakultas', $validatedData['validation'], $admin->id);
 
-            // Update status jika diperlukan (only on first save)
-            if ($usulan->status_usulan === 'Diajukan') {
-                $usulan->status_usulan = 'Sedang Direview';
-            }
+            // DON'T change status automatically - Admin Fakultas needs to fill dokumen pendukung first
+            // Status should remain 'Diajukan' until Admin Fakultas explicitly submits with dokumen pendukung
 
             $usulan->save();
 

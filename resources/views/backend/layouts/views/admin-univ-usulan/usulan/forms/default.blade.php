@@ -11,7 +11,7 @@
                 </label>
                 <select name="pegawai_id"
                         id="pegawai_id"
-                        class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('pegawai_id') border-red-300 @enderror"
+                        class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('pegawai_id') border-red-300 @else border-slate-200 @enderror"
                         required>
                     <option value="">Pilih Pegawai</option>
                     {{-- Options will be populated via AJAX or server-side --}}
@@ -29,7 +29,7 @@
                        name="jenis_usulan_detail"
                        id="jenis_usulan_detail"
                        value="{{ old('jenis_usulan_detail') }}"
-                       class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('jenis_usulan_detail') border-red-300 @enderror"
+                       class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('jenis_usulan_detail') border-red-300 @else border-slate-200 @enderror"
                        placeholder="Contoh: {{ $namaUsulan }} Tahap 1">
                 @error('jenis_usulan_detail')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -49,7 +49,7 @@
             <textarea name="deskripsi"
                       id="deskripsi"
                       rows="4"
-                      class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('deskripsi') border-red-300 @enderror"
+                      class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('deskripsi') border-red-300 @else border-slate-200 @enderror"
                       placeholder="Jelaskan detail usulan yang diajukan...">{{ old('deskripsi') }}</textarea>
             @error('deskripsi')
                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -70,7 +70,7 @@
                        name="dokumen_utama"
                        id="dokumen_utama"
                        accept=".pdf,.doc,.docx"
-                       class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('dokumen_utama') border-red-300 @enderror"
+                       class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('dokumen_utama') border-red-300 @else border-slate-200 @enderror"
                        required>
                 <p class="mt-1 text-xs text-slate-500">Format: PDF, DOC, DOCX. Maksimal 10MB</p>
                 @error('dokumen_utama')
@@ -87,7 +87,7 @@
                        id="dokumen_pendukung"
                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                        multiple
-                       class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('dokumen_pendukung') border-red-300 @enderror">
+                       class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('dokumen_pendukung') border-red-300 @else border-slate-200 @enderror">
                 <p class="mt-1 text-xs text-slate-500">Format: PDF, DOC, DOCX, JPG, PNG. Maksimal 5MB per file</p>
                 @error('dokumen_pendukung')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
