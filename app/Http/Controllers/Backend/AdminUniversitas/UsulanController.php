@@ -27,14 +27,14 @@ class UsulanController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($id)
+    public function show(Usulan $usulan)
     {
-        $usulan = Usulan::with([
+        $usulan = $usulan->load([
             'pegawai.unitKerja.subUnitKerja.unitKerja',
             'pegawai.pangkat',
             'pegawai.jabatan',
             'periodeUsulan'
-        ])->findOrFail($id);
+        ]);
 
         // Check if usulan is in correct status for Admin Universitas
         if ($usulan->status_usulan !== 'Diusulkan ke Universitas') {
@@ -51,9 +51,8 @@ class UsulanController extends Controller
     /**
      * Save validation data.
      */
-    public function saveValidation(Request $request, $id)
+    public function saveValidation(Request $request, Usulan $usulan)
     {
-        $usulan = Usulan::findOrFail($id);
 
         // Check if usulan is in correct status
         if ($usulan->status_usulan !== 'Diusulkan ke Universitas') {

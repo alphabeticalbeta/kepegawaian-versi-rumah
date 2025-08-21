@@ -28,14 +28,14 @@ class UsulanController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($id)
+    public function show(Usulan $usulan)
     {
-        $usulan = Usulan::with([
+        $usulan = $usulan->load([
             'pegawai.unitKerja.subUnitKerja.unitKerja',
             'pegawai.pangkat',
             'pegawai.jabatan',
             'periodeUsulan'
-        ])->findOrFail($id);
+        ]);
 
         // Check if usulan is in correct status for Tim Penilai
         if ($usulan->status_usulan !== 'Sedang Direview') {
@@ -46,15 +46,19 @@ class UsulanController extends Controller
         // Get existing validation data
         $existingValidation = $usulan->getValidasiByRole('tim_penilai') ?? [];
 
-        return view('backend.layouts.views.tim-penilai.usulan.detail', compact('usulan', 'existingValidation'));
+        // Get penilais data for popup
+        $penilais = \App\Models\BackendUnivUsulan\Pegawai::whereHas('roles', function($query) {
+            $query->where('name', 'Penilai Universitas');
+        })->orderBy('nama_lengkap')->get();
+
+        return view('backend.layouts.views.tim-penilai.usulan.detail', compact('usulan', 'existingValidation', 'penilais'));
     }
 
     /**
      * Save validation data.
      */
-    public function saveValidation(Request $request, $id)
+    public function saveValidation(Request $request, Usulan $usulan)
     {
-        $usulan = Usulan::findOrFail($id);
 
         // Check if usulan is in correct status
         if ($usulan->status_usulan !== 'Sedang Direview') {

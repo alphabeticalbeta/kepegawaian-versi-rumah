@@ -6,9 +6,20 @@ use App\Http\Controllers\Controller;
 use App\Models\BackendUnivUsulan\Pangkat;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use App\Services\FileStorageService;
+use App\Services\ValidationService;
 
 class PangkatController extends Controller
 {
+    private $fileStorage;
+    private $validationService;
+
+    public function __construct(FileStorageService $fileStorage, ValidationService $validationService)
+    {
+        $this->fileStorage = $fileStorage;
+        $this->validationService = $validationService;
+    }
+
     public function index()
     {
         // Mengurutkan pangkat berdasarkan hierarchy_level menggunakan scope

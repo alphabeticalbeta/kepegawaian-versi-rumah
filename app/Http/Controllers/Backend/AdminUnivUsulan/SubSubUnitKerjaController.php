@@ -7,9 +7,20 @@ use App\Models\BackendUnivUsulan\SubSubUnitKerja;
 use App\Models\BackendUnivUsulan\SubUnitKerja;
 use App\Models\BackendUnivUsulan\UnitKerja;
 use Illuminate\Http\Request;
+use App\Services\FileStorageService;
+use App\Services\ValidationService;
 
 class SubSubUnitKerjaController extends Controller
 {
+    private $fileStorage;
+    private $validationService;
+
+    public function __construct(FileStorageService $fileStorage, ValidationService $validationService)
+    {
+        $this->fileStorage = $fileStorage;
+        $this->validationService = $validationService;
+    }
+
     /**
      * Display a listing of the resource.
      */

@@ -85,7 +85,7 @@
                     </div>
 
                     @if($fileExists)
-                        <a href="{{ route('pegawai-unmul.usulan-jabatan.show-document', ['usulanJabatan' => $usulan->id, 'field' => $slug]) }}"
+                        <a href="{{ route('pegawai-unmul.usulan-jabatan.show-document', ['usulan' => $usulan->id, 'field' => $slug]) }}"
                            target="_blank" class="text-xs {{ $isInvalid ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800' }} hover:underline mt-1 inline-block mb-2">
                             <i data-lucide="check-circle" class="inline w-3 h-3 mr-1"></i> File sudah ada. Lihat file.
                         </a>
@@ -344,7 +344,7 @@
                 </label>
 
                 @if($buktiGuruBesarExists)
-                    <a href="{{ route('pegawai-unmul.usulan-jabatan.show-document', ['usulanJabatan' => $usulan->id, 'field' => 'bukti_syarat_guru_besar']) }}"
+                    <a href="{{ route('pegawai-unmul.usulan-jabatan.show-document', ['usulan' => $usulan->id, 'field' => 'bukti_syarat_guru_besar']) }}"
                     target="_blank" class="text-xs {{ $isBuktiGuruBesarInvalid ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800' }} hover:underline mt-1 inline-block mb-2">
                         <i data-lucide="check-circle" class="inline w-3 h-3 mr-1"></i> File sudah ada. Lihat file.
                     </a>

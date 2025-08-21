@@ -7,9 +7,20 @@ use App\Models\BackendUnivUsulan\UnitKerja;
 use App\Models\BackendUnivUsulan\SubUnitKerja;
 use App\Models\BackendUnivUsulan\SubSubUnitKerja;
 use Illuminate\Http\Request;
+use App\Services\FileStorageService;
+use App\Services\ValidationService;
 
 class UnitKerjaController extends Controller
 {
+    private $fileStorage;
+    private $validationService;
+
+    public function __construct(FileStorageService $fileStorage, ValidationService $validationService)
+    {
+        $this->fileStorage = $fileStorage;
+        $this->validationService = $validationService;
+    }
+
     public function index()
     {
         // Fetch all hierarchical data

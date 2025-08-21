@@ -14,12 +14,15 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\File as FileFacade;
+use App\Services\FileStorageService;
 
 class DataPegawaiController extends Controller
 {
-    public function __construct()
-    {
+    private $fileStorage;
 
+    public function __construct(FileStorageService $fileStorage)
+    {
+        $this->fileStorage = $fileStorage;
     }
 
     /**
@@ -427,7 +430,7 @@ class DataPegawaiController extends Controller
     }
 
     /**
-     * Reusable file upload logic.
+     * Reusable file upload logic - REFACTORED with FileStorageService.
      */
     private function handleFileUploads(Request $request, &$validatedData, $pegawai = null)
     {
@@ -440,16 +443,22 @@ class DataPegawaiController extends Controller
 
         foreach ($fileColumns as $column) {
             if ($request->hasFile($column)) {
-                // Delete old file if exists
+                // Delete old file if exists using FileStorageService
                 if ($pegawai && $pegawai->$column) {
-                    $oldDisk = $this->getFileDisk($column);
-                    Storage::disk($oldDisk)->delete($pegawai->$column);
+                    $this->fileStorage->deleteFile($pegawai->$column);
                 }
 
-                // Store new file on appropriate disk
-                $disk = $this->getFileDisk($column);
-                $path = $request->file($column)->store('pegawai-files/' . $column, $disk);
+                // Store new file using FileStorageService
+                $uploadPath = 'pegawai-files/' . $column;
+                $file = $request->file($column);
+                $path = $this->fileStorage->uploadFile($file, $uploadPath);
                 $validatedData[$column] = $path;
+
+                \Log::info("File uploaded using FileStorageService", [
+                    'column' => $column,
+                    'file_path' => $path,
+                    'pegawai_id' => $pegawai ? $pegawai->id : 'new'
+                ]);
             }
         }
     }

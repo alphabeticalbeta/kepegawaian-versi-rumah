@@ -7,9 +7,20 @@ use App\Models\BackendUnivUsulan\Pegawai;
 use Illuminate\Http\Request;
 // Gunakan model Role dari Spatie
 use Spatie\Permission\Models\Role;
+use App\Services\FileStorageService;
+use App\Services\ValidationService;
 
 class RolePegawaiController extends Controller
 {
+    private $fileStorage;
+    private $validationService;
+
+    public function __construct(FileStorageService $fileStorage, ValidationService $validationService)
+    {
+        $this->fileStorage = $fileStorage;
+        $this->validationService = $validationService;
+    }
+
     public function index(Request $request)
     {
         // Query builder dengan eager loading roles

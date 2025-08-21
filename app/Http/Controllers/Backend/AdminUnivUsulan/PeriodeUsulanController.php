@@ -8,9 +8,20 @@ use Illuminate\Http\Request;
 use App\Rules\NoDateRangeOverlap;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Services\FileStorageService;
+use App\Services\ValidationService;
 
 class PeriodeUsulanController extends Controller
 {
+    private $fileStorage;
+    private $validationService;
+
+    public function __construct(FileStorageService $fileStorage, ValidationService $validationService)
+    {
+        $this->fileStorage = $fileStorage;
+        $this->validationService = $validationService;
+    }
+
     /**
      * Menampilkan daftar semua resource.
      * (Metode ini tidak lagi digunakan karena daftar ditampilkan di PusatUsulanController)

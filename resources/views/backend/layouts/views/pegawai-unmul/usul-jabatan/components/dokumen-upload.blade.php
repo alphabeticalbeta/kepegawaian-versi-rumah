@@ -97,7 +97,7 @@
                 </div>
 
                 @if($paktaExists)
-                    <a href="{{ route('pegawai-unmul.usulan-jabatan.show-document', ['usulanJabatan' => $usulan->id, 'field' => 'pakta_integritas']) }}"
+                    <a href="{{ route('pegawai-unmul.usulan-jabatan.show-document', ['usulan' => $usulan->id, 'field' => 'pakta_integritas']) }}"
                     target="_blank" class="text-xs {{ $isPaktaInvalid ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800' }} hover:underline mt-1 inline-block mb-2">
                         <i data-lucide="check-circle" class="inline w-3 h-3 mr-1"></i> File sudah ada. Lihat file.
                     </a>
@@ -183,7 +183,7 @@
                 </div>
 
                 @if($korespondensiExists)
-                    <a href="{{ route('pegawai-unmul.usulan-jabatan.show-document', ['usulanJabatan' => $usulan->id, 'field' => 'bukti_korespondensi']) }}"
+                    <a href="{{ route('pegawai-unmul.usulan-jabatan.show-document', ['usulan' => $usulan->id, 'field' => 'bukti_korespondensi']) }}"
                     target="_blank" class="text-xs {{ $isKorespondensiInvalid ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800' }} hover:underline mt-1 inline-block mb-2">
                         <i data-lucide="check-circle" class="inline w-3 h-3 mr-1"></i> File sudah ada. Lihat file.
                     </a>
@@ -269,7 +269,7 @@
                 </div>
 
                 @if($turnitinExists)
-                    <a href="{{ route('pegawai-unmul.usulan-jabatan.show-document', ['usulanJabatan' => $usulan->id, 'field' => 'turnitin']) }}"
+                    <a href="{{ route('pegawai-unmul.usulan-jabatan.show-document', ['usulan' => $usulan->id, 'field' => 'turnitin']) }}"
                     target="_blank" class="text-xs {{ $isTurnitinInvalid ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800' }} hover:underline mt-1 inline-block mb-2">
                         <i data-lucide="check-circle" class="inline w-3 h-3 mr-1"></i> File sudah ada. Lihat file.
                     </a>
@@ -355,7 +355,7 @@
                 </div>
 
                 @if($artikelExists)
-                    <a href="{{ route('pegawai-unmul.usulan-jabatan.show-document', ['usulanJabatan' => $usulan->id, 'field' => 'upload_artikel']) }}"
+                    <a href="{{ route('pegawai-unmul.usulan-jabatan.show-document', ['usulan' => $usulan->id, 'field' => 'upload_artikel']) }}"
                     target="_blank" class="text-xs {{ $isArtikelInvalid ? 'text-red-600 hover:text-red-800' : 'text-green-600 hover:text-green-800' }} hover:underline mt-1 inline-block mb-2">
                         <i data-lucide="check-circle" class="inline w-3 h-3 mr-1"></i> File sudah ada. Lihat file.
                     </a>

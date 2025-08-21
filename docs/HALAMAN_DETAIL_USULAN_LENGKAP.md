@@ -14,7 +14,7 @@ Setelah usulan dikirim, halaman Detail Usulan harus menampilkan:
 
 ### **1. Perluasan View Show**
 
-**File:** `resources/views/backend/layouts/views/pegawai-unmul/usul-jabatan/show.blade.php`
+**File:** `resources/views/backend/layouts/views/pegawai-unmul/usul-jabatan/create-jabatan.blade.php` (dengan `$isShowMode = true`)
 
 **Sections Baru yang Ditambahkan:**
 

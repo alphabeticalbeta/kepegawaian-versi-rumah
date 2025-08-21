@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Cache;
+use App\Services\FileStorageService;
+use App\Services\ValidationService;
 
 /**
  * Admin Fakultas Controller
@@ -33,6 +35,14 @@ use Illuminate\Support\Facades\Cache;
 
 class AdminFakultasController extends Controller
 {
+    private $fileStorage;
+    private $validationService;
+
+    public function __construct(FileStorageService $fileStorage, ValidationService $validationService)
+    {
+        $this->fileStorage = $fileStorage;
+        $this->validationService = $validationService;
+    }
     /**
     * Menampilkan dashboard dengan daftar usulan untuk fakultas terkait.
     */
@@ -297,12 +307,18 @@ class AdminFakultasController extends Controller
                 return $this->processDokumenDataForView($usulan);
             });
 
+            // Get penilais data for popup
+            $penilais = \App\Models\BackendUnivUsulan\Pegawai::whereHas('roles', function($query) {
+                $query->where('name', 'Penilai Universitas');
+            })->orderBy('nama_lengkap')->get();
+
             return view('backend.layouts.views.admin-fakultas.usulan.detail', [
                 'usulan' => $usulan,
                 'validationFields' => $validationFields,
                 'existingValidation' => $existingValidation,
                 'bkdLabels' => $bkdLabels,
                 'dokumenData' => $dokumenData,
+                'penilais' => $penilais,
                 // Multi-role configuration
                 'currentRole' => 'admin_fakultas',
                 'formAction' => route('admin-fakultas.usulan.save-validation', $usulan->id),
@@ -328,16 +344,16 @@ class AdminFakultasController extends Controller
     /**
      * Menyimpan hasil validasi admin fakultas.
      */
-    public function saveValidation(Request $request, Usulan $adminUsulan)
+    public function saveValidation(Request $request, Usulan $usulan)
     {
         // Dispatcher: prioritise explicit action_type (complex flows)
         if ($request->filled('action_type')) {
-            return $this->saveComplexValidation($request, $adminUsulan);
+            return $this->saveComplexValidation($request, $usulan);
         }
 
         // Fallback to simple validation (legacy submit with 'action')
         if ($request->has('validation')) {
-            return $this->saveSimpleValidation($request, $adminUsulan);
+            return $this->saveSimpleValidation($request, $usulan);
         }
 
         return redirect()->back()->with('error', 'Permintaan tidak dikenali.');
@@ -479,10 +495,15 @@ class AdminFakultasController extends Controller
 
                     // Only require files for initial submission if files are provided
                     if ($isInitialSubmission) {
-                        $rules['dokumen_pendukung.file_surat_usulan'] = 'nullable|file|mimes:pdf|max:1024';
-                        $rules['dokumen_pendukung.file_berita_senat'] = 'nullable|file|mimes:pdf|max:1024';
+                        // Support both bracket and dot notation
+                        $rules['dokumen_pendukung.file_surat_usulan'] = 'nullable|file|mimes:pdf|max:2048';
+                        $rules['dokumen_pendukung.file_berita_senat'] = 'nullable|file|mimes:pdf|max:2048';
+                        $rules['dokumen_pendukung[file_surat_usulan]'] = 'nullable|file|mimes:pdf|max:2048';
+                        $rules['dokumen_pendukung[file_berita_senat]'] = 'nullable|file|mimes:pdf|max:2048';
                         $messages['dokumen_pendukung.file_surat_usulan.mimes'] = 'File surat usulan harus berformat PDF.';
                         $messages['dokumen_pendukung.file_berita_senat.mimes'] = 'File berita senat harus berformat PDF.';
+                        $messages['dokumen_pendukung[file_surat_usulan].mimes'] = 'File surat usulan harus berformat PDF.';
+                        $messages['dokumen_pendukung[file_berita_senat].mimes'] = 'File berita senat harus berformat PDF.';
                     }
 
                     $validatedData = $request->validate($rules, $messages);
@@ -504,14 +525,20 @@ class AdminFakultasController extends Controller
                     $currentDokumenPendukung['nomor_surat_usulan'] = $validatedData['dokumen_pendukung']['nomor_surat_usulan'];
                     $currentDokumenPendukung['nomor_berita_senat'] = $validatedData['dokumen_pendukung']['nomor_berita_senat'];
 
-                    // Handle file uploads only if provided
-                    if ($request->hasFile('dokumen_pendukung[file_surat_usulan]')) {
-                        $currentDokumenPendukung['file_surat_usulan_path'] = $request->file('dokumen_pendukung[file_surat_usulan]')->store('dokumen-fakultas/surat-usulan', 'public');
-                    }
+                    // Handle file uploads menggunakan FileStorageService
+                    $currentDokumenPendukung['file_surat_usulan_path'] = $this->fileStorage->handleDokumenPendukung(
+                        $request,
+                        $usulan,
+                        'file_surat_usulan',
+                        'dokumen-fakultas/surat-usulan'
+                    );
 
-                    if ($request->hasFile('dokumen_pendukung[file_berita_senat]')) {
-                        $currentDokumenPendukung['file_berita_senat_path'] = $request->file('dokumen_pendukung[file_berita_senat]')->store('dokumen-fakultas/berita-senat', 'public');
-                    }
+                    $currentDokumenPendukung['file_berita_senat_path'] = $this->fileStorage->handleDokumenPendukung(
+                        $request,
+                        $usulan,
+                        'file_berita_senat',
+                        'dokumen-fakultas/berita-senat'
+                    );
 
                     $currentValidasi['admin_fakultas']['dokumen_pendukung'] = $currentDokumenPendukung;
                     $usulan->validasi_data = $currentValidasi;
@@ -538,8 +565,11 @@ class AdminFakultasController extends Controller
                         'dokumen_pendukung' => 'nullable|array',
                         'dokumen_pendukung.nomor_surat_usulan' => 'nullable|string|max:255',
                         'dokumen_pendukung.nomor_berita_senat' => 'nullable|string|max:255',
-                        'dokumen_pendukung.file_surat_usulan' => 'nullable|file|mimes:pdf|max:1024',
-                        'dokumen_pendukung.file_berita_senat' => 'nullable|file|mimes:pdf|max:1024'
+                        'dokumen_pendukung.file_surat_usulan' => 'nullable|file|mimes:pdf|max:2048',
+                        'dokumen_pendukung.file_berita_senat' => 'nullable|file|mimes:pdf|max:2048',
+                        // Support bracket notation for compatibility
+                        'dokumen_pendukung[file_surat_usulan]' => 'nullable|file|mimes:pdf|max:2048',
+                        'dokumen_pendukung[file_berita_senat]' => 'nullable|file|mimes:pdf|max:2048'
                     ]);
 
                     // Simpan validasi data
@@ -552,19 +582,52 @@ class AdminFakultasController extends Controller
                         ]);
                     }
 
-                    // Cek apakah dokumen pendukung sudah diisi
-                    $currentValidasi = $usulan->validasi_data;
-                    $dokumenPendukung = $currentValidasi['admin_fakultas']['dokumen_pendukung'] ?? [];
+                    // Log request details sebelum validasi
+                    Log::info('Request details before dokumen pendukung validation', [
+                        'usulan_id' => $usulan->id,
+                        'action_type' => $actionType,
+                        'request_method' => $request->method(),
+                        'content_type' => $request->header('Content-Type'),
+                        'all_request_keys' => array_keys($request->all()),
+                        'has_files' => $request->hasFile('dokumen_pendukung'),
+                        'files_data' => $request->allFiles(),
+                        'dokumen_pendukung_data' => $request->input('dokumen_pendukung'),
+                        'raw_files' => $_FILES ?? []
+                    ]);
 
-                    if (empty($dokumenPendukung) ||
-                        empty($dokumenPendukung['nomor_surat_usulan']) ||
-                        empty($dokumenPendukung['file_surat_usulan_path'])) {
+                    // Additional debugging for file detection
+                    Log::info('Request all files', $request->allFiles() ?: []);
+                    Log::info('Request file dokumen_pendukung', $request->file('dokumen_pendukung') ?: []);
+
+                    // Validasi dokumen pendukung menggunakan service dengan logging detail
+                    Log::info('Starting dokumen pendukung validation', [
+                        'usulan_id' => $usulan->id,
+                        'action_type' => $actionType,
+                        'request_keys' => array_keys($request->all()),
+                        'has_files' => $request->hasFile('dokumen_pendukung'),
+                        'content_type' => $request->header('Content-Type')
+                    ]);
+
+                    $dokumenErrors = $this->validationService->validateDokumenPendukung($request, $usulan, 'admin_fakultas');
+
+                    Log::info('Dokumen pendukung validation completed', [
+                        'usulan_id' => $usulan->id,
+                        'errors_count' => count($dokumenErrors),
+                        'errors' => $dokumenErrors
+                    ]);
+
+                    if (!empty($dokumenErrors)) {
+                        Log::warning('Dokumen pendukung validation failed', [
+                            'usulan_id' => $usulan->id,
+                            'errors' => $dokumenErrors
+                        ]);
+
                         throw \Illuminate\Validation\ValidationException::withMessages([
-                            'dokumen_pendukung' => 'Dokumen pendukung (Nomor Surat Usulan dan File Surat Usulan) harus diisi sebelum mengirim ke universitas.'
+                            'dokumen_pendukung' => $dokumenErrors
                         ]);
                     }
 
-                    // Update dokumen pendukung jika ada
+                    // Update dokumen pendukung menggunakan FileStorageService
                     if (!empty($validatedData['dokumen_pendukung'])) {
                         $currentValidasi = $usulan->validasi_data;
                         $currentDokumenPendukung = $currentValidasi['admin_fakultas']['dokumen_pendukung'] ?? [];
@@ -577,13 +640,20 @@ class AdminFakultasController extends Controller
                             $currentDokumenPendukung['nomor_berita_senat'] = $validatedData['dokumen_pendukung']['nomor_berita_senat'];
                         }
 
-                        // Handle file uploads
-                        if ($request->hasFile('dokumen_pendukung[file_surat_usulan]')) {
-                            $currentDokumenPendukung['file_surat_usulan_path'] = $request->file('dokumen_pendukung[file_surat_usulan]')->store('dokumen-fakultas/surat-usulan', 'public');
-                        }
-                        if ($request->hasFile('dokumen_pendukung[file_berita_senat]')) {
-                            $currentDokumenPendukung['file_berita_senat_path'] = $request->file('dokumen_pendukung[file_berita_senat]')->store('dokumen-fakultas/berita-senat', 'public');
-                        }
+                        // Handle file uploads menggunakan FileStorageService
+                        $currentDokumenPendukung['file_surat_usulan_path'] = $this->fileStorage->handleDokumenPendukung(
+                            $request,
+                            $usulan,
+                            'file_surat_usulan',
+                            'dokumen-fakultas/surat-usulan'
+                        );
+
+                        $currentDokumenPendukung['file_berita_senat_path'] = $this->fileStorage->handleDokumenPendukung(
+                            $request,
+                            $usulan,
+                            'file_berita_senat',
+                            'dokumen-fakultas/berita-senat'
+                        );
 
                         $currentValidasi['admin_fakultas']['dokumen_pendukung'] = $currentDokumenPendukung;
                         $usulan->validasi_data = $currentValidasi;

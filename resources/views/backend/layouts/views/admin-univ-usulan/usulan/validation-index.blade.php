@@ -154,7 +154,7 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                    <a href="{{ route('admin-univ-usulan.usulan.show', $usulan->id) }}"
+                                    <a href="{{ route('backend.admin-univ-usulan.usulan.show', $usulan->id) }}"
                                        class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 px-3 py-1 rounded-lg transition-colors">
                                         <i data-lucide="eye" class="w-4 h-4 inline mr-1"></i>
                                         Detail

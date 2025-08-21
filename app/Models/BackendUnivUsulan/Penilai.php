@@ -4,19 +4,29 @@ namespace App\Models\BackendUnivUsulan;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Spatie\Permission\Traits\HasRoles;
+use App\Models\BackendUnivUsulan\UnitKerja;
 
 class Penilai extends Model
 {
-    use HasFactory;
+    use HasFactory, HasRoles;
 
-    protected $table = 'penilais';
+    /**
+     * Guard yang digunakan untuk authentication dan permissions
+     */
+    protected $guard_name = 'pegawai';
+
+    // Gunakan tabel pegawais yang sudah ada
+    protected $table = 'pegawais';
 
     protected $fillable = [
         'nama_lengkap',
         'nip',
         'email',
-        'bidang_keahlian',
-        'status',
+        'jenis_pegawai',
+        'status_kepegawaian',
         'created_at',
         'updated_at'
     ];
@@ -27,26 +37,49 @@ class Penilai extends Model
     public function usulans()
     {
         return $this->belongsToMany(Usulan::class, 'usulan_penilai', 'penilai_id', 'usulan_id')
+                    ->withPivot('status_penilaian', 'catatan_penilaian')
                     ->withTimestamps();
     }
 
     /**
-     * Get active penilais
+     * Relasi ke Unit Kerja
      */
-    public static function getActivePenilais()
+    public function unitKerja(): BelongsTo
     {
-        return self::where('status', 'aktif')
-                   ->orderBy('nama_lengkap')
-                   ->get();
+        return $this->belongsTo(UnitKerja::class, 'unit_kerja_id');
     }
 
     /**
-     * Get penilais by bidang keahlian
+     * Relasi ke Roles (menggunakan Spatie Permission)
+     */
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(\Spatie\Permission\Models\Role::class, 'model_has_roles', 'model_id', 'role_id')
+                    ->where('model_type', \App\Models\BackendUnivUsulan\Pegawai::class);
+    }
+
+    /**
+     * Get active penilais (pegawai dengan role Penilai Universitas)
+     */
+    public static function getActivePenilais()
+    {
+        return self::whereHas('roles', function($query) {
+            $query->where('name', 'Penilai Universitas');
+        })
+        ->orderBy('nama_lengkap')
+        ->get();
+    }
+
+    /**
+     * Get penilais by bidang keahlian (berdasarkan unit kerja)
      */
     public static function getPenilaisByBidang($bidang)
     {
-        return self::where('status', 'aktif')
-                   ->where('bidang_keahlian', 'like', "%{$bidang}%")
+        return self::where('status_kepegawaian', 'Aktif')
+                   ->whereIn('jenis_pegawai', ['Dosen', 'Tendik'])
+                   ->whereHas('unitKerja', function($query) use ($bidang) {
+                       $query->where('nama_unit_kerja', 'like', "%{$bidang}%");
+                   })
                    ->orderBy('nama_lengkap')
                    ->get();
     }

@@ -8,9 +8,20 @@ use App\Models\BackendUnivUsulan\Usulan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use App\Services\FileStorageService;
+use App\Services\ValidationService;
 
 class UsulanController extends Controller
 {
+    private $fileStorage;
+    private $validationService;
+
+    public function __construct(FileStorageService $fileStorage, ValidationService $validationService)
+    {
+        $this->fileStorage = $fileStorage;
+        $this->validationService = $validationService;
+    }
+
     /**
      * Menampilkan halaman usulan berdasarkan jenis dengan periode otomatis
      */
@@ -86,7 +97,12 @@ class UsulanController extends Controller
         // Get existing validation data
         $existingValidation = $usulan->getValidasiByRole('admin_universitas') ?? [];
 
-        return view('backend.layouts.views.admin-univ-usulan.usulan.detail', compact('usulan', 'existingValidation'));
+        // Get penilais data for popup
+        $penilais = \App\Models\BackendUnivUsulan\Pegawai::whereHas('roles', function($query) {
+            $query->where('name', 'Penilai Universitas');
+        })->orderBy('nama_lengkap')->get();
+
+        return view('backend.layouts.views.admin-univ-usulan.usulan.detail', compact('usulan', 'existingValidation', 'penilais'));
     }
 
     /**

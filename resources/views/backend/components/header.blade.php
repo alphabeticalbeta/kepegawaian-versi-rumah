@@ -21,7 +21,7 @@
                     $availableDashboards['Admin Universitas'] = route('admin-universitas.dashboard');
                 }
                 if ($roles->contains('Admin Universitas Usulan')) {
-                    $availableDashboards['Admin Usulan'] = route('admin-univ-usulan.dashboard');
+                    $availableDashboards['Admin Usulan'] = route('backend.admin-univ-usulan.dashboard');
                 }
                 if ($roles->contains('Admin Fakultas')) {
                     $availableDashboards['Admin Fakultas'] = route('admin-fakultas.dashboard');

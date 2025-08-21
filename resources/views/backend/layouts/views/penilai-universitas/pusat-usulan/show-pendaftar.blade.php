@@ -5,8 +5,14 @@
 
     <div class="mb-8">
         <div class="flex items-center space-x-2 text-sm text-gray-500 mb-4">
-            <a href="{{ route('backend.admin-univ-usulan.pusat-usulan.index') }}" class="hover:text-gray-700 transition-colors">
-                Manajemen Usulan
+            <a href="{{ route('penilai-universitas.dashboard') }}" class="hover:text-gray-700 transition-colors">
+                Dashboard
+            </a>
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+            </svg>
+            <a href="{{ route('penilai-universitas.pusat-usulan.index') }}" class="hover:text-gray-700 transition-colors">
+                Penilaian Usulan
             </a>
             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
@@ -57,7 +63,7 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-center">
-                                <a href="{{ route('backend.admin-univ-usulan.pusat-usulan.show', $usulan->id) }}" class="font-medium text-indigo-600 hover:text-indigo-900">Detail</a>
+                                <a href="{{ route('penilai-universitas.pusat-usulan.show', $usulan->id) }}" class="font-medium text-indigo-600 hover:text-indigo-900">Detail</a>
                             </td>
                         </tr>
                     @empty

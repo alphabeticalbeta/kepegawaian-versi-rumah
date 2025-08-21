@@ -157,6 +157,24 @@ class Usulan extends Model
                     ->withTimestamps();
     }
 
+    /**
+     * Check if usulan is assigned to specific penilai.
+     */
+    public function isAssignedToPenilai($penilaiId): bool
+    {
+        return $this->penilais()->where('penilai_id', $penilaiId)->exists();
+    }
+
+    /**
+     * Scope to get usulans assigned to specific penilai.
+     */
+    public function scopeAssignedToPenilai($query, $penilaiId)
+    {
+        return $query->whereHas('penilais', function ($penilaiQuery) use ($penilaiId) {
+            $penilaiQuery->where('penilai_id', $penilaiId);
+        });
+    }
+
     // =====================================
     // ACCESSORS (Computed Properties)
     // =====================================

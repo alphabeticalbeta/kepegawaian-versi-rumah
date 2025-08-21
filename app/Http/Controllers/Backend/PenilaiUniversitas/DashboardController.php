@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Backend\PenilaiUniversitas;
 
 use App\Http\Controllers\Controller;
+use App\Services\PenilaiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\BackendUnivUsulan\Usulan;
@@ -11,6 +12,13 @@ use App\Models\BackendUnivUsulan\PeriodeUsulan;
 
 class DashboardController extends Controller
 {
+    protected $penilaiService;
+
+    public function __construct(PenilaiService $penilaiService)
+    {
+        $this->penilaiService = $penilaiService;
+    }
+
     /**
      * Display the penilai universitas dashboard.
      *
@@ -21,41 +29,15 @@ class DashboardController extends Controller
         try {
             \Log::info('PenilaiUniversitas Dashboard accessed', ['user_id' => Auth::id()]);
 
-            // Get active periods for different usulan types
-            $activePeriods = \App\Models\BackendUnivUsulan\PeriodeUsulan::where('status', 'Buka')
-                ->with(['usulans' => function($query) {
-                    $query->with('pegawai:id,nama_lengkap,nip')
-                          ->latest()
-                          ->limit(5);
-                }])
-                ->get();
+            $currentPenilai = Auth::user();
 
-            // Get recent usulans for assessment (status: Sedang Direview)
-            $recentUsulans = \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Sedang Direview')
-                ->with(['pegawai:id,nama_lengkap,nip', 'periodeUsulan'])
-                ->latest()
-                ->limit(10)
-                ->get();
-
-            // Get statistics
-            $stats = [
-                'total_periods' => $activePeriods->count(),
-                'total_usulans_pending' => $recentUsulans->count(),
-                'total_usulans_all' => \App\Models\BackendUnivUsulan\Usulan::count(),
-                'usulans_by_status' => [
-                    'Diajukan' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Diajukan')->count(),
-                    'Diusulkan ke Universitas' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Diusulkan ke Universitas')->count(),
-                    'Sedang Direview' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Sedang Direview')->count(),
-                    'Direkomendasikan' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Direkomendasikan')->count(),
-                    'Disetujui' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Disetujui')->count(),
-                    'Ditolak' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Ditolak')->count(),
-                ]
-            ];
+            // Use service to get dashboard data
+            $dashboardData = $this->penilaiService->getDashboardData($currentPenilai->id);
 
             return view('backend.layouts.views.penilai-universitas.dashboard', [
-                'activePeriods' => $activePeriods,
-                'recentUsulans' => $recentUsulans,
-                'stats' => $stats,
+                'activePeriods' => $dashboardData['activePeriods'],
+                'recentUsulans' => $dashboardData['recentUsulans'],
+                'stats' => $dashboardData['stats'],
                 'user' => Auth::user()
             ]);
         } catch (\Exception $e) {

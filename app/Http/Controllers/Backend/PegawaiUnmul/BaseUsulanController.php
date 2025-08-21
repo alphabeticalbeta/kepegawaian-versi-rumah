@@ -14,9 +14,17 @@ use Illuminate\Support\Facades\Storage;
 use App\Jobs\ProcessUsulanDocuments;
 use App\Jobs\SendUsulanNotification;
 use App\Jobs\GenerateUsulanReport;
+use App\Services\FileStorageService;
 
 abstract class BaseUsulanController extends Controller
 {
+    protected $fileStorage;
+
+    public function __construct(FileStorageService $fileStorage)
+    {
+        $this->fileStorage = $fileStorage;
+    }
+
     /**
      * Get base required fields untuk validasi profil
      */
@@ -142,7 +150,7 @@ abstract class BaseUsulanController extends Controller
     }
 
     /**
-     * Handle upload dokumen (generic untuk semua jenis usulan)
+     * Handle upload dokumen (generic untuk semua jenis usulan) - REFACTORED with FileStorageService
      */
     protected function handleDocumentUploads($request, $pegawai, array $documentKeys): array
     {
@@ -157,22 +165,19 @@ abstract class BaseUsulanController extends Controller
                     // Enhanced validation
                     $this->validateUploadedFile($file, $key);
 
-                    $originalName = $file->getClientOriginalName();
-                    $extension = $file->getClientOriginalExtension();
-                    $fileName = $key . '_' . time() . '_' . uniqid() . '.' . $extension;
-
-                    $path = $file->storeAs($uploadPath, $fileName, 'local');
+                    // Use FileStorageService for upload
+                    $path = $this->fileStorage->uploadFile($file, $uploadPath);
 
                     $filePaths[$key] = [
                         'path' => $path,
-                        'original_name' => $originalName,
+                        'original_name' => $file->getClientOriginalName(),
                         'file_size' => $file->getSize(),
                         'mime_type' => $file->getMimeType(),
                         'uploaded_at' => now()->toISOString(),
                         'uploaded_by' => $pegawai->id,
                     ];
 
-                    Log::info("Document uploaded successfully", [
+                    Log::info("Document uploaded successfully using FileStorageService", [
                         'document_key' => $key,
                         'file_path' => $path,
                         'file_size' => $file->getSize(),

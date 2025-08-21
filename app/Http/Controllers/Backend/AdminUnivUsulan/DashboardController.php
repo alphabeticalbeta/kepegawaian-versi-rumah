@@ -5,9 +5,20 @@ namespace App\Http\Controllers\Backend\AdminUnivUsulan;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\FileStorageService;
+use App\Services\ValidationService;
 
 class DashboardController extends Controller
 {
+    private $fileStorage;
+    private $validationService;
+
+    public function __construct(FileStorageService $fileStorage, ValidationService $validationService)
+    {
+        $this->fileStorage = $fileStorage;
+        $this->validationService = $validationService;
+    }
+
     /**
      * Display the admin univ usulan dashboard.
      *
@@ -34,14 +45,23 @@ class DashboardController extends Controller
                 ->limit(10)
                 ->get();
 
+            // Get usulans waiting for admin review (NEW STATUS)
+            $usulansWaitingReview = \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Menunggu Review Admin Univ')
+                ->with(['pegawai:id,nama_lengkap,nip', 'periodeUsulan'])
+                ->latest()
+                ->limit(10)
+                ->get();
+
             // Get statistics
             $stats = [
                 'total_periods' => $activePeriods->count(),
                 'total_usulans_pending' => $recentUsulans->count(),
+                'total_usulans_waiting_review' => $usulansWaitingReview->count(),
                 'total_usulans_all' => \App\Models\BackendUnivUsulan\Usulan::count(),
                 'usulans_by_status' => [
                     'Diajukan' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Diajukan')->count(),
                     'Diusulkan ke Universitas' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Diusulkan ke Universitas')->count(),
+                    'Menunggu Review Admin Univ' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Menunggu Review Admin Univ')->count(),
                     'Sedang Direview' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Sedang Direview')->count(),
                     'Direkomendasikan' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Direkomendasikan')->count(),
                     'Disetujui' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Disetujui')->count(),
@@ -52,6 +72,7 @@ class DashboardController extends Controller
             return view('backend.layouts.views.admin-univ-usulan.dashboard', [
                 'activePeriods' => $activePeriods,
                 'recentUsulans' => $recentUsulans,
+                'usulansWaitingReview' => $usulansWaitingReview,
                 'stats' => $stats,
                 'user' => Auth::user()
             ]);

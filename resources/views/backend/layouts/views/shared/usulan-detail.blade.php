@@ -49,27 +49,29 @@
             'actionButtons' => ['perbaikan_usulan', 'usulkan_ke_universitas'],
             'canForward' => true,
             'canReturn' => true,
-            'routePrefix' => 'admin-fakultas'
+            'routePrefix' => 'admin-fakultas.usulan'
         ],
         'Admin Universitas' => [
             'title' => 'Validasi Usulan Universitas',
             'description' => 'Validasi final usulan sebelum diteruskan ke tim penilai',
             'validationFields' => ['data_pribadi', 'data_kepegawaian', 'data_pendidikan', 'data_kinerja', 'dokumen_profil', 'bkd', 'karya_ilmiah', 'dokumen_usulan', 'syarat_guru_besar', 'dokumen_admin_fakultas'],
             'nextStatus' => 'Sedang Direview',
-            'actionButtons' => ['perbaikan_ke_pegawai', 'perbaikan_ke_fakultas', 'teruskan_ke_penilai', 'teruskan_ke_senat'],
+            'actionButtons' => ['perbaikan_ke_pegawai', 'perbaikan_ke_fakultas', 'teruskan_ke_penilai', 'teruskan_ke_senat', 'review_penilai'],
             'canForward' => true,
             'canReturn' => true,
-            'routePrefix' => 'admin-univ-usulan'
+            'routePrefix' => 'backend.admin-univ-usulan.usulan',
+            'documentRoutePrefix' => 'backend.admin-univ-usulan.usulan'
         ],
         'Tim Penilai' => [
             'title' => 'Penilaian Usulan',
             'description' => 'Penilaian mendalam terhadap usulan',
-            'validationFields' => ['data_pribadi', 'data_kepegawaian', 'data_pendidikan', 'data_kinerja', 'dokumen_profil', 'bkd', 'karya_ilmiah', 'dokumen_usulan', 'syarat_guru_besar'],
-            'nextStatus' => 'Direkomendasikan',
+            'validationFields' => ['data_pribadi', 'data_kepegawaian', 'data_pendidikan', 'data_kinerja', 'dokumen_profil', 'bkd', 'karya_ilmiah', 'dokumen_usulan', 'syarat_guru_besar', 'dokumen_admin_fakultas'],
+            'nextStatus' => 'Menunggu Review Admin Univ',
             'actionButtons' => ['perbaikan_usulan', 'rekomendasikan'],
             'canForward' => true,
-            'canReturn' => true,
-            'routePrefix' => 'tim-penilai'
+            'canReturn' => false,
+            'routePrefix' => 'penilai-universitas.pusat-usulan',
+            'documentRoutePrefix' => 'penilai-universitas.pusat-usulan'
         ],
         'Tim Senat' => [
             'title' => 'Keputusan Senat',
@@ -79,7 +81,7 @@
             'actionButtons' => ['tolak_usulan', 'setujui_usulan'],
             'canForward' => false,
             'canReturn' => true,
-            'routePrefix' => 'tim-senat'
+            'routePrefix' => 'tim-senat.usulan'
         ]
     ];
 
@@ -419,7 +421,7 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         @foreach($config['validationFields'] as $groupKey)
                             @if(isset($fieldGroups[$groupKey]))
-                                @if($groupKey === 'dokumen_admin_fakultas' && $currentRole !== 'Admin Universitas' && $currentRole !== 'Admin Fakultas')
+                                @if($groupKey === 'dokumen_admin_fakultas' && $currentRole !== 'Admin Universitas' && $currentRole !== 'Admin Fakultas' && $currentRole !== 'Tim Penilai')
                                     @continue
                                 @endif
                                 @if($groupKey === 'dokumen_admin_fakultas' && $currentRole === 'Admin Fakultas' && !in_array($usulan->status_usulan, ['Diusulkan ke Universitas', 'Sedang Direview', 'Direkomendasikan', 'Disetujui', 'Ditolak', 'Perbaikan Usulan', 'Diajukan']))
@@ -577,7 +579,7 @@
                                                         }
                                                     } elseif ($groupKey === 'dokumen_profil') {
                                                         if ($usulan->pegawai->$fieldKey) {
-                                                            $route = route($config['routePrefix'] . '.usulan.show-pegawai-document', [$usulan->id, $fieldKey]);
+                                                            $route = route($config['routePrefix'] . '.show-pegawai-document', [$usulan->id, $fieldKey]);
                                                             $value = '<a href="' . e($route) . '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Lihat</a>';
                                                         } else {
                                                             $value = 'Dokumen tidak tersedia';
@@ -600,10 +602,10 @@
                                                         }
 
                                                         if ($docPath) {
-                                                            $route = route($config['routePrefix'] . '.usulan.show-document', [$usulan->id, $fieldKey]);
+                                                            $route = route($config['routePrefix'] . '.show-document', [$usulan->id, $fieldKey]);
                                                             $value = '<a href="' . e($route) . '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Lihat</a>';
                                                         } else {
-                                                            $value = 'Dokumen tidak tersedia';
+                                                            $value = 'BKD tidak tersedia';
                                                         }
                                                     } elseif ($groupKey === 'karya_ilmiah') {
                                                         // Handle link fields with proper data structure
@@ -662,7 +664,7 @@
                                                         }
 
                                                         if ($docPath) {
-                                                            $route = route($config['routePrefix'] . '.usulan.show-document', [$usulan->id, $fieldKey]);
+                                                            $route = route(($config['documentRoutePrefix'] ?? $config['routePrefix']) . '.show-document', [$usulan->id, $fieldKey]);
                                                             $value = '<a href="' . e($route) . '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Lihat</a>';
                                                         } else {
                                                             $value = 'BKD tidak tersedia';
@@ -696,7 +698,7 @@
                                                             }
 
                                                             if ($docPath) {
-                                                                $route = route($config['routePrefix'] . '.usulan.show-document', [$usulan->id, $fieldKey]);
+                                                                $route = route(($config['documentRoutePrefix'] ?? $config['routePrefix']) . '.show-document', [$usulan->id, $fieldKey]);
                                                                 $value = '<a href="' . e($route) . '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Lihat</a>';
                                                             } else {
                                                                 $value = 'Dokumen tidak tersedia';
@@ -712,8 +714,13 @@
                                                         } elseif ($fieldKey === 'file_surat_usulan') {
                                                             $docPath = $dokumenPendukung['file_surat_usulan_path'] ?? null;
                                                             if ($docPath) {
-                                                                $url = asset('storage/' . $docPath);
-                                                                $value = '<a href="' . e($url) . '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Lihat</a>';
+                                                                // Use proper route for Tim Penilai
+                                                                if ($currentRole === 'Tim Penilai') {
+                                                                    $route = route('penilai-universitas.pusat-usulan.show-admin-fakultas-document', [$usulan->id, $fieldKey]);
+                                                                } else {
+                                                                    $url = asset('storage/' . $docPath);
+                                                                }
+                                                                $value = '<a href="' . e($route ?? $url) . '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Lihat</a>';
                                                             } else {
                                                                 $value = 'Dokumen tidak tersedia';
                                                             }
@@ -722,8 +729,13 @@
                                                         } elseif ($fieldKey === 'file_berita_senat') {
                                                             $docPath = $dokumenPendukung['file_berita_senat_path'] ?? null;
                                                             if ($docPath) {
-                                                                $url = asset('storage/' . $docPath);
-                                                                $value = '<a href="' . e($url) . '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Lihat</a>';
+                                                                // Use proper route for Tim Penilai
+                                                                if ($currentRole === 'Tim Penilai') {
+                                                                    $route = route('penilai-universitas.pusat-usulan.show-admin-fakultas-document', [$usulan->id, $fieldKey]);
+                                                                } else {
+                                                                    $url = asset('storage/' . $docPath);
+                                                                }
+                                                                $value = '<a href="' . e($route ?? $url) . '" target="_blank" class="text-blue-600 hover:text-blue-800 underline">Lihat</a>';
                                                             } else {
                                                                 $value = 'Dokumen tidak tersedia';
                                                             }
@@ -850,50 +862,89 @@
                     <i data-lucide="refresh-cw" class="w-4 h-4 inline mr-1"></i>
                     Perubahan validasi tersimpan otomatis. Gunakan tombol berikut untuk melanjutkan proses.
                 </div>
-                <form id="action-form" action="{{ route($config['routePrefix'] . '.usulan.save-validation', $usulan->id) }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-3 flex-wrap">
+                <form id="action-form" action="{{ route($config['routePrefix'] . '.save-validation', $usulan->id) }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-3 flex-wrap" autocomplete="off" novalidate>
                     @csrf
                     <input type="hidden" name="action_type" id="action_type" value="save_only">
                     <input type="hidden" name="catatan_umum" id="catatan_umum" value="">
 
                     @if($currentRole === 'Admin Universitas')
                         {{-- Admin Universitas Action Buttons --}}
-                        <button type="button" id="btn-perbaikan-pegawai" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
-                            <i data-lucide="user-x" class="w-4 h-4"></i>
-                            Perbaikan ke Pegawai
-                        </button>
+                        @if($usulan->status_usulan === 'Diusulkan ke Universitas')
+                            {{-- Initial validation buttons --}}
+                            <button type="button" id="btn-perbaikan-pegawai" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="user-x" class="w-4 h-4"></i>
+                                Perbaikan ke Pegawai
+                            </button>
 
-                        <button type="button" id="btn-perbaikan-fakultas" class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-2">
-                            <i data-lucide="building-2" class="w-4 h-4"></i>
-                            Perbaikan ke Fakultas
-                        </button>
+                            <button type="button" id="btn-perbaikan-fakultas" class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="building-2" class="w-4 h-4"></i>
+                                Perbaikan ke Fakultas
+                            </button>
 
-                        <button type="button" id="btn-teruskan-penilai" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
-                            <i data-lucide="user-check" class="w-4 h-4"></i>
-                            Teruskan ke Penilai
-                        </button>
+                            <button type="button" id="btn-teruskan-penilai" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="user-check" class="w-4 h-4"></i>
+                                Teruskan ke Penilai
+                            </button>
+                        @endif
 
-                        @php
-                            // Check if Tim Penilai has given recommendation
-                            $hasRecommendation = $usulan->validasi_data['tim_penilai']['recommendation'] ?? false;
-                            $isRecommended = $hasRecommendation === 'direkomendasikan';
-                        @endphp
-
-                        <button type="button" id="btn-teruskan-senat"
-                                class="px-4 py-2 {{ $isRecommended ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-400 cursor-not-allowed' }} text-white rounded-lg transition-colors flex items-center gap-2"
-                                {{ $isRecommended ? '' : 'disabled' }}>
-                            <i data-lucide="crown" class="w-4 h-4"></i>
-                            Teruskan ke Senat
-                        </button>
-
-                        @if(!$isRecommended)
-                        <small class="text-gray-500 text-xs">* Butuh rekomendasi dari Tim Penilai</small>
+                        @if($usulan->status_usulan === 'Direkomendasikan')
+                            {{-- Forward to Senat button --}}
+                            <button type="button" id="btn-teruskan-senat" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="crown" class="w-4 h-4"></i>
+                                Teruskan ke Senat
+                            </button>
                         @endif
 
                         @if($usulan->status_usulan === 'Sedang Direview')
-                        <button type="button" id="btn-kembalikan-dari-penilai" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2">
-                            <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                            Kembalikan dari Tim Penilai
-                        </button>
+                            {{-- Return from Penilai button --}}
+                            <button type="button" id="btn-kembalikan-dari-penilai" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                                Kembalikan dari Tim Penilai
+                            </button>
+                        @endif
+
+                        {{-- NEW: Handle Review dari Tim Penilai --}}
+                        @if($usulan->status_usulan === 'Menunggu Review Admin Univ')
+                            @php
+                                $penilaiReview = $usulan->validasi_data['tim_penilai'] ?? [];
+                                $hasRecommendation = $penilaiReview['recommendation'] ?? false;
+                                $hasPerbaikan = isset($penilaiReview['perbaikan_usulan']);
+                            @endphp
+
+                            <div class="flex flex-col gap-2 w-full">
+                                <div class="text-sm font-medium text-gray-700 mb-2">
+                                    <i data-lucide="eye" class="w-4 h-4 inline mr-1"></i>
+                                    Review Hasil Tim Penilai
+                                </div>
+
+                                @if($hasPerbaikan)
+                                    {{-- Review Perbaikan Usulan --}}
+                                    <div class="flex gap-2">
+                                        <button type="button" id="btn-approve-perbaikan" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                                            <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                            Setujui Perbaikan
+                                        </button>
+                                        <button type="button" id="btn-reject-perbaikan" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
+                                            <i data-lucide="x-circle" class="w-4 h-4"></i>
+                                            Tolak Perbaikan
+                                        </button>
+                                    </div>
+                                @endif
+
+                                @if($hasRecommendation === 'direkomendasikan')
+                                    {{-- Review Rekomendasi --}}
+                                    <div class="flex gap-2">
+                                        <button type="button" id="btn-approve-rekomendasi" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
+                                            <i data-lucide="crown" class="w-4 h-4"></i>
+                                            Setujui Rekomendasi
+                                        </button>
+                                        <button type="button" id="btn-reject-rekomendasi" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
+                                            <i data-lucide="x-circle" class="w-4 h-4"></i>
+                                            Tolak Rekomendasi
+                                        </button>
+                                    </div>
+                                @endif
+                            </div>
                         @endif
                     @elseif($currentRole === 'Admin Fakultas')
                         {{-- Admin Fakultas Action Buttons --}}
@@ -920,6 +971,33 @@
                                    ($config['nextStatus'] === 'Direkomendasikan' ? 'Rekomendasikan' : 'Lanjutkan')) }}
                             </button>
                             @endif
+                        @endif
+                    @elseif($currentRole === 'Tim Penilai')
+                        {{-- Tim Penilai Action Buttons --}}
+                        @if($usulan->status_usulan === 'Sedang Direview')
+                            <div class="flex flex-col gap-2 w-full">
+                                <div class="text-sm font-medium text-gray-700 mb-2">
+                                    <i data-lucide="clipboard-check" class="w-4 h-4 inline mr-1"></i>
+                                    Penilaian Usulan
+                                </div>
+
+                                <div class="flex gap-2">
+                                    <button type="button" id="btn-perbaikan" class="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-2">
+                                        <i data-lucide="arrow-left-right" class="w-4 h-4"></i>
+                                        Perbaikan Usulan
+                                    </button>
+
+                                    <button type="button" id="btn-rekomendasikan" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                                        <i data-lucide="thumbs-up" class="w-4 h-4"></i>
+                                        Rekomendasikan
+                                    </button>
+                                </div>
+
+                                <div class="text-xs text-gray-500 mt-1">
+                                    <i data-lucide="info" class="w-3 h-3 inline mr-1"></i>
+                                    Hasil penilaian akan dikirim ke Admin Universitas untuk review.
+                                </div>
+                            </div>
                         @endif
                     @else
                         {{-- Other Roles Action Buttons (Original Logic) --}}
@@ -961,6 +1039,11 @@
                                 'icon' => 'clock',
                                 'color' => 'text-yellow-600',
                                 'message' => 'Usulan sedang dalam proses review. Data tidak dapat diubah.'
+                            ],
+                            'Menunggu Review Admin Univ' => [
+                                'icon' => 'eye',
+                                'color' => 'text-purple-600',
+                                'message' => 'Usulan menunggu review dari Admin Universitas.'
                             ],
                             'Direkomendasikan' => [
                                 'icon' => 'thumbs-up',
@@ -1014,7 +1097,7 @@
                     if ($currentRole === 'Admin Fakultas') {
                         $backRoute = route('admin-fakultas.dashboard');
                     } elseif ($currentRole === 'Admin Universitas') {
-                        $backRoute = route('admin-univ-usulan.usulan.index');
+                        $backRoute = route('backend.admin-univ-usulan.usulan.index');
                     } elseif ($currentRole === 'Tim Penilai') {
                         $backRoute = route('tim-penilai.usulan.index');
                     } elseif ($currentRole === 'Tim Senat') {
@@ -1150,6 +1233,34 @@ function showAutoSaveStatus(status) {
 
 // ENHANCED: Event listeners for auto-save
 document.addEventListener('DOMContentLoaded', function() {
+    // Prevent form auto-submission
+    const actionForm = document.getElementById('action-form');
+    if (actionForm) {
+        actionForm.addEventListener('submit', function(e) {
+            // Only allow submission if action_type is not 'save_only' (which is the default)
+            const actionType = document.getElementById('action_type').value;
+            if (actionType === 'save_only') {
+                e.preventDefault();
+                console.log('Form submission prevented - no action selected');
+                return false;
+            }
+        });
+
+            // Prevent form submission on Enter key
+    actionForm.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            console.log('Form submission prevented - Enter key pressed');
+            return false;
+        }
+    });
+
+    // Clear form data on page load to prevent auto-submission
+    actionForm.reset();
+    document.getElementById('action_type').value = 'save_only';
+    document.getElementById('catatan_umum').value = '';
+    }
+
     // Auto-save on validation status change
     document.querySelectorAll('.validation-status').forEach(select => {
         select.addEventListener('change', debouncedAutoSave);
@@ -1461,16 +1572,23 @@ function showTeruskanKePenilaiModal() {
         cancelButtonText: 'Batal',
         confirmButtonColor: '#2563eb',
         width: '500px',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
         preConfirm: () => {
             // Check if at least one penilai is selected
             const selectedPenilais = document.querySelectorAll('input[name="selected_penilais[]"]:checked');
             if (selectedPenilais.length === 0) {
-                Swal.showValidationMessage('Pilih minimal 1 penilai');
+                Swal.showValidationMessage('⚠️ Pilih minimal 1 penilai terlebih dahulu!');
                 return false;
             }
 
-            // Get selected penilai IDs
+            // Validate that selected penilais are valid
             const penilaiIds = Array.from(selectedPenilais).map(cb => cb.value);
+            if (penilaiIds.length === 0 || penilaiIds.some(id => !id)) {
+                Swal.showValidationMessage('⚠️ Data penilai tidak valid!');
+                return false;
+            }
+
             const catatan = document.getElementById('catatan-penilai').value;
 
             return {
@@ -1583,6 +1701,21 @@ function showKirimKembaliKeUniversitasModal() {
 }
 
 function submitAction(actionType, catatan) {
+    // Additional validation for forward_to_penilai action
+    if (actionType === 'forward_to_penilai') {
+        const selectedPenilais = document.querySelectorAll('input[name="selected_penilais[]"]:checked');
+        if (selectedPenilais.length === 0) {
+            Swal.fire({
+                title: '❌ Penilai Belum Dipilih',
+                text: 'Silakan pilih minimal 1 penilai terlebih dahulu.',
+                icon: 'warning',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#2563eb'
+            });
+            return;
+        }
+    }
+
     const form = document.getElementById('action-form');
     const actionInput = document.getElementById('action_type');
     const catatanInput = document.getElementById('catatan_umum');
@@ -1684,9 +1817,19 @@ function submitAction(actionType, catatan) {
     });
 
     // Submit form with enhanced notification handling
+    const formData = new FormData(form);
+
+    // Manually collect file inputs that are outside the form
+    document.querySelectorAll('input[type="file"][name^="dokumen_pendukung["]').forEach(fileInput => {
+        if (fileInput.files.length > 0) {
+            formData.append(fileInput.name, fileInput.files[0]);
+            console.log('Added file to FormData:', fileInput.name, fileInput.files[0].name);
+        }
+    });
+
     fetch(form.action, {
         method: 'POST',
-        body: new FormData(form),
+        body: formData,
         headers: {
             'X-Requested-With': 'XMLHttpRequest'
         }
@@ -1742,5 +1885,164 @@ function submitAction(actionType, catatan) {
         });
     });
 }
+
+// NEW: Button handlers untuk review dari Tim Penilai
+document.addEventListener('DOMContentLoaded', function() {
+    // Approve Perbaikan
+    const btnApprovePerbaikan = document.getElementById('btn-approve-perbaikan');
+    if (btnApprovePerbaikan) {
+        btnApprovePerbaikan.addEventListener('click', function() {
+            Swal.fire({
+                title: 'Setujui Perbaikan',
+                text: 'Apakah Anda yakin ingin menyetujui hasil perbaikan dari Tim Penilai?',
+                input: 'textarea',
+                inputPlaceholder: 'Catatan tambahan (opsional)...',
+                showCancelButton: true,
+                confirmButtonText: 'Setujui',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#059669',
+                preConfirm: (catatan) => {
+                    return catatan || '';
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    submitAction('approve_perbaikan', result.value);
+                }
+            });
+        });
+    }
+
+    // Reject Perbaikan
+    const btnRejectPerbaikan = document.getElementById('btn-reject-perbaikan');
+    if (btnRejectPerbaikan) {
+        btnRejectPerbaikan.addEventListener('click', function() {
+            Swal.fire({
+                title: 'Tolak Perbaikan',
+                text: 'Apakah Anda yakin ingin menolak hasil perbaikan dari Tim Penilai?',
+                input: 'textarea',
+                inputPlaceholder: 'Alasan penolakan...',
+                showCancelButton: true,
+                confirmButtonText: 'Tolak',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#dc2626',
+                preConfirm: (catatan) => {
+                    if (!catatan || catatan.trim() === '') {
+                        Swal.showValidationMessage('Alasan penolakan wajib diisi');
+                        return false;
+                    }
+                    return catatan;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    submitAction('reject_perbaikan', result.value);
+                }
+            });
+        });
+    }
+
+    // Approve Rekomendasi
+    const btnApproveRekomendasi = document.getElementById('btn-approve-rekomendasi');
+    if (btnApproveRekomendasi) {
+        btnApproveRekomendasi.addEventListener('click', function() {
+            Swal.fire({
+                title: 'Setujui Rekomendasi',
+                text: 'Apakah Anda yakin ingin menyetujui rekomendasi dari Tim Penilai?',
+                input: 'textarea',
+                inputPlaceholder: 'Catatan tambahan (opsional)...',
+                showCancelButton: true,
+                confirmButtonText: 'Setujui',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#7c3aed',
+                preConfirm: (catatan) => {
+                    return catatan || '';
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    submitAction('approve_rekomendasi', result.value);
+                }
+            });
+        });
+    }
+
+    // Reject Rekomendasi
+    const btnRejectRekomendasi = document.getElementById('btn-reject-rekomendasi');
+    if (btnRejectRekomendasi) {
+        btnRejectRekomendasi.addEventListener('click', function() {
+            Swal.fire({
+                title: 'Tolak Rekomendasi',
+                text: 'Apakah Anda yakin ingin menolak rekomendasi dari Tim Penilai?',
+                input: 'textarea',
+                inputPlaceholder: 'Alasan penolakan...',
+                showCancelButton: true,
+                confirmButtonText: 'Tolak',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#dc2626',
+                preConfirm: (catatan) => {
+                    if (!catatan || catatan.trim() === '') {
+                        Swal.showValidationMessage('Alasan penolakan wajib diisi');
+                        return false;
+                    }
+                    return catatan;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    submitAction('reject_rekomendasi', result.value);
+                }
+            });
+        });
+    }
+
+    // Tim Penilai Button Handlers
+    const btnPerbaikan = document.getElementById('btn-perbaikan');
+    if (btnPerbaikan) {
+        btnPerbaikan.addEventListener('click', function() {
+            Swal.fire({
+                title: 'Perbaikan Usulan',
+                text: 'Usulan akan dikirim ke Admin Universitas untuk review. Silakan berikan catatan perbaikan.',
+                input: 'textarea',
+                inputPlaceholder: 'Masukkan catatan perbaikan...',
+                showCancelButton: true,
+                confirmButtonText: 'Kirim ke Admin Univ',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#d97706',
+                preConfirm: (catatan) => {
+                    if (!catatan || catatan.trim() === '') {
+                        Swal.showValidationMessage('Catatan perbaikan wajib diisi');
+                        return false;
+                    }
+                    return catatan;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    submitAction('perbaikan_usulan', result.value);
+                }
+            });
+        });
+    }
+
+    const btnRekomendasikan = document.getElementById('btn-rekomendasikan');
+    if (btnRekomendasikan) {
+        btnRekomendasikan.addEventListener('click', function() {
+            Swal.fire({
+                title: 'Rekomendasikan Usulan',
+                text: 'Usulan akan dikirim ke Admin Universitas untuk review. Silakan berikan catatan rekomendasi.',
+                input: 'textarea',
+                inputPlaceholder: 'Masukkan catatan rekomendasi (opsional)...',
+                showCancelButton: true,
+                confirmButtonText: 'Kirim ke Admin Univ',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#059669',
+                preConfirm: (catatan) => {
+                    return catatan || '';
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    submitAction('rekomendasikan', result.value);
+                }
+            });
+        });
+    }
+});
 </script>
 @endif
+

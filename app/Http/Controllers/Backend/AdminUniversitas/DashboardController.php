@@ -19,19 +19,41 @@ class DashboardController extends Controller
     public function index()
     {
         try {
-            // Get statistics for dashboard
-            $statistics = $this->getDashboardStatistics();
+            // Get active periods for different usulan types
+            $activePeriods = \App\Models\BackendUnivUsulan\PeriodeUsulan::where('status', 'Buka')
+                ->with(['usulans' => function($query) {
+                    $query->with('pegawai:id,nama_lengkap,nip')
+                          ->latest()
+                          ->limit(5);
+                }])
+                ->get();
 
-            // Get recent activities
-            $recentActivities = $this->getRecentActivities();
+            // Get recent usulans for validation (status: Diusulkan ke Universitas)
+            $recentUsulans = \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Diusulkan ke Universitas')
+                ->with(['pegawai:id,nama_lengkap,nip', 'periodeUsulan'])
+                ->latest()
+                ->limit(10)
+                ->get();
 
-            // Get chart data
-            $chartData = $this->getChartData();
+            // Get statistics
+            $stats = [
+                'total_periods' => $activePeriods->count(),
+                'total_usulans_pending' => $recentUsulans->count(),
+                'total_usulans_all' => \App\Models\BackendUnivUsulan\Usulan::count(),
+                'usulans_by_status' => [
+                    'Diajukan' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Diajukan')->count(),
+                    'Diusulkan ke Universitas' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Diusulkan ke Universitas')->count(),
+                    'Sedang Direview' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Sedang Direview')->count(),
+                    'Direkomendasikan' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Direkomendasikan')->count(),
+                    'Disetujui' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Disetujui')->count(),
+                    'Ditolak' => \App\Models\BackendUnivUsulan\Usulan::where('status_usulan', 'Ditolak')->count(),
+                ]
+            ];
 
-            return view('backend.layouts.views.admin-universitas.dashboard', [
-                'statistics' => $statistics,
-                'recentActivities' => $recentActivities,
-                'chartData' => $chartData,
+            return view('backend.layouts.views.admin-univ-usulan.dashboard', [
+                'activePeriods' => $activePeriods,
+                'recentUsulans' => $recentUsulans,
+                'stats' => $stats,
                 'user' => Auth::user()
             ]);
         } catch (\Exception $e) {
@@ -42,101 +64,15 @@ class DashboardController extends Controller
             ]);
 
             // Return safe fallback view
-            return view('backend.layouts.views.admin-universitas.dashboard', [
-                'statistics' => $this->getDefaultStatistics(),
-                'recentActivities' => collect(),
-                'chartData' => $this->getDefaultChartData(),
+            return view('backend.layouts.views.admin-univ-usulan.dashboard', [
+                'activePeriods' => collect(),
+                'recentUsulans' => collect(),
+                'stats' => [],
                 'user' => Auth::user(),
                 'error' => 'Terjadi kesalahan saat memuat dashboard. Silakan coba lagi.'
             ]);
         }
     }
 
-    /**
-     * Get dashboard statistics.
-     *
-     * @return array
-     */
-    private function getDashboardStatistics()
-    {
-        return [
-            'total_pegawai' => Pegawai::count(),
-            'total_usulan' => Usulan::count(),
-            'usulan_pending' => Usulan::where('status_usulan', 'Diajukan')->count(),
-            'usulan_approved' => Usulan::where('status_usulan', 'Direkomendasikan')->count(),
-            'usulan_rejected' => Usulan::where('status_usulan', 'Ditolak')->count(),
-            'periode_aktif' => PeriodeUsulan::where('status', 'Buka')->count(),
-        ];
-    }
 
-    /**
-     * Get default statistics when database is not available.
-     *
-     * @return array
-     */
-    private function getDefaultStatistics()
-    {
-        return [
-            'total_pegawai' => 0,
-            'total_usulan' => 0,
-            'usulan_pending' => 0,
-            'usulan_approved' => 0,
-            'usulan_rejected' => 0,
-            'periode_aktif' => 0,
-        ];
-    }
-
-    /**
-     * Get recent activities.
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    private function getRecentActivities()
-    {
-        return Usulan::with(['pegawai', 'periodeUsulan'])
-            ->latest()
-            ->take(10)
-            ->get();
-    }
-
-    /**
-     * Get chart data for dashboard.
-     *
-     * @return array
-     */
-    private function getChartData()
-    {
-        // Monthly usulan submission data
-        $monthlyData = Usulan::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
-            ->whereYear('created_at', date('Y'))
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get()
-            ->pluck('count', 'month')
-            ->toArray();
-
-        // Status distribution
-        $statusData = Usulan::selectRaw('status_usulan, COUNT(*) as count')
-            ->groupBy('status_usulan')
-            ->pluck('count', 'status_usulan')
-            ->toArray();
-
-        return [
-            'monthly_submissions' => $monthlyData,
-            'status_distribution' => $statusData,
-        ];
-    }
-
-    /**
-     * Get default chart data when database is not available.
-     *
-     * @return array
-     */
-    private function getDefaultChartData()
-    {
-        return [
-            'monthly_submissions' => [],
-            'status_distribution' => [],
-        ];
-    }
 }

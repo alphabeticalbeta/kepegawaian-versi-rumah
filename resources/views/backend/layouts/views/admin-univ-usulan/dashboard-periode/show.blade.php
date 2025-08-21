@@ -173,10 +173,10 @@
             Export Data
         </button>
 
-        <form action="{{ route('backend.admin-univ-usulan.usulan.toggle-periode') }}" method="POST" class="inline">
+        <form id="togglePeriodeForm" action="{{ route('backend.admin-univ-usulan.usulan.toggle-periode') }}" method="POST" class="inline">
             @csrf
             <input type="hidden" name="periode_id" value="{{ $periode->id }}">
-            <button type="submit"
+            <button type="submit" id="togglePeriodeBtn"
                     class="px-6 py-3 rounded-xl font-medium flex items-center transition-colors duration-200
                     {{ $periode->status === 'Buka' ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-green-600 text-white hover:bg-green-700' }}">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,7 +186,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
                     @endif
                 </svg>
-                {{ $periode->status === 'Buka' ? 'Tutup Periode' : 'Buka Periode' }}
+                <span id="togglePeriodeText">{{ $periode->status === 'Buka' ? 'Tutup Periode' : 'Buka Periode' }}</span>
             </button>
         </form>
     </div>
@@ -196,9 +196,10 @@
         <div class="p-6 border-b border-slate-200">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-slate-800">Usulan Terbaru</h3>
-                <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                                <a href="{{ route('backend.admin-univ-usulan.periode-usulan.pendaftar', $periode) }}"
+                   class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
                     Lihat Semua
-                </button>
+                </a>
             </div>
         </div>
 
@@ -210,6 +211,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Jenis Pegawai</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tanggal Usulan</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200">
@@ -234,10 +236,20 @@
                                     {{ $usulan->status_usulan }}
                                 </span>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                <a href="{{ route('backend.admin-univ-usulan.usulan.show', $usulan->id) }}"
+                                   class="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    Lihat Detail
+                                </a>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-6 py-8 text-center text-slate-500">
+                            <td colspan="5" class="px-6 py-8 text-center text-slate-500">
                                 Belum ada usulan untuk periode ini
                             </td>
                         </tr>
@@ -247,5 +259,87 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleForm = document.getElementById('togglePeriodeForm');
+    const toggleBtn = document.getElementById('togglePeriodeBtn');
+    const toggleText = document.getElementById('togglePeriodeText');
+
+    if (toggleForm) {
+        toggleForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Disable button to prevent double submission
+            toggleBtn.disabled = true;
+            toggleBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Memproses...';
+
+            fetch(toggleForm.action, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    periode_id: document.querySelector('input[name="periode_id"]').value
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Berhasil!',
+                        text: data.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+
+                    // Update button appearance
+                    if (data.new_status === 'Buka') {
+                        toggleBtn.className = 'px-6 py-3 rounded-xl font-medium flex items-center transition-colors duration-200 bg-red-600 text-white hover:bg-red-700';
+                        toggleBtn.innerHTML = `
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Tutup Periode</span>
+                        `;
+                    } else {
+                        toggleBtn.className = 'px-6 py-3 rounded-xl font-medium flex items-center transition-colors duration-200 bg-green-600 text-white hover:bg-green-700';
+                        toggleBtn.innerHTML = `
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
+                            </svg>
+                            <span>Buka Periode</span>
+                        `;
+                    }
+                } else {
+                    // Show error message
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: data.message || 'Terjadi kesalahan saat mengubah status periode.'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal!',
+                    text: 'Terjadi kesalahan saat mengubah status periode.'
+                });
+            })
+            .finally(() => {
+                // Re-enable button
+                toggleBtn.disabled = false;
+            });
+        });
+    }
+});
+</script>
+@endpush
 @endsection
 

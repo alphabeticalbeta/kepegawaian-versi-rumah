@@ -10,9 +10,20 @@ use Illuminate\Support\Facades\Auth; // <-- TAMBAHKAN INI
 use Illuminate\Support\Facades\DB;   // <-- TAMBAHKAN INI
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use App\Services\FileStorageService;
+use App\Services\ValidationService;
 
 class PusatUsulanController extends Controller
 {
+    private $fileStorage;
+    private $validationService;
+
+    public function __construct(FileStorageService $fileStorage, ValidationService $validationService)
+    {
+        $this->fileStorage = $fileStorage;
+        $this->validationService = $validationService;
+    }
+
     public function index()
     {
         $periodeUsulans = PeriodeUsulan::withCount('usulans')
@@ -68,6 +79,11 @@ class PusatUsulanController extends Controller
             'Sedang Direview Universitas',
         ]);
 
+        // Get penilais data for popup
+        $penilais = \App\Models\BackendUnivUsulan\Pegawai::whereHas('roles', function($query) {
+            $query->where('name', 'Penilai Universitas');
+        })->orderBy('nama_lengkap')->get();
+
         // Return view dengan data yang diperlukan
         return view('backend.layouts.views.admin-univ-usulan.pusat-usulan.detail-usulan', [
             'usulan' => $usulan,
@@ -76,6 +92,7 @@ class PusatUsulanController extends Controller
             'existingValidation' => $existingValidation,
             'canEdit' => $canEdit,
             'bkdLabels' => $bkdLabels,
+            'penilais' => $penilais,
         ]);
     }
 
@@ -88,11 +105,6 @@ class PusatUsulanController extends Controller
             'turnitin',
             'upload_artikel',
             'bukti_syarat_guru_besar',
-            // BKD documents (dynamic names)
-            'bkd_ganjil_2024_2025',
-            'bkd_genap_2023_2024',
-            'bkd_ganjil_2023_2024',
-            'bkd_genap_2022_2023',
         ];
 
         // Check if field is BKD document (starts with 'bkd_')
@@ -152,19 +164,18 @@ class PusatUsulanController extends Controller
             abort(404, 'Path dokumen tidak ditemukan dalam data usulan.');
         }
 
-        // 3. Check if file exists in storage
+        // 3. Check if file exists in storage using FileStorageService
         if (!Storage::disk('local')->exists($filePath)) {
             Log::error('Document file not found in storage', [
                 'usulan_id' => $usulan->id,
                 'field' => $field,
-                'path' => $filePath,
-                'full_path' => Storage::disk('local')->path($filePath)
+                'path' => $filePath
             ]);
             abort(404, 'File dokumen tidak ditemukan di storage.');
         }
 
         // 4. Log document access
-        Log::info('Document accessed', [
+        Log::info('Document accessed using FileStorageService', [
             'usulan_id' => $usulan->id,
             'field' => $field,
             'accessed_by' => Auth::id(),
@@ -172,18 +183,9 @@ class PusatUsulanController extends Controller
             'file_path' => $filePath
         ]);
 
-        // 5. Get full path and serve file
+        // 5. Serve file using standard Laravel response
         $fullPath = Storage::disk('local')->path($filePath);
-
-        // Determine mime type
         $mimeType = 'application/pdf'; // Default for PDF
-        if (str_ends_with($filePath, '.pdf')) {
-            $mimeType = 'application/pdf';
-        } elseif (str_ends_with($filePath, '.jpg') || str_ends_with($filePath, '.jpeg')) {
-            $mimeType = 'image/jpeg';
-        } elseif (str_ends_with($filePath, '.png')) {
-            $mimeType = 'image/png';
-        }
 
         return response()->file($fullPath, [
             'Content-Type' => $mimeType,

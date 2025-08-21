@@ -8,9 +8,20 @@ use App\Models\BackendUnivUsulan\Usulan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Services\FileStorageService;
+use App\Services\ValidationService;
 
 class DashboardPeriodeController extends Controller
 {
+    private $fileStorage;
+    private $validationService;
+
+    public function __construct(FileStorageService $fileStorage, ValidationService $validationService)
+    {
+        $this->fileStorage = $fileStorage;
+        $this->validationService = $validationService;
+    }
+
     /**
      * Menampilkan dashboard untuk jenis usulan tertentu
      */

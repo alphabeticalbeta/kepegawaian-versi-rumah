@@ -5,9 +5,20 @@ namespace App\Http\Controllers\Backend\AdminUnivUsulan;
 use App\Http\Controllers\Controller;
 use App\Models\BackendUnivUsulan\Jabatan;
 use Illuminate\Http\Request;
+use App\Services\FileStorageService;
+use App\Services\ValidationService;
 
 class JabatanController extends Controller
 {
+    private $fileStorage;
+    private $validationService;
+
+    public function __construct(FileStorageService $fileStorage, ValidationService $validationService)
+    {
+        $this->fileStorage = $fileStorage;
+        $this->validationService = $validationService;
+    }
+
     /**
      * Display a listing of the resource with filters.
      */
