@@ -15,6 +15,7 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 -- membuang struktur untuk table db_kepegunmul.document_access_logs
+DROP TABLE IF EXISTS `document_access_logs`;
 CREATE TABLE IF NOT EXISTS `document_access_logs` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `pegawai_id` bigint unsigned NOT NULL,
@@ -32,7 +33,7 @@ CREATE TABLE IF NOT EXISTS `document_access_logs` (
   KEY `idx_doc_access_accessor_time` (`accessor_id`,`accessed_at`),
   CONSTRAINT `document_access_logs_accessor_id_foreign` FOREIGN KEY (`accessor_id`) REFERENCES `pegawais` (`id`) ON DELETE CASCADE,
   CONSTRAINT `document_access_logs_pegawai_id_foreign` FOREIGN KEY (`pegawai_id`) REFERENCES `pegawais` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=54 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=59 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Membuang data untuk tabel db_kepegunmul.document_access_logs: ~40 rows (lebih kurang)
 REPLACE INTO `document_access_logs` (`id`, `pegawai_id`, `accessor_id`, `document_field`, `ip_address`, `user_agent`, `accessed_at`, `created_at`, `updated_at`) VALUES
@@ -88,9 +89,15 @@ REPLACE INTO `document_access_logs` (`id`, `pegawai_id`, `accessor_id`, `documen
 	(50, 1, 1, 'foto', '172.19.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-19 15:48:27', '2025-08-19 15:48:27', '2025-08-19 15:48:27'),
 	(51, 1, 1, 'foto', '172.19.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-19 21:55:13', '2025-08-19 21:55:13', '2025-08-19 21:55:13'),
 	(52, 10, 1, 'foto', '172.19.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-20 02:10:26', '2025-08-20 02:10:26', '2025-08-20 02:10:26'),
-	(53, 1, 1, 'foto', '172.19.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-20 02:38:25', '2025-08-20 02:38:25', '2025-08-20 02:38:25');
+	(53, 1, 1, 'foto', '172.19.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-20 02:38:25', '2025-08-20 02:38:25', '2025-08-20 02:38:25'),
+	(54, 1, 1, 'foto', '172.19.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-20 09:47:57', '2025-08-20 09:47:57', '2025-08-20 09:47:57'),
+	(55, 1, 1, 'foto', '172.19.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-20 21:56:03', '2025-08-20 21:56:03', '2025-08-20 21:56:03'),
+	(56, 10, 1, 'foto', '172.19.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-20 22:24:25', '2025-08-20 22:24:25', '2025-08-20 22:24:25'),
+	(57, 1, 1, 'foto', '172.19.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-20 23:05:53', '2025-08-20 23:05:53', '2025-08-20 23:05:53'),
+	(58, 1, 1, 'foto', '172.19.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', '2025-08-20 23:06:05', '2025-08-20 23:06:05', '2025-08-20 23:06:05');
 
 -- membuang struktur untuk table db_kepegunmul.failed_jobs
+DROP TABLE IF EXISTS `failed_jobs`;
 CREATE TABLE IF NOT EXISTS `failed_jobs` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `uuid` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -106,6 +113,7 @@ CREATE TABLE IF NOT EXISTS `failed_jobs` (
 -- Membuang data untuk tabel db_kepegunmul.failed_jobs: ~0 rows (lebih kurang)
 
 -- membuang struktur untuk table db_kepegunmul.jabatans
+DROP TABLE IF EXISTS `jabatans`;
 CREATE TABLE IF NOT EXISTS `jabatans` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `jenis_pegawai` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -162,6 +170,7 @@ REPLACE INTO `jabatans` (`id`, `jenis_pegawai`, `jenis_jabatan`, `jabatan`, `hie
 	(39, 'Tenaga Kependidikan', 'Tenaga Kependidikan Tugas Tambahan', 'Koordinator Unit', NULL, '2025-08-17 23:17:11', '2025-08-17 23:17:11');
 
 -- membuang struktur untuk table db_kepegunmul.jobs
+DROP TABLE IF EXISTS `jobs`;
 CREATE TABLE IF NOT EXISTS `jobs` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `queue` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -177,6 +186,7 @@ CREATE TABLE IF NOT EXISTS `jobs` (
 -- Membuang data untuk tabel db_kepegunmul.jobs: ~0 rows (lebih kurang)
 
 -- membuang struktur untuk table db_kepegunmul.job_batches
+DROP TABLE IF EXISTS `job_batches`;
 CREATE TABLE IF NOT EXISTS `job_batches` (
   `id` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
   `name` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -194,6 +204,7 @@ CREATE TABLE IF NOT EXISTS `job_batches` (
 -- Membuang data untuk tabel db_kepegunmul.job_batches: ~0 rows (lebih kurang)
 
 -- membuang struktur untuk table db_kepegunmul.migrations
+DROP TABLE IF EXISTS `migrations`;
 CREATE TABLE IF NOT EXISTS `migrations` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `migration` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -240,6 +251,7 @@ REPLACE INTO `migrations` (`id`, `migration`, `batch`) VALUES
 	(35, '2025_01_20_000000_create_penilais_table', 4);
 
 -- membuang struktur untuk table db_kepegunmul.model_has_permissions
+DROP TABLE IF EXISTS `model_has_permissions`;
 CREATE TABLE IF NOT EXISTS `model_has_permissions` (
   `permission_id` bigint unsigned NOT NULL,
   `model_type` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -252,6 +264,7 @@ CREATE TABLE IF NOT EXISTS `model_has_permissions` (
 -- Membuang data untuk tabel db_kepegunmul.model_has_permissions: ~0 rows (lebih kurang)
 
 -- membuang struktur untuk table db_kepegunmul.model_has_roles
+DROP TABLE IF EXISTS `model_has_roles`;
 CREATE TABLE IF NOT EXISTS `model_has_roles` (
   `role_id` bigint unsigned NOT NULL,
   `model_type` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -291,6 +304,7 @@ REPLACE INTO `model_has_roles` (`role_id`, `model_type`, `model_id`) VALUES
 	(7, 'App\\Models\\BackendUnivUsulan\\Pegawai', 10);
 
 -- membuang struktur untuk table db_kepegunmul.pangkats
+DROP TABLE IF EXISTS `pangkats`;
 CREATE TABLE IF NOT EXISTS `pangkats` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `pangkat` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -332,6 +346,7 @@ REPLACE INTO `pangkats` (`id`, `pangkat`, `hierarchy_level`, `status_pangkat`, `
 	(24, 'Honorer', NULL, 'Non-ASN', '2025-08-17 23:17:11', '2025-08-17 23:17:11');
 
 -- membuang struktur untuk table db_kepegunmul.pegawais
+DROP TABLE IF EXISTS `pegawais`;
 CREATE TABLE IF NOT EXISTS `pegawais` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `unit_kerja_id` bigint unsigned DEFAULT NULL,
@@ -418,7 +433,32 @@ REPLACE INTO `pegawais` (`id`, `unit_kerja_id`, `pangkat_terakhir_id`, `jabatan_
 	(14, NULL, 1, 11, 1, 'Dosen', NULL, 'Dosen PNS', '197808182009022004', '1234567890123456', NULL, 'Prof. Dr. Endang Sulistyowati', 'S.Kom., M.Kom.', 'endang.sulistyowati@unmul.ac.id', '197808182009022004', '$2y$12$VPuzAzGJiAggCv/7YzOtgOQw7Gev4G1Te7sIRjFudrQRNCtewhvSy', '1234567890123456', 'pegawai-files/foto/dummy-avatar.svg', 'Samarinda', '1990-01-01', 'Laki-Laki', '081234567890', '2020-01-01', 'pegawai-files/sk_cpns/dummy-sk-cpns.pdf', '2021-01-01', 'pegawai-files/sk_pns/dummy-sk-pns.pdf', '2022-01-01', 'pegawai-files/sk_pangkat_terakhir/dummy-sk-pangkat.pdf', '2023-01-01', 'pegawai-files/sk_jabatan_terakhir/dummy-sk-jabatan.pdf', 'Magister (S2) / Sederajat', NULL, NULL, 'pegawai-files/ijazah_terakhir/dummy-ijazah.pdf', 'pegawai-files/transkrip_nilai_terakhir/dummy-transkrip.pdf', NULL, NULL, 'Pemrograman Web, Basis Data, Algoritma', 'Teknologi Informasi', 'https://sinta.kemdikbud.go.id/authors/profile/123456', 'Baik', 'pegawai-files/skp_tahun_pertama/dummy-skp-2023.pdf', 'Sangat Baik', 'pegawai-files/skp_tahun_kedua/dummy-skp-2024.pdf', 85.5, 'pegawai-files/pak_konversi/dummy-pak.pdf', '2025-08-17 23:17:14', '2025-08-17 23:17:14'),
 	(15, NULL, 1, 7, 1, 'Tenaga Kependidikan', NULL, 'Tenaga Kependidikan PNS', '198909192012033005', '1234567890123456', NULL, 'Sri Mulyani', 'S.Kom., M.Kom.', 'sri.mulyani@unmul.ac.id', '198909192012033005', '$2y$12$EIq8jkCBEBrKiQufmEXHYuhET9CZb9TKeWvDrnHGRi/atfx3RFHuy', '1234567890123456', 'pegawai-files/foto/dummy-avatar.svg', 'Samarinda', '1990-01-01', 'Laki-Laki', '081234567890', '2020-01-01', 'pegawai-files/sk_cpns/dummy-sk-cpns.pdf', '2021-01-01', 'pegawai-files/sk_pns/dummy-sk-pns.pdf', '2022-01-01', 'pegawai-files/sk_pangkat_terakhir/dummy-sk-pangkat.pdf', '2023-01-01', 'pegawai-files/sk_jabatan_terakhir/dummy-sk-jabatan.pdf', 'Magister (S2) / Sederajat', NULL, NULL, 'pegawai-files/ijazah_terakhir/dummy-ijazah.pdf', 'pegawai-files/transkrip_nilai_terakhir/dummy-transkrip.pdf', NULL, NULL, NULL, NULL, NULL, 'Baik', 'pegawai-files/skp_tahun_pertama/dummy-skp-2023.pdf', 'Sangat Baik', 'pegawai-files/skp_tahun_kedua/dummy-skp-2024.pdf', 85.5, 'pegawai-files/pak_konversi/dummy-pak.pdf', '2025-08-17 23:17:15', '2025-08-17 23:17:15');
 
+-- membuang struktur untuk table db_kepegunmul.penilais
+DROP TABLE IF EXISTS `penilais`;
+CREATE TABLE IF NOT EXISTS `penilais` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `nama_lengkap` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `nip` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `email` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `bidang_keahlian` text COLLATE utf8mb4_unicode_ci,
+  `status` enum('aktif','nonaktif') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'aktif',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `penilais_nip_unique` (`nip`),
+  UNIQUE KEY `penilais_email_unique` (`email`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Membuang data untuk tabel db_kepegunmul.penilais: ~5 rows (lebih kurang)
+REPLACE INTO `penilais` (`id`, `nama_lengkap`, `nip`, `email`, `bidang_keahlian`, `status`, `created_at`, `updated_at`) VALUES
+	(1, 'Dr. Ahmad Hidayat, M.Si.', '198501012010011001', 'ahmad.hidayat@unmul.ac.id', 'Manajemen, Ekonomi, Administrasi Publik', 'aktif', '2025-08-20 02:11:16', '2025-08-20 02:11:16'),
+	(2, 'Prof. Dr. Siti Nurhaliza, M.Pd.', '197503152005012001', 'siti.nurhaliza@unmul.ac.id', 'Pendidikan, Psikologi, Pengembangan SDM', 'aktif', '2025-08-20 02:11:16', '2025-08-20 02:11:16'),
+	(3, 'Dr. Bambang Sutrisno, S.E., M.M.', '198012102008011001', 'bambang.sutrisno@unmul.ac.id', 'Manajemen, Bisnis, Keuangan', 'aktif', '2025-08-20 02:11:16', '2025-08-20 02:11:16'),
+	(4, 'Dr. Rina Marlina, S.Pd., M.Ed.', '198604152010012001', 'rina.marlina@unmul.ac.id', 'Pendidikan, Kurikulum, Evaluasi Pembelajaran', 'aktif', '2025-08-20 02:11:16', '2025-08-20 02:11:16'),
+	(5, 'Prof. Dr. Muhammad Rizki, S.T., M.T.', '197208102003121001', 'muhammad.rizki@unmul.ac.id', 'Teknik, Teknologi, Inovasi', 'aktif', '2025-08-20 02:11:16', '2025-08-20 02:11:16');
+
 -- membuang struktur untuk table db_kepegunmul.periode_usulans
+DROP TABLE IF EXISTS `periode_usulans`;
 CREATE TABLE IF NOT EXISTS `periode_usulans` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `nama_periode` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -442,6 +482,7 @@ REPLACE INTO `periode_usulans` (`id`, `nama_periode`, `jenis_usulan`, `status_ke
 	(1, 'Gelombang 1', 'Usulan Jabatan', '["Dosen PNS"]', '2025', '2025-08-01', '2025-08-25', 1, NULL, NULL, 'Buka', '2025-08-18 05:46:32', '2025-08-18 05:46:32');
 
 -- membuang struktur untuk table db_kepegunmul.permissions
+DROP TABLE IF EXISTS `permissions`;
 CREATE TABLE IF NOT EXISTS `permissions` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -473,6 +514,7 @@ REPLACE INTO `permissions` (`id`, `name`, `guard_name`, `created_at`, `updated_a
 	(17, 'reject_usulan', 'pegawai', '2025-08-17 23:17:10', '2025-08-17 23:17:10');
 
 -- membuang struktur untuk table db_kepegunmul.roles
+DROP TABLE IF EXISTS `roles`;
 CREATE TABLE IF NOT EXISTS `roles` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -494,6 +536,7 @@ REPLACE INTO `roles` (`id`, `name`, `guard_name`, `created_at`, `updated_at`) VA
 	(7, 'Pegawai Unmul', 'pegawai', '2025-08-17 23:17:10', '2025-08-17 23:17:10');
 
 -- membuang struktur untuk table db_kepegunmul.role_has_permissions
+DROP TABLE IF EXISTS `role_has_permissions`;
 CREATE TABLE IF NOT EXISTS `role_has_permissions` (
   `permission_id` bigint unsigned NOT NULL,
   `role_id` bigint unsigned NOT NULL,
@@ -539,6 +582,7 @@ REPLACE INTO `role_has_permissions` (`permission_id`, `role_id`) VALUES
 	(17, 6);
 
 -- membuang struktur untuk table db_kepegunmul.sessions
+DROP TABLE IF EXISTS `sessions`;
 CREATE TABLE IF NOT EXISTS `sessions` (
   `id` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
   `user_id` bigint unsigned DEFAULT NULL,
@@ -554,6 +598,7 @@ CREATE TABLE IF NOT EXISTS `sessions` (
 -- Membuang data untuk tabel db_kepegunmul.sessions: ~0 rows (lebih kurang)
 
 -- membuang struktur untuk table db_kepegunmul.sub_sub_unit_kerjas
+DROP TABLE IF EXISTS `sub_sub_unit_kerjas`;
 CREATE TABLE IF NOT EXISTS `sub_sub_unit_kerjas` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `sub_unit_kerja_id` bigint unsigned NOT NULL,
@@ -627,6 +672,7 @@ REPLACE INTO `sub_sub_unit_kerjas` (`id`, `sub_unit_kerja_id`, `nama`, `created_
 	(58, 29, 'Program Studi Teknik Informatika', '2025-08-19 04:24:27', '2025-08-19 04:24:27');
 
 -- membuang struktur untuk table db_kepegunmul.sub_unit_kerjas
+DROP TABLE IF EXISTS `sub_unit_kerjas`;
 CREATE TABLE IF NOT EXISTS `sub_unit_kerjas` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `unit_kerja_id` bigint unsigned NOT NULL,
@@ -671,6 +717,7 @@ REPLACE INTO `sub_unit_kerjas` (`id`, `unit_kerja_id`, `nama`, `created_at`, `up
 	(29, 1, 'Jurusan Teknik Informatika', '2025-08-19 04:24:27', '2025-08-19 04:24:27');
 
 -- membuang struktur untuk table db_kepegunmul.unit_kerjas
+DROP TABLE IF EXISTS `unit_kerjas`;
 CREATE TABLE IF NOT EXISTS `unit_kerjas` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `nama` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -695,6 +742,7 @@ REPLACE INTO `unit_kerjas` (`id`, `nama`, `created_at`, `updated_at`) VALUES
 	(11, 'Unit Kerja Non-Fakultas', '2025-08-17 23:17:11', '2025-08-17 23:17:11');
 
 -- membuang struktur untuk table db_kepegunmul.usulans
+DROP TABLE IF EXISTS `usulans`;
 CREATE TABLE IF NOT EXISTS `usulans` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `status_kepegawaian` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
@@ -726,11 +774,12 @@ CREATE TABLE IF NOT EXISTS `usulans` (
   CONSTRAINT `usulans_periode_usulan_id_foreign` FOREIGN KEY (`periode_usulan_id`) REFERENCES `periode_usulans` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Membuang data untuk tabel db_kepegunmul.usulans: ~0 rows (lebih kurang)
+-- Membuang data untuk tabel db_kepegunmul.usulans: ~1 rows (lebih kurang)
 REPLACE INTO `usulans` (`id`, `status_kepegawaian`, `pegawai_id`, `periode_usulan_id`, `jenis_usulan`, `jabatan_lama_id`, `jabatan_tujuan_id`, `status_usulan`, `data_usulan`, `validasi_data`, `catatan_verifikator`, `created_at`, `updated_at`) VALUES
-	(15, 'Dosen PNS', 1, 1, 'Usulan Jabatan', 4, 5, 'Diusulkan ke Universitas', '{"metadata": {"version": "1.0", "updated_by": 1, "jenjang_type": "lektor-kepala-to-guru-besar", "last_updated": "2025-08-20T03:13:54.427892Z", "submission_type": "Diajukan", "created_at_snapshot": "2025-08-20T02:25:23.319757Z"}, "karya_ilmiah": {"links": {"wos": "https://claude.ai/chat/", "sinta": "https://claude.ai/chat/4ae1a460-cddd-4a5c-801e-ebaecc9ad901", "scopus": "https://claude.ai/chat", "artikel": "https://claude.ai/chat/4ae1a460-cddd-4a5c-801e-ebaecc9ad901", "scimago": "https://claude.ai/chat/4ae1a460-cddd-4a5c-801e-ebaecc9ad901"}, "updated_at": "2025-08-20T03:13:54.427765Z", "jenis_karya": "Jurnal Internasional Bereputasi", "nama_jurnal": "Bayam Rumah", "edisi_artikel": "Mengapa Kualitas Udara Mempengaruhi Kesehatan Mental Anda", "judul_artikel": "Mengapa Kualitas Udara Mempengaruhi Kesehatan Mental Anda", "nomor_artikel": "Mengapa Kualitas Udara Mempengaruhi Kesehatan Mental Anda", "volume_artikel": "Mengapa Kualitas Udara Mempengaruhi Kesehatan Mental Anda", "halaman_artikel": "Mengapa Kualitas Udara Mempengaruhi Kesehatan Mental Anda", "penerbit_artikel": "Mengapa Kualitas Udara Mempengaruhi Kesehatan Mental Anda"}, "syarat_khusus": {"updated_at": "2025-08-20T03:13:54.427843Z", "deskripsi_syarat": "Pernah mendapatkan hibah penelitian", "syarat_guru_besar": "hibah"}, "dokumen_usulan": {"turnitin": {"path": "usulan-dokumen/1/2025/08/turnitin_1755656723_68a5321333be5.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.223377Z", "uploaded_by": 1, "original_name": "test.pdf"}, "upload_artikel": {"path": "usulan-dokumen/1/2025/08/upload_artikel_1755656723_68a5321336c39.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.235134Z", "uploaded_by": 1, "original_name": "test.pdf"}, "pakta_integritas": {"path": "usulan-dokumen/1/2025/08/pakta_integritas_1755656723_68a532130e43f.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.198111Z", "uploaded_by": 1, "original_name": "test.pdf"}, "bkd_genap_2022_2023": {"path": "usulan-dokumen/1/2025/08/bkd_genap_2022_2023_1755656723_68a532134b0e1.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.318861Z", "uploaded_by": 1, "original_name": "test.pdf"}, "bkd_genap_2023_2024": {"path": "usulan-dokumen/1/2025/08/bkd_genap_2023_2024_1755656723_68a5321344ee5.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.294486Z", "uploaded_by": 1, "original_name": "test.pdf"}, "bukti_korespondensi": {"path": "usulan-dokumen/1/2025/08/bukti_korespondensi_1755656723_68a5321330903.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.211056Z", "uploaded_by": 1, "original_name": "test.pdf"}, "bkd_ganjil_2023_2024": {"path": "usulan-dokumen/1/2025/08/bkd_ganjil_2023_2024_1755656723_68a5321348191.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.306490Z", "uploaded_by": 1, "original_name": "test.pdf"}, "bkd_ganjil_2024_2025": {"path": "usulan-dokumen/1/2025/08/bkd_ganjil_2024_2025_1755656723_68a532133ca46.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.281449Z", "uploaded_by": 1, "original_name": "test.pdf"}, "bukti_syarat_guru_besar": {"path": "usulan-dokumen/1/2025/08/bukti_syarat_guru_besar_1755656723_68a5321339a0c.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.247542Z", "uploaded_by": 1, "original_name": "test.pdf"}}, "catatan_pengusul": null, "pegawai_snapshot": {"nip": "199405242024061001", "email": "admin.fakultas@kepegawaian.com", "nuptk": "1234567890123456", "sk_pns": "pegawai-files/sk_pns/T8LdFtsaQlLcB6ncETq7Uqy6WnCw4a8LDkwM194q.pdf", "sk_cpns": "pegawai-files/sk_cpns/I7s7wK1X4B8AyXC5j7Si5Av5p9wao9tZuLAHvxJq.pdf", "tmt_pns": "2021-01-01", "tmt_cpns": "2020-01-01", "jabatan_id": 4, "pangkat_id": 10, "gelar_depan": "-", "tmt_jabatan": "2023-01-01", "tmt_pangkat": "2022-01-01", "nama_lengkap": "Muhammad Rivani Ibrahim", "pak_konversi": "pegawai-files/pak_konversi/LszGzkcSvIB4GUR1vcIjf0dcN2er6fAa3PaskHQ3.pdf", "tempat_lahir": "Samarinda", "jenis_kelamin": "Laki-Laki", "jenis_pegawai": "Dosen", "tanggal_lahir": "1990-01-01", "unit_kerja_id": 1, "gelar_belakang": "S.Kom., M.Kom.", "nilai_konversi": 85.5, "ijazah_terakhir": "pegawai-files/ijazah_terakhir/IljZEa4FYZ7uqV6YUw7hl8j8YHcQUJOV64pOKu0D.pdf", "nomor_handphone": "081234567895", "skp_tahun_kedua": "pegawai-files/skp_tahun_kedua/lXwpChu7n5kvX5yyXqRSZ02kiMfG2gOJFV3tEWSl.pdf", "url_profil_sinta": "https://sinta.kemdikbud.go.id/authors/profile/123456", "jabatan_saat_usul": "Lektor Kepala", "pangkat_saat_usul": "Penata Muda Tingkat I (III/b)", "skp_tahun_pertama": "pegawai-files/skp_tahun_pertama/Kvb6VsisMKcf0CCMGGbp3KmWAgAxSbfZQzhFT322.pdf", "mata_kuliah_diampu": "Pemrograman Web, Basis Data, Algoritma", "status_kepegawaian": "Dosen PNS", "pendidikan_terakhir": "Magister (S2) / Sederajat", "sk_jabatan_terakhir": "pegawai-files/sk_jabatan_terakhir/96hVSg4JpB65Lul3wG7Sely20Ye4tPui15OeIgvc.pdf", "sk_pangkat_terakhir": "pegawai-files/sk_pangkat_terakhir/tJK8SzeObjJDlvgq3qtUN9ctpe2l4z8zCldFslmU.pdf", "unit_kerja_saat_usul": "Prodi Rekayasa Perangkat Lunak", "sk_penyetaraan_ijazah": "pegawai-files/sk_penyetaraan_ijazah/zkx2sakisXvzA18yKzu9xdmTZuC0FcVDTvKWgKcG.pdf", "ranting_ilmu_kepakaran": "Teknologi Informasi", "transkrip_nilai_terakhir": "pegawai-files/transkrip_nilai_terakhir/dRfVV2beCjbkjLz0zRLZZLXBIIj9t5O9YsORg1AV.pdf", "disertasi_thesis_terakhir": "pegawai-files/disertasi_thesis_terakhir/3uNA8WMq43oGe1D7SHDFz4FHRyQhMGVMmbCJS9TK.pdf", "predikat_kinerja_tahun_kedua": "Sangat Baik", "predikat_kinerja_tahun_pertama": "Baik"}}', '{"admin_fakultas": {"validation": {"bkd": {"bkd_genap_2022_2023": {"status": "sesuai", "keterangan": null}, "bkd_genap_2023_2024": {"status": "sesuai", "keterangan": null}, "bkd_ganjil_2023_2024": {"status": "sesuai", "keterangan": null}, "bkd_ganjil_2024_2025": {"status": "sesuai", "keterangan": null}}, "data_kinerja": {"nilai_konversi": {"status": "sesuai", "keterangan": "Kondisi ketika di edit dan reload hasilnya"}, "predikat_kinerja_tahun_kedua": {"status": "sesuai", "keterangan": null}, "predikat_kinerja_tahun_pertama": {"status": "sesuai", "keterangan": null}}, "data_pribadi": {"nip": {"status": "sesuai", "keterangan": null}, "email": {"status": "sesuai", "keterangan": null}, "nuptk": {"status": "sesuai", "keterangan": null}, "gelar_depan": {"status": "sesuai", "keterangan": null}, "nama_lengkap": {"status": "sesuai", "keterangan": null}, "tempat_lahir": {"status": "sesuai", "keterangan": null}, "jenis_kelamin": {"status": "sesuai", "keterangan": null}, "jenis_pegawai": {"status": "sesuai", "keterangan": null}, "tanggal_lahir": {"status": "sesuai", "keterangan": null}, "gelar_belakang": {"status": "sesuai", "keterangan": null}, "nomor_handphone": {"status": "sesuai", "keterangan": null}, "status_kepegawaian": {"status": "sesuai", "keterangan": null}}, "karya_ilmiah": {"link_wos": {"status": "sesuai", "keterangan": null}, "link_sinta": {"status": "sesuai", "keterangan": null}, "jenis_karya": {"status": "sesuai", "keterangan": null}, "link_scopus": {"status": "sesuai", "keterangan": null}, "nama_jurnal": {"status": "sesuai", "keterangan": null}, "link_artikel": {"status": "sesuai", "keterangan": null}, "link_scimago": {"status": "sesuai", "keterangan": null}, "edisi_artikel": {"status": "sesuai", "keterangan": null}, "judul_artikel": {"status": "sesuai", "keterangan": null}, "nomor_artikel": {"status": "sesuai", "keterangan": null}, "volume_artikel": {"status": "sesuai", "keterangan": null}, "halaman_artikel": {"status": "sesuai", "keterangan": null}, "penerbit_artikel": {"status": "sesuai", "keterangan": null}}, "dokumen_profil": {"sk_pns": {"status": "sesuai", "keterangan": null}, "sk_cpns": {"status": "sesuai", "keterangan": null}, "pak_konversi": {"status": "sesuai", "keterangan": null}, "ijazah_terakhir": {"status": "sesuai", "keterangan": "Kondisi ketika di edit dan reload hasilnya"}, "skp_tahun_kedua": {"status": "sesuai", "keterangan": null}, "skp_tahun_pertama": {"status": "sesuai", "keterangan": null}, "sk_jabatan_terakhir": {"status": "sesuai", "keterangan": null}, "sk_pangkat_terakhir": {"status": "sesuai", "keterangan": null}, "sk_penyetaraan_ijazah": {"status": "sesuai", "keterangan": null}, "transkrip_nilai_terakhir": {"status": "sesuai", "keterangan": null}, "disertasi_thesis_terakhir": {"status": "sesuai", "keterangan": null}}, "dokumen_usulan": {"turnitin": {"status": "sesuai", "keterangan": null}, "upload_artikel": {"status": "sesuai", "keterangan": null}, "pakta_integritas": {"status": "sesuai", "keterangan": null}, "bukti_korespondensi": {"status": "sesuai", "keterangan": null}}, "data_pendidikan": {"url_profil_sinta": {"status": "sesuai", "keterangan": null}, "mata_kuliah_diampu": {"status": "sesuai", "keterangan": null}, "nama_prodi_jurusan": {"status": "sesuai", "keterangan": "perbaiki dokumen dan naskah ini"}, "pendidikan_terakhir": {"status": "sesuai", "keterangan": null}, "ranting_ilmu_kepakaran": {"status": "sesuai", "keterangan": null}, "nama_universitas_sekolah": {"status": "sesuai", "keterangan": null}}, "data_kepegawaian": {"tmt_pns": {"status": "sesuai", "keterangan": "perbaiki dokumen dan naskah ini"}, "tmt_cpns": {"status": "sesuai", "keterangan": "perbaiki dokumen dan naskah ini"}, "tmt_jabatan": {"status": "sesuai", "keterangan": null}, "tmt_pangkat": {"status": "sesuai", "keterangan": null}, "jabatan_saat_usul": {"status": "sesuai", "keterangan": null}, "pangkat_saat_usul": {"status": "sesuai", "keterangan": null}, "unit_kerja_saat_usul": {"status": "sesuai", "keterangan": null}}, "syarat_guru_besar": {"syarat_guru_besar": {"status": "sesuai", "keterangan": null}, "bukti_syarat_guru_besar": {"status": "sesuai", "keterangan": null}}}, "validated_at": "2025-08-20T04:41:35.832086Z", "validated_by": 1, "dokumen_pendukung": {"nomor_berita_senat": "121/UN17/KP/2025", "nomor_surat_usulan": "121/UN17/KP/2025"}}}', 'Usulan dikembalikan oleh Admin Fakultas untuk perbaikan.\n\nCatatan Tambahan:\nKondisi ketika di edit dan reload hasilnya', '2025-08-20 02:25:23', '2025-08-20 04:41:35');
+	(15, 'Dosen PNS', 1, 1, 'Usulan Jabatan', 4, 5, 'Sedang Direview', '{"metadata": {"version": "1.0", "updated_by": 1, "jenjang_type": "lektor-kepala-to-guru-besar", "last_updated": "2025-08-20T03:13:54.427892Z", "submission_type": "Diajukan", "created_at_snapshot": "2025-08-20T02:25:23.319757Z"}, "karya_ilmiah": {"links": {"wos": "https://claude.ai/chat/", "sinta": "https://claude.ai/chat/4ae1a460-cddd-4a5c-801e-ebaecc9ad901", "scopus": "https://claude.ai/chat", "artikel": "https://claude.ai/chat/4ae1a460-cddd-4a5c-801e-ebaecc9ad901", "scimago": "https://claude.ai/chat/4ae1a460-cddd-4a5c-801e-ebaecc9ad901"}, "updated_at": "2025-08-20T03:13:54.427765Z", "jenis_karya": "Jurnal Internasional Bereputasi", "nama_jurnal": "Bayam Rumah", "edisi_artikel": "Mengapa Kualitas Udara Mempengaruhi Kesehatan Mental Anda", "judul_artikel": "Mengapa Kualitas Udara Mempengaruhi Kesehatan Mental Anda", "nomor_artikel": "Mengapa Kualitas Udara Mempengaruhi Kesehatan Mental Anda", "volume_artikel": "Mengapa Kualitas Udara Mempengaruhi Kesehatan Mental Anda", "halaman_artikel": "Mengapa Kualitas Udara Mempengaruhi Kesehatan Mental Anda", "penerbit_artikel": "Mengapa Kualitas Udara Mempengaruhi Kesehatan Mental Anda"}, "syarat_khusus": {"updated_at": "2025-08-20T03:13:54.427843Z", "deskripsi_syarat": "Pernah mendapatkan hibah penelitian", "syarat_guru_besar": "hibah"}, "dokumen_usulan": {"turnitin": {"path": "usulan-dokumen/1/2025/08/turnitin_1755656723_68a5321333be5.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.223377Z", "uploaded_by": 1, "original_name": "test.pdf"}, "upload_artikel": {"path": "usulan-dokumen/1/2025/08/upload_artikel_1755656723_68a5321336c39.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.235134Z", "uploaded_by": 1, "original_name": "test.pdf"}, "pakta_integritas": {"path": "usulan-dokumen/1/2025/08/pakta_integritas_1755656723_68a532130e43f.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.198111Z", "uploaded_by": 1, "original_name": "test.pdf"}, "bkd_genap_2022_2023": {"path": "usulan-dokumen/1/2025/08/bkd_genap_2022_2023_1755656723_68a532134b0e1.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.318861Z", "uploaded_by": 1, "original_name": "test.pdf"}, "bkd_genap_2023_2024": {"path": "usulan-dokumen/1/2025/08/bkd_genap_2023_2024_1755656723_68a5321344ee5.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.294486Z", "uploaded_by": 1, "original_name": "test.pdf"}, "bukti_korespondensi": {"path": "usulan-dokumen/1/2025/08/bukti_korespondensi_1755656723_68a5321330903.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.211056Z", "uploaded_by": 1, "original_name": "test.pdf"}, "bkd_ganjil_2023_2024": {"path": "usulan-dokumen/1/2025/08/bkd_ganjil_2023_2024_1755656723_68a5321348191.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.306490Z", "uploaded_by": 1, "original_name": "test.pdf"}, "bkd_ganjil_2024_2025": {"path": "usulan-dokumen/1/2025/08/bkd_ganjil_2024_2025_1755656723_68a532133ca46.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.281449Z", "uploaded_by": 1, "original_name": "test.pdf"}, "bukti_syarat_guru_besar": {"path": "usulan-dokumen/1/2025/08/bukti_syarat_guru_besar_1755656723_68a5321339a0c.pdf", "file_size": 594270, "mime_type": "application/pdf", "uploaded_at": "2025-08-20T02:25:23.247542Z", "uploaded_by": 1, "original_name": "test.pdf"}}, "catatan_pengusul": null, "pegawai_snapshot": {"nip": "199405242024061001", "email": "admin.fakultas@kepegawaian.com", "nuptk": "1234567890123456", "sk_pns": "pegawai-files/sk_pns/T8LdFtsaQlLcB6ncETq7Uqy6WnCw4a8LDkwM194q.pdf", "sk_cpns": "pegawai-files/sk_cpns/I7s7wK1X4B8AyXC5j7Si5Av5p9wao9tZuLAHvxJq.pdf", "tmt_pns": "2021-01-01", "tmt_cpns": "2020-01-01", "jabatan_id": 4, "pangkat_id": 10, "gelar_depan": "-", "tmt_jabatan": "2023-01-01", "tmt_pangkat": "2022-01-01", "nama_lengkap": "Muhammad Rivani Ibrahim", "pak_konversi": "pegawai-files/pak_konversi/LszGzkcSvIB4GUR1vcIjf0dcN2er6fAa3PaskHQ3.pdf", "tempat_lahir": "Samarinda", "jenis_kelamin": "Laki-Laki", "jenis_pegawai": "Dosen", "tanggal_lahir": "1990-01-01", "unit_kerja_id": 1, "gelar_belakang": "S.Kom., M.Kom.", "nilai_konversi": 85.5, "ijazah_terakhir": "pegawai-files/ijazah_terakhir/IljZEa4FYZ7uqV6YUw7hl8j8YHcQUJOV64pOKu0D.pdf", "nomor_handphone": "081234567895", "skp_tahun_kedua": "pegawai-files/skp_tahun_kedua/lXwpChu7n5kvX5yyXqRSZ02kiMfG2gOJFV3tEWSl.pdf", "url_profil_sinta": "https://sinta.kemdikbud.go.id/authors/profile/123456", "jabatan_saat_usul": "Lektor Kepala", "pangkat_saat_usul": "Penata Muda Tingkat I (III/b)", "skp_tahun_pertama": "pegawai-files/skp_tahun_pertama/Kvb6VsisMKcf0CCMGGbp3KmWAgAxSbfZQzhFT322.pdf", "mata_kuliah_diampu": "Pemrograman Web, Basis Data, Algoritma", "status_kepegawaian": "Dosen PNS", "pendidikan_terakhir": "Magister (S2) / Sederajat", "sk_jabatan_terakhir": "pegawai-files/sk_jabatan_terakhir/96hVSg4JpB65Lul3wG7Sely20Ye4tPui15OeIgvc.pdf", "sk_pangkat_terakhir": "pegawai-files/sk_pangkat_terakhir/tJK8SzeObjJDlvgq3qtUN9ctpe2l4z8zCldFslmU.pdf", "unit_kerja_saat_usul": "Prodi Rekayasa Perangkat Lunak", "sk_penyetaraan_ijazah": "pegawai-files/sk_penyetaraan_ijazah/zkx2sakisXvzA18yKzu9xdmTZuC0FcVDTvKWgKcG.pdf", "ranting_ilmu_kepakaran": "Teknologi Informasi", "transkrip_nilai_terakhir": "pegawai-files/transkrip_nilai_terakhir/dRfVV2beCjbkjLz0zRLZZLXBIIj9t5O9YsORg1AV.pdf", "disertasi_thesis_terakhir": "pegawai-files/disertasi_thesis_terakhir/3uNA8WMq43oGe1D7SHDFz4FHRyQhMGVMmbCJS9TK.pdf", "predikat_kinerja_tahun_kedua": "Sangat Baik", "predikat_kinerja_tahun_pertama": "Baik"}}', '{"admin_fakultas": {"validation": {"bkd": {"bkd_genap_2022_2023": {"status": "sesuai", "keterangan": null}, "bkd_genap_2023_2024": {"status": "sesuai", "keterangan": null}, "bkd_ganjil_2023_2024": {"status": "sesuai", "keterangan": null}, "bkd_ganjil_2024_2025": {"status": "sesuai", "keterangan": null}}, "data_kinerja": {"nilai_konversi": {"status": "sesuai", "keterangan": "Kondisi ketika di edit dan reload hasilnya"}, "predikat_kinerja_tahun_kedua": {"status": "sesuai", "keterangan": null}, "predikat_kinerja_tahun_pertama": {"status": "sesuai", "keterangan": null}}, "data_pribadi": {"nip": {"status": "sesuai", "keterangan": null}, "email": {"status": "sesuai", "keterangan": null}, "nuptk": {"status": "sesuai", "keterangan": null}, "gelar_depan": {"status": "sesuai", "keterangan": null}, "nama_lengkap": {"status": "sesuai", "keterangan": null}, "tempat_lahir": {"status": "sesuai", "keterangan": null}, "jenis_kelamin": {"status": "sesuai", "keterangan": null}, "jenis_pegawai": {"status": "sesuai", "keterangan": null}, "tanggal_lahir": {"status": "sesuai", "keterangan": null}, "gelar_belakang": {"status": "sesuai", "keterangan": null}, "nomor_handphone": {"status": "sesuai", "keterangan": null}, "status_kepegawaian": {"status": "sesuai", "keterangan": null}}, "karya_ilmiah": {"link_wos": {"status": "sesuai", "keterangan": null}, "link_sinta": {"status": "sesuai", "keterangan": null}, "jenis_karya": {"status": "sesuai", "keterangan": null}, "link_scopus": {"status": "sesuai", "keterangan": null}, "nama_jurnal": {"status": "sesuai", "keterangan": null}, "link_artikel": {"status": "sesuai", "keterangan": null}, "link_scimago": {"status": "sesuai", "keterangan": null}, "edisi_artikel": {"status": "sesuai", "keterangan": null}, "judul_artikel": {"status": "sesuai", "keterangan": null}, "nomor_artikel": {"status": "sesuai", "keterangan": null}, "volume_artikel": {"status": "sesuai", "keterangan": null}, "halaman_artikel": {"status": "sesuai", "keterangan": null}, "penerbit_artikel": {"status": "sesuai", "keterangan": null}}, "dokumen_profil": {"sk_pns": {"status": "sesuai", "keterangan": null}, "sk_cpns": {"status": "sesuai", "keterangan": null}, "pak_konversi": {"status": "sesuai", "keterangan": null}, "ijazah_terakhir": {"status": "sesuai", "keterangan": "Kondisi ketika di edit dan reload hasilnya"}, "skp_tahun_kedua": {"status": "sesuai", "keterangan": null}, "skp_tahun_pertama": {"status": "sesuai", "keterangan": null}, "sk_jabatan_terakhir": {"status": "sesuai", "keterangan": null}, "sk_pangkat_terakhir": {"status": "sesuai", "keterangan": null}, "sk_penyetaraan_ijazah": {"status": "sesuai", "keterangan": null}, "transkrip_nilai_terakhir": {"status": "sesuai", "keterangan": null}, "disertasi_thesis_terakhir": {"status": "sesuai", "keterangan": null}}, "dokumen_usulan": {"turnitin": {"status": "sesuai", "keterangan": null}, "upload_artikel": {"status": "sesuai", "keterangan": null}, "pakta_integritas": {"status": "sesuai", "keterangan": null}, "bukti_korespondensi": {"status": "sesuai", "keterangan": null}}, "data_pendidikan": {"url_profil_sinta": {"status": "sesuai", "keterangan": null}, "mata_kuliah_diampu": {"status": "sesuai", "keterangan": null}, "nama_prodi_jurusan": {"status": "sesuai", "keterangan": "perbaiki dokumen dan naskah ini"}, "pendidikan_terakhir": {"status": "sesuai", "keterangan": null}, "ranting_ilmu_kepakaran": {"status": "sesuai", "keterangan": null}, "nama_universitas_sekolah": {"status": "sesuai", "keterangan": null}}, "data_kepegawaian": {"tmt_pns": {"status": "sesuai", "keterangan": "perbaiki dokumen dan naskah ini"}, "tmt_cpns": {"status": "sesuai", "keterangan": "perbaiki dokumen dan naskah ini"}, "tmt_jabatan": {"status": "sesuai", "keterangan": null}, "tmt_pangkat": {"status": "sesuai", "keterangan": null}, "jabatan_saat_usul": {"status": "sesuai", "keterangan": null}, "pangkat_saat_usul": {"status": "sesuai", "keterangan": null}, "unit_kerja_saat_usul": {"status": "sesuai", "keterangan": null}}, "syarat_guru_besar": {"syarat_guru_besar": {"status": "sesuai", "keterangan": null}, "bukti_syarat_guru_besar": {"status": "sesuai", "keterangan": null}}}, "validated_at": "2025-08-20T13:15:40.917620Z", "validated_by": 1, "dokumen_pendukung": {"nomor_berita_senat": "121/UN17/KP/2025", "nomor_surat_usulan": "121/UN17/KP/2025", "file_berita_senat_path": "dokumen-fakultas/berita-senat/SK PMK Rivani_2025-08-20_13-15-41_FYBxfLNo.pdf", "file_surat_usulan_path": "dokumen-fakultas/surat-usulan/SK PMK Rivani_2025-08-20_13-15-41_Bthe5WOC.pdf"}}, "admin_universitas": {"validation": {"bkd": {"bkd_genap_2022_2023": {"status": "sesuai", "keterangan": null}, "bkd_genap_2023_2024": {"status": "sesuai", "keterangan": null}, "bkd_ganjil_2023_2024": {"status": "sesuai", "keterangan": null}, "bkd_ganjil_2024_2025": {"status": "sesuai", "keterangan": null}}, "data_kinerja": {"nilai_konversi": {"status": "sesuai", "keterangan": null}, "predikat_kinerja_tahun_kedua": {"status": "sesuai", "keterangan": null}, "predikat_kinerja_tahun_pertama": {"status": "sesuai", "keterangan": null}}, "data_pribadi": {"nip": {"status": "sesuai", "keterangan": null}, "email": {"status": "sesuai", "keterangan": null}, "nuptk": {"status": "sesuai", "keterangan": null}, "gelar_depan": {"status": "sesuai", "keterangan": null}, "nama_lengkap": {"status": "sesuai", "keterangan": null}, "tempat_lahir": {"status": "sesuai", "keterangan": null}, "jenis_kelamin": {"status": "sesuai", "keterangan": null}, "jenis_pegawai": {"status": "sesuai", "keterangan": null}, "tanggal_lahir": {"status": "sesuai", "keterangan": null}, "gelar_belakang": {"status": "sesuai", "keterangan": null}, "nomor_handphone": {"status": "sesuai", "keterangan": null}, "status_kepegawaian": {"status": "sesuai", "keterangan": null}}, "karya_ilmiah": {"link_wos": {"status": "sesuai", "keterangan": null}, "link_sinta": {"status": "sesuai", "keterangan": null}, "jenis_karya": {"status": "sesuai", "keterangan": null}, "link_scopus": {"status": "sesuai", "keterangan": null}, "nama_jurnal": {"status": "sesuai", "keterangan": null}, "link_artikel": {"status": "sesuai", "keterangan": null}, "link_scimago": {"status": "sesuai", "keterangan": null}, "edisi_artikel": {"status": "sesuai", "keterangan": null}, "judul_artikel": {"status": "sesuai", "keterangan": null}, "nomor_artikel": {"status": "sesuai", "keterangan": null}, "volume_artikel": {"status": "sesuai", "keterangan": null}, "halaman_artikel": {"status": "sesuai", "keterangan": null}, "penerbit_artikel": {"status": "sesuai", "keterangan": null}}, "dokumen_profil": {"sk_pns": {"status": "sesuai", "keterangan": null}, "sk_cpns": {"status": "sesuai", "keterangan": null}, "pak_konversi": {"status": "sesuai", "keterangan": null}, "ijazah_terakhir": {"status": "sesuai", "keterangan": null}, "skp_tahun_kedua": {"status": "sesuai", "keterangan": null}, "skp_tahun_pertama": {"status": "sesuai", "keterangan": null}, "sk_jabatan_terakhir": {"status": "sesuai", "keterangan": null}, "sk_pangkat_terakhir": {"status": "sesuai", "keterangan": null}, "sk_penyetaraan_ijazah": {"status": "sesuai", "keterangan": null}, "transkrip_nilai_terakhir": {"status": "sesuai", "keterangan": null}, "disertasi_thesis_terakhir": {"status": "sesuai", "keterangan": null}}, "dokumen_usulan": {"turnitin": {"status": "sesuai", "keterangan": null}, "upload_artikel": {"status": "sesuai", "keterangan": null}, "pakta_integritas": {"status": "sesuai", "keterangan": null}, "bukti_korespondensi": {"status": "sesuai", "keterangan": null}}, "data_pendidikan": {"url_profil_sinta": {"status": "sesuai", "keterangan": null}, "mata_kuliah_diampu": {"status": "sesuai", "keterangan": null}, "nama_prodi_jurusan": {"status": "sesuai", "keterangan": null}, "pendidikan_terakhir": {"status": "sesuai", "keterangan": null}, "ranting_ilmu_kepakaran": {"status": "sesuai", "keterangan": null}, "nama_universitas_sekolah": {"status": "sesuai", "keterangan": null}}, "data_kepegawaian": {"tmt_pns": {"status": "sesuai", "keterangan": null}, "tmt_cpns": {"status": "sesuai", "keterangan": null}, "tmt_jabatan": {"status": "sesuai", "keterangan": null}, "tmt_pangkat": {"status": "sesuai", "keterangan": null}, "jabatan_saat_usul": {"status": "sesuai", "keterangan": null}, "pangkat_saat_usul": {"status": "sesuai", "keterangan": null}, "unit_kerja_saat_usul": {"status": "sesuai", "keterangan": null}}, "syarat_guru_besar": {"syarat_guru_besar": {"status": "sesuai", "keterangan": null}, "bukti_syarat_guru_besar": {"status": "sesuai", "keterangan": null}}, "dokumen_admin_fakultas": {"file_berita_senat": {"status": "sesuai", "keterangan": null}, "file_surat_usulan": {"status": "sesuai", "keterangan": null}, "nomor_berita_senat": {"status": "sesuai", "keterangan": null}, "nomor_surat_usulan": {"status": "sesuai", "keterangan": null}}}, "validated_at": "2025-08-20T22:11:45.327094Z", "validated_by": 1, "forward_to_penilai": {"catatan": null, "admin_id": 1, "tanggal_forward": "2025-08-20 22:11:45", "selected_penilais": ["4", "1"]}}}', 'dfgsdfgdfsgsdfgsdfgsdfgsdfgdfg', '2025-08-20 02:25:23', '2025-08-20 22:11:45');
 
 -- membuang struktur untuk table db_kepegunmul.usulan_dokumens
+DROP TABLE IF EXISTS `usulan_dokumens`;
 CREATE TABLE IF NOT EXISTS `usulan_dokumens` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `usulan_id` bigint unsigned NOT NULL,
@@ -759,6 +808,7 @@ REPLACE INTO `usulan_dokumens` (`id`, `usulan_id`, `diupload_oleh_id`, `nama_dok
 	(24, 15, 1, 'bkd_genap_2022_2023', 'usulan-dokumen/1/2025/08/bkd_genap_2022_2023_1755656723_68a532134b0e1.pdf', '2025-08-20 02:25:23', '2025-08-20 02:25:23');
 
 -- membuang struktur untuk table db_kepegunmul.usulan_jabatan_senat
+DROP TABLE IF EXISTS `usulan_jabatan_senat`;
 CREATE TABLE IF NOT EXISTS `usulan_jabatan_senat` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `usulan_id` bigint unsigned NOT NULL,
@@ -778,6 +828,7 @@ CREATE TABLE IF NOT EXISTS `usulan_jabatan_senat` (
 -- Membuang data untuk tabel db_kepegunmul.usulan_jabatan_senat: ~0 rows (lebih kurang)
 
 -- membuang struktur untuk table db_kepegunmul.usulan_logs
+DROP TABLE IF EXISTS `usulan_logs`;
 CREATE TABLE IF NOT EXISTS `usulan_logs` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `usulan_id` bigint unsigned NOT NULL,
@@ -792,7 +843,7 @@ CREATE TABLE IF NOT EXISTS `usulan_logs` (
   KEY `idx_usulan_logs_dilakukan_oleh` (`dilakukan_oleh_id`),
   CONSTRAINT `usulan_logs_dilakukan_oleh_id_foreign` FOREIGN KEY (`dilakukan_oleh_id`) REFERENCES `pegawais` (`id`),
   CONSTRAINT `usulan_logs_usulan_id_foreign` FOREIGN KEY (`usulan_id`) REFERENCES `usulans` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Membuang data untuk tabel db_kepegunmul.usulan_logs: ~10 rows (lebih kurang)
 REPLACE INTO `usulan_logs` (`id`, `usulan_id`, `status_sebelumnya`, `status_baru`, `catatan`, `dilakukan_oleh_id`, `created_at`, `updated_at`) VALUES
@@ -802,9 +853,11 @@ REPLACE INTO `usulan_logs` (`id`, `usulan_id`, `status_sebelumnya`, `status_baru
 	(33, 15, 'Diajukan', 'Perbaikan Usulan', 'Usulan dikembalikan ke Pegawai untuk perbaikan.', 1, '2025-08-20 02:54:47', '2025-08-20 02:54:47'),
 	(34, 15, 'Perbaikan Usulan', 'Draft', 'Usulan diperbarui sebagai draft', 1, '2025-08-20 03:13:39', '2025-08-20 03:13:39'),
 	(35, 15, 'Draft', 'Diajukan', 'Usulan diajukan oleh pegawai untuk review', 1, '2025-08-20 03:13:54', '2025-08-20 03:13:54'),
-	(36, 15, 'Diajukan', 'Diusulkan ke Universitas', 'Usulan divalidasi dan diteruskan ke Universitas.', 1, '2025-08-20 04:41:35', '2025-08-20 04:41:35');
+	(36, 15, 'Diajukan', 'Diusulkan ke Universitas', 'Usulan divalidasi dan diteruskan ke Universitas.', 1, '2025-08-20 04:41:35', '2025-08-20 04:41:35'),
+	(37, 15, 'Perbaikan Usulan', 'Diusulkan ke Universitas', 'Usulan berhasil diperbaiki dan dikirim kembali ke Universitas.', 1, '2025-08-20 13:15:41', '2025-08-20 13:15:41');
 
 -- membuang struktur untuk table db_kepegunmul.usulan_penilai
+DROP TABLE IF EXISTS `usulan_penilai`;
 CREATE TABLE IF NOT EXISTS `usulan_penilai` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `usulan_id` bigint unsigned NOT NULL,
@@ -819,11 +872,15 @@ CREATE TABLE IF NOT EXISTS `usulan_penilai` (
   KEY `idx_usulan_status_penilaian` (`usulan_id`,`status_penilaian`),
   CONSTRAINT `usulan_penilai_penilai_id_foreign` FOREIGN KEY (`penilai_id`) REFERENCES `pegawais` (`id`) ON DELETE CASCADE,
   CONSTRAINT `usulan_penilai_usulan_id_foreign` FOREIGN KEY (`usulan_id`) REFERENCES `usulans` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Membuang data untuk tabel db_kepegunmul.usulan_penilai: ~0 rows (lebih kurang)
+REPLACE INTO `usulan_penilai` (`id`, `usulan_id`, `penilai_id`, `status_penilaian`, `catatan_penilaian`, `created_at`, `updated_at`) VALUES
+	(1, 15, 4, 'Belum Dinilai', NULL, '2025-08-20 22:11:45', '2025-08-20 22:11:45'),
+	(2, 15, 1, 'Belum Dinilai', NULL, '2025-08-20 22:11:45', '2025-08-20 22:11:45');
 
 -- membuang struktur untuk table db_kepegunmul.usulan_validasi
+DROP TABLE IF EXISTS `usulan_validasi`;
 CREATE TABLE IF NOT EXISTS `usulan_validasi` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `usulan_id` bigint unsigned NOT NULL,
