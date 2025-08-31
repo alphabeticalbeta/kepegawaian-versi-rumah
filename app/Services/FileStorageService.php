@@ -10,13 +10,13 @@ use Illuminate\Support\Str;
 
 class FileStorageService
 {
-    private $disk;
     private $maxFileSize;
     private $allowedMimes;
+    protected $documentAccessService;
 
-    public function __construct()
+    public function __construct(DocumentAccessService $documentAccessService)
     {
-        $this->disk = 'public';
+        $this->documentAccessService = $documentAccessService;
         $this->maxFileSize = 2048; // 2MB
         $this->allowedMimes = ['pdf', 'doc', 'docx'];
     }
@@ -24,7 +24,7 @@ class FileStorageService
     /**
      * Upload file dengan validasi dan logging
      */
-    public function uploadFile($file, $path, $filename = null)
+    public function uploadFile($file, $path, $field, $filename = null)
     {
         try {
             // Validasi file
@@ -33,18 +33,23 @@ class FileStorageService
             // Generate unique filename
             $filename = $filename ?? $this->generateUniqueFilename($file);
 
+            // Determine disk based on field type
+            $disk = $this->documentAccessService->getDiskForField($field);
+
             // Upload file
-            $filePath = $file->storeAs($path, $filename, $this->disk);
+            $filePath = $file->storeAs($path, $filename, $disk);
 
             // Log upload activity
-            $this->logUploadActivity($filePath, $file->getSize());
+            $this->logUploadActivity($filePath, $file->getSize(), $disk);
 
             return $filePath;
         } catch (\Exception $e) {
             Log::error('File upload failed', [
                 'error' => $e->getMessage(),
                 'file_name' => $file->getClientOriginalName(),
-                'file_size' => $file->getSize()
+                'file_size' => $file->getSize(),
+                'field' => $field,
+                'disk' => $this->documentAccessService->getDiskForField($field)
             ]);
             throw $e;
         }
@@ -53,19 +58,24 @@ class FileStorageService
     /**
      * Delete file dengan logging
      */
-    public function deleteFile($filePath)
+    public function deleteFile($filePath, $field = null)
     {
         try {
-            if (Storage::disk($this->disk)->exists($filePath)) {
-                Storage::disk($this->disk)->delete($filePath);
-                $this->logDeleteActivity($filePath);
+            // Determine disk based on field type
+            $disk = $field ? $this->documentAccessService->getDiskForField($field) : 'local';
+            
+            if (Storage::disk($disk)->exists($filePath)) {
+                Storage::disk($disk)->delete($filePath);
+                $this->logDeleteActivity($filePath, $disk);
                 return true;
             }
             return false;
         } catch (\Exception $e) {
             Log::error('File deletion failed', [
                 'error' => $e->getMessage(),
-                'file_path' => $filePath
+                'file_path' => $filePath,
+                'field' => $field,
+                'disk' => $disk ?? 'unknown'
             ]);
             return false;
         }
@@ -116,7 +126,7 @@ class FileStorageService
             }
 
             try {
-                $filePath = $this->uploadFile($file, $storagePath);
+                $filePath = $this->uploadFile($file, $storagePath, $fieldName);
                 $debugInfo['upload_success'] = true;
                 $debugInfo['uploaded_file_path'] = $filePath;
 
@@ -147,15 +157,39 @@ class FileStorageService
             $debugInfo['upload_success'] = false;
             $debugInfo['upload_error'] = 'No new file provided';
 
+            // Try to get existing file path from validasi_data first
+            $existingPath = null;
+            $dokumenPendukung = $usulan->validasi_data['admin_fakultas']['dokumen_pendukung'] ?? [];
+            $pathKey = $fieldName . '_path';
+
+            // Check for new key format first (e.g., 'file_surat_usulan_path')
+            if (!empty($dokumenPendukung[$pathKey])) {
+                $existingPath = $dokumenPendukung[$pathKey];
+                $debugInfo['existing_path_from_validasi'] = $existingPath;
+                $debugInfo['lookup_key_used'] = $pathKey;
+            } 
+            // Fallback to old key format (e.g., 'file_surat_usulan')
+            elseif (!empty($dokumenPendukung[$fieldName])) {
+                $existingPath = $dokumenPendukung[$fieldName];
+                $debugInfo['existing_path_from_validasi'] = $existingPath;
+                $debugInfo['lookup_key_used'] = $fieldName;
+            }
+
+            // If not found in validasi_data, try getDocumentPath method as a final fallback
+            if (empty($existingPath)) {
+                $existingPath = $usulan->getDocumentPath($fieldName);
+                $debugInfo['existing_path_from_getDocumentPath'] = $existingPath;
+            }
+
             Log::info('Dokumen pendukung - using existing file', [
                 'usulan_id' => $usulan->id,
                 'field_name' => $fieldName,
-                'existing_file_path' => $usulan->getDocumentPath($fieldName),
+                'existing_file_path' => $existingPath,
                 'debug_info' => $debugInfo
             ]);
-        }
 
-        return $usulan->getDocumentPath($fieldName);
+            return $existingPath;
+        }
     }
 
     /**
@@ -188,12 +222,12 @@ class FileStorageService
     /**
      * Log upload activity
      */
-    private function logUploadActivity($filePath, $fileSize)
+    private function logUploadActivity($filePath, $fileSize, $disk)
     {
         Log::info('File uploaded successfully', [
             'file_path' => $filePath,
             'file_size' => $fileSize,
-            'disk' => $this->disk,
+            'disk' => $disk,
             'uploaded_at' => now()
         ]);
     }
@@ -201,11 +235,11 @@ class FileStorageService
     /**
      * Log delete activity
      */
-    private function logDeleteActivity($filePath)
+    private function logDeleteActivity($filePath, $disk)
     {
         Log::info('File deleted successfully', [
             'file_path' => $filePath,
-            'disk' => $this->disk,
+            'disk' => $disk,
             'deleted_at' => now()
         ]);
     }
@@ -215,14 +249,26 @@ class FileStorageService
      */
     public function getStorageUsage()
     {
-        $totalSize = Storage::disk($this->disk)->size('/');
+        $localSize = Storage::disk('local')->size('/');
+        $publicSize = Storage::disk('public')->size('/');
+        $totalSize = $localSize + $publicSize;
         $usagePercentage = ($totalSize / (1024 * 1024 * 1024 * 100)) * 100; // 100GB limit
 
         return [
+            'local_size_bytes' => $localSize,
+            'public_size_bytes' => $publicSize,
             'total_size_bytes' => $totalSize,
             'total_size_gb' => $totalSize / (1024 * 1024 * 1024),
             'usage_percentage' => $usagePercentage,
-            'disk' => $this->disk
+            'disks' => ['local', 'public']
         ];
+    }
+
+    /**
+     * Get disk for field
+     */
+    public function getDiskForField(string $field): string
+    {
+        return $this->documentAccessService->getDiskForField($field);
     }
 }

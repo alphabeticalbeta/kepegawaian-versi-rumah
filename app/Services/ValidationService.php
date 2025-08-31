@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\BackendUnivUsulan\Usulan;
+use App\Models\KepegawaianUniversitas\Usulan;
 use Illuminate\Support\Facades\Log;
 
 class ValidationService
@@ -76,6 +76,36 @@ class ValidationService
     }
 
     /**
+     * Check apakah usulan bisa diubah ke status Sister
+     */
+    public function canSubmitToSister(Usulan $usulan): bool
+    {
+        return in_array($usulan->status_usulan, [
+            'Usulan Direkomendasikan oleh Tim Senat',
+            'Usulan Sudah Dikirim ke Sister'
+        ]);
+    }
+
+    /**
+     * Check apakah usulan bisa diperbaiki dari Sister
+     */
+    public function canSubmitPerbaikanFromSister(Usulan $usulan): bool
+    {
+        return $usulan->status_usulan === \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_USULAN_DARI_TIM_SISTER;
+    }
+
+    /**
+     * Check apakah usulan bisa dikirim ke Admin Univ Usulan untuk validasi
+     */
+    public function canSubmitToAdminUnivUsulan(Usulan $usulan): bool
+    {
+        return in_array($usulan->status_usulan, [
+            \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_USULAN_DARI_TIM_SISTER,
+            \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DIKIRIM_KE_ADMIN_FAKULTAS
+        ]);
+    }
+
+    /**
      * Get required documents berdasarkan role
      */
     private function getRequiredDocumentsForRole($role)
@@ -93,6 +123,9 @@ class ValidationService
             ],
             'tim_senat' => [
                 // Tim senat tidak memerlukan dokumen pendukung
+            ],
+            'pegawai' => [
+                // Pegawai tidak memerlukan dokumen pendukung untuk perbaikan sister
             ]
         ];
 

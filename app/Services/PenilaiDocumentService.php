@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\BackendUnivUsulan\Usulan;
+use App\Models\KepegawaianUniversitas\Usulan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -48,7 +48,8 @@ class PenilaiDocumentService
         }
 
         // Determine correct disk and check file existence
-        $disk = 'local'; // Dokumen usulan selalu disimpan di local disk
+        // Dokumen usulan (termasuk BKD) disimpan di 'public' sesuai DocumentAccessService
+        $disk = 'public';
         if (!Storage::disk($disk)->exists($filePath)) {
             abort(404, 'File tidak ditemukan di storage');
         }

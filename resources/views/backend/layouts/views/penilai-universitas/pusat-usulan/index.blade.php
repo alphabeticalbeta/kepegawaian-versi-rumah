@@ -8,7 +8,7 @@
             Pusat Manajemen Usulan
         </h1>
         <p class="mt-2 text-gray-600">
-            Kelola periode, lihat pendaftar, dan pantau semua jenis usulan dari satu tempat.
+            Daftar usulan yang ditugaskan kepada Anda untuk dinilai.
         </p>
     </div>
 
@@ -26,78 +26,128 @@
     @endif
 
     <div class="bg-white shadow-xl rounded-2xl border border-gray-200 overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+        <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
             <div>
                 <h3 class="text-lg font-semibold text-gray-800">
-                    Daftar Periode Usulan
+                    Daftar Usulan yang Ditugaskan
                 </h3>
                 <p class="text-sm text-gray-500 mt-1">
-                    Berikut adalah semua periode usulan yang telah dibuat.
+                    Usulan kepegawaian yang ditugaskan kepada Anda untuk penilaian.
                 </p>
             </div>
-            <a href="{{ route('backend.admin-univ-usulan.periode-usulan.create', ['jenis' => 'jabatan']) }}" class="mt-4 sm:mt-0 inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 border border-transparent rounded-lg font-semibold text-xs text-white uppercase tracking-widest hover:from-indigo-700 hover:to-purple-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                Tambah Periode
-            </a>
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-sm text-left text-gray-600">
-                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+            <table class="w-full">
+                <thead class="bg-slate-50">
                     <tr>
-                        <th scope="col" class="px-6 py-4">Nama Periode</th>
-                        <th scope="col" class="px-6 py-4">Jenis Usulan</th>
-                        <th scope="col" class="px-6 py-4">Tanggal Usulan</th>
-                        <th scope="col" class="px-6 py-4">Tanggal Perbaikan</th>
-                        <th scope="col" class="px-6 py-4 text-center">Status</th>
-                        <th scope="col" class="px-6 py-4 text-center">Pendaftar</th>
-                        <th scope="col" class="px-6 py-4 text-center">Aksi</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">No</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Pegawai</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Jenis Pegawai</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Nama Sub-Sub Unit Kerja</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Unit Kerja</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Jabatan yang Dituju</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @forelse ($periodeUsulans as $periode)
-                        <tr class="bg-white border-b hover:bg-gray-50 transition-colors duration-200">
-                            <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ $periode->nama_periode }}</td>
-                            <td class="px-6 py-4 capitalize">{{ $periode->jenis_usulan }}</td>
-                            <td class="px-6 py-4">{{ \Carbon\Carbon::parse($periode->tanggal_mulai)->isoFormat('D MMM') }} - {{ \Carbon\Carbon::parse($periode->tanggal_selesai)->isoFormat('D MMM YYYY') }}</td>
-                            <td class="px-6 py-4">
-                                @if($periode->tanggal_mulai_perbaikan)
-                                    {{ \Carbon\Carbon::parse($periode->tanggal_mulai_perbaikan)->isoFormat('D MMM') }} - {{ \Carbon\Carbon::parse($periode->tanggal_selesai_perbaikan)->isoFormat('D MMM YYYY') }}
-                                @else
-                                    <span class="text-gray-400">-</span>
-                                @endif
+                <tbody class="divide-y divide-slate-200">
+                    @forelse($usulans as $index => $usulan)
+                        <tr class="hover:bg-slate-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                                {{ $usulans->firstItem() + $index }}
                             </td>
-                            <td class="px-6 py-4 text-center">
-                                @if($periode->status == 'Buka')
-                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Buka</span>
-                                @else
-                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Tutup</span>
-                                @endif
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div>
+                                    <div class="text-sm font-medium text-slate-900">{{ $usulan->pegawai->nama_lengkap ?? 'N/A' }}</div>
+                                    <div class="text-sm text-slate-500">NIP: {{ $usulan->pegawai->nip ?? 'N/A' }}</div>
+                                </div>
                             </td>
-                            <td class="px-6 py-4 text-center font-bold text-gray-800">{{ $periode->usulans_count }}</td>
-                            <td class="px-6 py-4 text-center">
-                                <div class="flex justify-center items-center gap-4">
-                                    <a href="{{ route('backend.admin-univ-usulan.periode-usulan.pendaftar', $periode->id) }}" class="font-medium text-blue-600 hover:text-blue-900" title="Lihat Pendaftar" class="font-medium text-blue-600 hover:text-blue-900" title="Lihat Pendaftar">Lihat</a>
-                                    <a href="{{ route('backend.admin-univ-usulan.periode-usulan.edit', $periode->id) }}" class="font-medium text-indigo-600 hover:text-indigo-900" title="Edit Periode">Edit</a>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                {{ $usulan->pegawai->jenis_pegawai ?? 'N/A' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                {{ $usulan->pegawai->unitKerja->subUnitKerja->nama ?? 'N/A' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                {{ $usulan->pegawai->unitKerja->subUnitKerja->unitKerja->nama ?? 'N/A' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                {{ $usulan->jabatanTujuan->jabatan ?? 'N/A' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @php
+                                    // Function to get display status based on current status and role
+                                    function getDisplayStatus($usulan, $currentRole) {
+                                        $status = $usulan->status_usulan;
 
-                                    @if($periode->usulans_count > 0)
-                                        <span class="font-medium text-gray-400 cursor-not-allowed" title="Tidak dapat dihapus karena sudah ada pendaftar">Hapus</span>
-                                    @else
-                                        <form action="{{ route('backend.admin-univ-usulan.periode-usulan.destroy', $periode->id) }}" method="POST" onsubmit="return confirm('Anda yakin ingin menghapus data ini?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="font-medium text-red-600 hover:text-red-900" title="Hapus Periode">Hapus</button>
-                                        </form>
-                                    @endif
+                                        // Mapping status berdasarkan alur kerja yang diminta
+                                        switch ($status) {
+                                            // Status untuk Penilai Universitas
+                                            case 'Usulan Disetujui Kepegawaian Universitas dan Menunggu Penilaian':
+                                                if ($currentRole === 'Penilai Universitas') {
+                                                    return 'Usulan Perbaikan dari Penilai Universitas';
+                                                }
+                                                break;
+
+                                            case 'Perbaikan Dari Tim Penilai':
+                                                if ($currentRole === 'Penilai Universitas') {
+                                                    return 'Usulan Perbaikan dari Penilai Universitas';
+                                                }
+                                                break;
+
+                                            case 'Usulan Direkomendasi Tim Penilai':
+                                                if ($currentRole === 'Penilai Universitas') {
+                                                    return 'Usulan Direkomendasi Penilai Universitas';
+                                                }
+                                                break;
+
+                                            default:
+                                                return $status;
+                                        }
+
+                                        return $status;
+                                    }
+
+                                    // Get display status
+                                    $displayStatus = getDisplayStatus($usulan, 'Penilai Universitas');
+
+                                    // Status colors mapping
+                                    $statusColors = [
+                                        // Status lama (fallback)
+                                        'Disetujui' => 'bg-green-100 text-green-800',
+                                        'Ditolak' => 'bg-red-100 text-red-800',
+                                        'Usulan Disetujui Kepegawaian Universitas dan Menunggu Penilaian' => 'bg-indigo-100 text-indigo-800',
+
+                                        // Status baru
+                                        'Usulan Perbaikan dari Penilai Universitas' => 'bg-orange-100 text-orange-800',
+                                        'Usulan Direkomendasi Penilai Universitas' => 'bg-purple-100 text-purple-800',
+                                    ];
+
+                                    $statusColor = $statusColors[$displayStatus] ?? 'bg-yellow-100 text-yellow-800';
+                                @endphp
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full {{ $statusColor }}">
+                                    {{ $displayStatus }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div class="flex gap-2">
+                                    <a href="{{ route('penilai-universitas.pusat-usulan.show', $usulan) }}"
+                                       class="text-blue-600 hover:text-blue-900 px-3 py-1 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+                                        Detail
+                                    </a>
                                 </div>
                             </td>
                         </tr>
                     @empty
-                        <tr class="bg-white border-b">
-                            <td colspan="7" class="px-6 py-8 text-center text-gray-500">
-                                <div class="flex flex-col items-center">
-                                    <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-                                    <p>Belum ada data periode usulan.</p>
+                        <tr>
+                            <td colspan="8" class="px-6 py-12 text-center">
+                                <div class="text-slate-500">
+                                    <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                    </svg>
+                                    <h3 class="mt-2 text-sm font-medium text-slate-900">Belum ada usulan</h3>
+                                    <p class="mt-1 text-sm text-slate-500">Belum ada usulan yang ditugaskan kepada Anda untuk dinilai.</p>
                                 </div>
                             </td>
                         </tr>
@@ -105,9 +155,11 @@
                 </tbody>
             </table>
         </div>
-        @if ($periodeUsulans->hasPages())
-            <div class="p-4 border-t border-gray-200">
-               {{ $periodeUsulans->links() }}
+
+        <!-- Pagination -->
+        @if($usulans->hasPages())
+            <div class="px-6 py-4 border-t border-slate-200">
+                {{ $usulans->links() }}
             </div>
         @endif
     </div>

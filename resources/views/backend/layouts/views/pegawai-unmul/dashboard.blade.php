@@ -6,7 +6,7 @@
 
     @php
     // Cek apakah ada usulan yang perlu diperbaiki
-        $usulanPerluPerbaikan = $usulans->firstWhere('status_usulan', 'Perbaikan Usulan');
+        $usulanPerluPerbaikan = $usulans->firstWhere('status_usulan', \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_ADMIN_FAKULTAS);
     @endphp
 
     @if($usulanPerluPerbaikan)
@@ -60,25 +60,97 @@
                     <tbody>
                         @forelse ($usulans as $usulan)
                             <tr class="bg-white border-b hover:bg-gray-50 transition-colors duration-200">
-                                <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap capitalize">{{ $usulan->jenis_usulan }}</td>
+                                <td class="px-6 py-4 font-semibold text-gray-900 whitespace-nowrap">{{ \App\Helpers\UsulanHelper::formatJenisUsulan($usulan->jenis_usulan) }}</td>
                                 <td class="px-6 py-4">{{ $usulan->periodeUsulan->nama_periode }}</td>
                                 <td class="px-6 py-4">{{ $usulan->created_at->isoFormat('D MMMM YYYY') }}</td>
                                 <td class="px-6 py-4 text-center">
                                     @php
-                                        $statusClass = match($usulan->status_usulan) {
-                                            'Draft' => 'bg-gray-100 text-gray-800',
-                                            'Diajukan' => 'bg-blue-100 text-blue-800',
-                                            'Sedang Direview' => 'bg-yellow-100 text-yellow-800',
-                                            'Perbaikan Usulan' => 'bg-orange-100 text-orange-800',
-                                            'Dikembalikan' => 'bg-red-100 text-red-800',
-                                            'Disetujui' => 'bg-green-100 text-green-800',
-                                            'Direkomendasikan' => 'bg-purple-100 text-purple-800',
-                                            'Ditolak' => 'bg-red-100 text-red-800',
-                                            default => 'bg-gray-100 text-gray-800'
-                                        };
+                                        // Function to get display status based on current status and role
+                                        function getDisplayStatus($usulan, $currentRole) {
+                                            $status = $usulan->status_usulan;
+
+                                            // Mapping status berdasarkan alur kerja yang diminta
+                                            switch ($status) {
+                                                // Status untuk Pegawai
+                                                case \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DIKIRIM_KE_ADMIN_FAKULTAS:
+                                                    return 'Usulan Dikirim ke Admin Fakultas';
+
+                                                case \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_ADMIN_FAKULTAS:
+                                                    if ($currentRole === 'Pegawai') {
+                                                        return 'Permintaan Perbaikan dari Admin Fakultas';
+                                                    }
+                                                    break;
+
+                                                case \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_ADMIN_FAKULTAS:
+                                                                                                          if ($currentRole === 'Pegawai') {
+                                                          return 'Permintaan Perbaikan dari Admin Fakultas';
+                                                      }
+                                                    break;
+
+
+
+                                                case \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS:
+                                                    if ($currentRole === 'Pegawai') {
+                                                        return \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS;
+                                                    }
+                                                    break;
+
+                                                case \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS:
+                                                    if ($currentRole === 'Pegawai') {
+                                                        return 'Permintaan Perbaikan dari Penilai Universitas';
+                                                    }
+                                                    break;
+
+                                                case \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS:
+                                                    if ($currentRole === 'Pegawai') {
+                                                        return 'Usulan Perbaikan dari Penilai Universitas';
+                                                    }
+                                                    break;
+
+                                                case \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_USULAN_DARI_TIM_SISTER:
+                                                    return 'Permintaan Perbaikan Usulan dari Tim Sister';
+
+                                                case \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER:
+                                                    return 'Usulan Sudah Dikirim ke Sister';
+
+                                                default:
+                                                    return $status;
+                                            }
+
+                                            return $status;
+                                        }
+
+                                        // Get display status
+                                        $displayStatus = getDisplayStatus($usulan, 'Pegawai');
+
+                                        // Status colors mapping
+                                        $statusColors = [
+                                            // Status lama (fallback)
+                                            \App\Models\KepegawaianUniversitas\Usulan::STATUS_DRAFT_USULAN => 'bg-gray-100 text-gray-800',
+                                            \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DIKIRIM_KE_ADMIN_FAKULTAS => 'bg-blue-100 text-blue-800',
+                                            \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS => 'bg-yellow-100 text-yellow-800',
+                                            \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_ADMIN_FAKULTAS => 'bg-orange-100 text-orange-800',
+
+                                            \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DISETUJUI_ADMIN_FAKULTAS => 'bg-green-100 text-green-800',
+                                            \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN => 'bg-purple-100 text-purple-800',
+                                            \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN => 'bg-red-100 text-red-800',
+
+                                            // Status baru
+                                            'Usulan Dikirim ke Admin Fakultas' => 'bg-blue-100 text-blue-800',
+                                            'Permintaan Perbaikan dari Admin Fakultas' => 'bg-amber-100 text-amber-800',
+                                            'Permintaan Perbaikan dari Admin Fakultas' => 'bg-orange-100 text-orange-800',
+
+                                            \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS => 'bg-orange-100 text-orange-800',
+                                            'Permintaan Perbaikan dari Penilai Universitas' => 'bg-red-100 text-red-800',
+                                            'Usulan Perbaikan dari Penilai Universitas' => 'bg-orange-100 text-orange-800',
+                                            'Permintaan Perbaikan Usulan dari Tim Sister' => 'bg-red-100 text-red-800',
+                                            'Usulan Sudah Dikirim ke Sister' => 'bg-blue-100 text-blue-800',
+                                        ];
+
+                                        $statusColor = $statusColors[$displayStatus] ?? 'bg-gray-100 text-gray-800';
                                     @endphp
-                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusClass }}">
-                                        {{ $usulan->status_usulan }}
+                                    <span class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusColor }}">
+                                        {{ $displayStatus }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-center">
@@ -104,11 +176,21 @@
                                             };
 
                                             // Tentukan apakah bisa edit atau hanya lihat detail
-                                            $canEdit = in_array($usulan->status_usulan, ['Draft', 'Perbaikan Usulan', 'Dikembalikan ke Pegawai']);
+                                            $canEdit = in_array($usulan->status_usulan, [
+                                                \App\Models\KepegawaianUniversitas\Usulan::STATUS_DRAFT_USULAN,
+                                                \App\Models\KepegawaianUniversitas\Usulan::STATUS_DRAFT_PERBAIKAN_ADMIN_FAKULTAS,
+                                                \App\Models\KepegawaianUniversitas\Usulan::STATUS_DRAFT_PERBAIKAN_KEPEGAWAIAN_UNIVERSITAS,
+                                                \App\Models\KepegawaianUniversitas\Usulan::STATUS_DRAFT_PERBAIKAN_PENILAI_UNIVERSITAS,
+                                                \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_ADMIN_FAKULTAS,
+                                                \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS
+                                            ]);
                                             $actionRoute = $canEdit ? $routeName . '.edit' : $routeName . '.show';
                                         @endphp
 
-                                        @if($usulan->status_usulan == 'Perbaikan Usulan')
+                                        @if(in_array($usulan->status_usulan, [
+                                            \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_ADMIN_FAKULTAS,
+                                            \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS
+                                        ]))
                                             <a href="{{ route($actionRoute, $usulan) }}"
                                             class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-orange-600 bg-orange-50 border border-orange-200 rounded-lg hover:bg-orange-100 hover:text-orange-700 transition-colors duration-200">
                                                 <i data-lucide="edit" class="w-3 h-3 mr-1"></i>

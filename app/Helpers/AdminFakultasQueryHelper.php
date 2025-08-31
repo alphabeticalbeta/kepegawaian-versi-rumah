@@ -2,8 +2,8 @@
 
 namespace App\Helpers;
 
-use App\Models\BackendUnivUsulan\Pegawai;
-use App\Models\BackendUnivUsulan\PeriodeUsulan;
+use App\Models\KepegawaianUniversitas\Pegawai;
+use App\Models\KepegawaianUniversitas\PeriodeUsulan;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 
@@ -46,7 +46,10 @@ class AdminFakultasQueryHelper
                 $query = PeriodeUsulan::select(['id', 'nama_periode', 'status', 'tanggal_mulai', 'tanggal_selesai'])
                     ->withCount([
                         'usulans as jumlah_pengusul' => function ($query) use ($unitKerjaId) {
-                            $query->whereIn('status_usulan', ['Diajukan', 'Sedang Direview'])
+                            $query->whereIn('status_usulan', [
+                                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DIKIRIM_KE_ADMIN_FAKULTAS,
+                                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DISETUJUI_ADMIN_FAKULTAS
+                            ])
                                 ->whereHas('pegawai.unitKerja.subUnitKerja.unitKerja', function ($subQuery) use ($unitKerjaId) {
                                     $subQuery->where('id', $unitKerjaId);
                                 });

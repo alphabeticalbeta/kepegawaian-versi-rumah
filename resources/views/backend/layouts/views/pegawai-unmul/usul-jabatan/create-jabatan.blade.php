@@ -2,6 +2,9 @@
 @extends('backend.layouts.roles.pegawai-unmul.app')
 
 @php
+    // Import Usulan model for constants
+    use App\Models\KepegawaianUniversitas\Usulan as UsulanModel;
+    
     // Set default values for variables that might not be defined
     $isEditMode = $isEditMode ?? false;
     $isReadOnly = $isReadOnly ?? false;
@@ -21,7 +24,8 @@
     // Get validation data from all roles for edit mode
     $validationData = [];
     if ($isEditMode && $usulan) {
-        $roles = ['admin_fakultas', 'admin_universitas', 'tim_penilai'];
+        // Sertakan kepegawaian_universitas agar catatan perbaikan dari KE terbaca
+        $roles = ['admin_fakultas', 'kepegawaian_universitas', 'tim_penilai'];
 
         foreach ($roles as $role) {
             $roleData = $usulan->getValidasiByRole($role);
@@ -30,7 +34,186 @@
             }
         }
 
-
+        // Get Tim Penilai data for individual display
+        $penilais = $usulan->penilais ?? collect();
+        $timPenilaiIndividualData = [];
+        
+        // Define field labels for mapping
+        $fieldLabels = [
+            'data_pribadi' => [
+                'jenis_pegawai' => 'Jenis Pegawai',
+                'status_kepegawaian' => 'Status Kepegawaian',
+                'nip' => 'NIP',
+                'nuptk' => 'NUPTK',
+                'gelar_depan' => 'Gelar Depan',
+                'nama_lengkap' => 'Nama Lengkap',
+                'gelar_belakang' => 'Gelar Belakang',
+                'email' => 'Email',
+                'tempat_lahir' => 'Tempat Lahir',
+                'tanggal_lahir' => 'Tanggal Lahir',
+                'jenis_kelamin' => 'Jenis Kelamin',
+                'nomor_handphone' => 'Nomor Handphone'
+            ],
+            'data_kepegawaian' => [
+                'pangkat_saat_usul' => 'Pangkat',
+                'tmt_pangkat' => 'TMT Pangkat',
+                'jabatan_saat_usul' => 'Jabatan',
+                'tmt_jabatan' => 'TMT Jabatan',
+                'tmt_cpns' => 'TMT CPNS',
+                'tmt_pns' => 'TMT PNS',
+                'unit_kerja_saat_usul' => 'Unit Kerja'
+            ],
+            'data_pendidikan' => [
+                'pendidikan_terakhir' => 'Pendidikan Terakhir',
+                'nama_universitas_sekolah' => 'Nama Universitas/Sekolah',
+                'nama_prodi_jurusan' => 'Nama Program Studi/Jurusan',
+                'mata_kuliah_diampu' => 'Mata Kuliah Diampu',
+                'ranting_ilmu_kepakaran' => 'Bidang Kepakaran',
+                'url_profil_sinta' => 'Profil SINTA'
+            ],
+            'data_kinerja' => [
+                'predikat_kinerja_tahun_pertama' => 'Predikat SKP Tahun ' . (date('Y') - 1),
+                'predikat_kinerja_tahun_kedua' => 'Predikat SKP Tahun ' . (date('Y') - 2),
+                'nilai_konversi' => 'Nilai Konversi ' . (date('Y') - 1)
+            ],
+            'dokumen_profil' => [
+                'ijazah_terakhir' => 'Ijazah Terakhir',
+                'transkrip_nilai_terakhir' => 'Transkrip Nilai Terakhir',
+                'sk_pangkat_terakhir' => 'SK Pangkat Terakhir',
+                'sk_jabatan_terakhir' => 'SK Jabatan Terakhir',
+                'skp_tahun_pertama' => 'SKP Tahun ' . (date('Y') - 1),
+                'skp_tahun_kedua' => 'SKP Tahun ' . (date('Y') - 2),
+                'pak_konversi' => 'PAK Konversi ' . (date('Y') - 1),
+                'sk_cpns' => 'SK CPNS',
+                'sk_pns' => 'SK PNS',
+                'sk_penyetaraan_ijazah' => 'SK Penyetaraan Ijazah',
+                'disertasi_thesis_terakhir' => 'Disertasi/Thesis Terakhir'
+            ],
+            'karya_ilmiah' => [
+                'karya_ilmiah' => 'Karya Ilmiah',
+                'nama_jurnal' => 'Nama Jurnal',
+                'judul_artikel' => 'Judul Artikel',
+                'penerbit_artikel' => 'Penerbit Artikel',
+                'volume_artikel' => 'Volume Artikel',
+                'nomor_artikel' => 'Nomor Artikel',
+                'edisi_artikel' => 'Edisi Artikel',
+                'halaman_artikel' => 'Halaman Artikel',
+                'link_artikel' => 'Link Artikel',
+                'link_sinta' => 'Link SINTA',
+                'link_scopus' => 'Link Scopus',
+                'link_scimago' => 'Link Scimago',
+                'link_wos' => 'Link Web of Science'
+            ],
+            'dokumen_usulan' => [
+                'pakta_integritas' => 'Pakta Integritas',
+                'bukti_korespondensi' => 'Bukti Korespondensi',
+                'turnitin' => 'Turnitin',
+                'upload_artikel' => 'Upload Artikel',
+                'bukti_syarat_guru_besar' => 'Bukti Syarat Guru Besar'
+            ],
+            'syarat_guru_besar' => [
+                'bukti_syarat_guru_besar' => 'Bukti Syarat Guru Besar'
+            ]
+        ];
+        
+        if ($penilais->count() > 0) {
+            foreach ($penilais as $index => $penilai) {
+                $penilaiName = 'Penilai ' . ($index + 1);
+                $penilaiInvalidFields = [];
+                $penilaiGeneralNotes = [];
+                
+                // Check if penilai has completed assessment
+                $hasAssessment = !empty($penilai->pivot->hasil_penilaian) || 
+                                !empty($penilai->pivot->status_penilaian) || 
+                                !empty($penilai->pivot->catatan_penilaian) ||
+                                ($penilai->pivot->status_penilaian ?? '') !== 'Belum Dinilai';
+                
+                if ($hasAssessment) {
+                    // Get individual penilai data from validasi_data
+                    $validasiData = $usulan->validasi_data ?? [];
+                    $individualPenilaiData = $validasiData['individual_penilai'] ?? [];
+                    
+                    // Find data for this specific penilai
+                    $penilaiData = collect($individualPenilaiData)->firstWhere('penilai_id', $penilai->id);
+                    
+                    if ($penilaiData && is_array($penilaiData)) {
+                        // Process invalid fields for this penilai
+                        foreach ($penilaiData as $groupKey => $groupData) {
+                            if (is_array($groupData)) {
+                                foreach ($groupData as $fieldKey => $fieldData) {
+                                    if (isset($fieldData['status']) && $fieldData['status'] === 'tidak_sesuai') {
+                                        // Enhanced field mapping
+                                        $fieldLabelMap = [
+                                            'file_berita_senat' => 'File Berita Senat',
+                                            'file_surat_usulan' => 'File Surat Usulan',
+                                            'nomor_berita_senat' => 'Nomor Berita Senat',
+                                            'nomor_surat_usulan' => 'Nomor Surat Usulan',
+                                            'turnitin' => 'Dokumen Turnitin',
+                                            'upload_artikel' => 'Upload Artikel',
+                                            'pakta_integritas' => 'Pakta Integritas',
+                                            'bukti_korespondensi' => 'Bukti Korespondensi',
+                                            'sk_pns' => 'SK PNS',
+                                            'sk_cpns' => 'SK CPNS',
+                                            'ijazah_terakhir' => 'Ijazah Terakhir',
+                                            'skp_tahun_pertama' => 'SKP Tahun Pertama',
+                                            'skp_tahun_kedua' => 'SKP Tahun Kedua',
+                                            'sk_jabatan_terakhir' => 'SK Jabatan Terakhir',
+                                            'sk_pangkat_terakhir' => 'SK Pangkat Terakhir',
+                                            'transkrip_nilai_terakhir' => 'Transkrip Nilai Terakhir',
+                                            'disertasi_thesis_terakhir' => 'Disertasi/Thesis Terakhir',
+                                            'pak_konversi' => 'PAK Konversi',
+                                            'sk_penyetaraan_ijazah' => 'SK Penyetaraan Ijazah',
+                                            'syarat_guru_besar' => 'Syarat Guru Besar',
+                                            'bukti_syarat_guru_besar' => 'Bukti Syarat Guru Besar'
+                                        ];
+                                        
+                                        $fieldLabel = isset($fieldLabels[$groupKey][$fieldKey]) ? $fieldLabels[$groupKey][$fieldKey] : ($fieldLabelMap[$fieldKey] ?? ucwords(str_replace('_', ' ', $fieldKey)));
+                                        
+                                        $penilaiInvalidFields[] = $fieldLabel . ' : ' . ($fieldData['keterangan'] ?? 'Tidak ada keterangan');
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Collect general notes for this penilai
+                        if (!empty($usulan->catatan_verifikator)) {
+                            $penilaiGeneralNotes[] = $usulan->catatan_verifikator;
+                        }
+                    }
+                    
+                    // Fallback: Try to get data from general tim_penilai validation if individual data is empty
+                    if (empty($penilaiInvalidFields)) {
+                        $timPenilaiValidation = $usulan->getValidasiByRole('tim_penilai');
+                        if (!empty($timPenilaiValidation) && isset($timPenilaiValidation['validation'])) {
+                            foreach ($timPenilaiValidation['validation'] as $groupKey => $groupData) {
+                                if (is_array($groupData)) {
+                                    foreach ($groupData as $fieldKey => $fieldData) {
+                                        if (isset($fieldData['status']) && $fieldData['status'] === 'tidak_sesuai') {
+                                            $fieldLabel = isset($fieldLabels[$groupKey][$fieldKey]) ? $fieldLabels[$groupKey][$fieldKey] : ($fieldLabelMap[$fieldKey] ?? ucwords(str_replace('_', ' ', $fieldKey)));
+                                            $penilaiInvalidFields[] = $fieldLabel . ' : ' . ($fieldData['keterangan'] ?? 'Tidak ada keterangan');
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Use pivot data if available
+                    if (!empty($penilai->pivot->catatan_penilaian)) {
+                        $penilaiGeneralNotes[] = $penilai->pivot->catatan_penilaian;
+                    }
+                } else {
+                    $penilaiGeneralNotes[] = 'Belum memberikan penilaian';
+                }
+                
+                $timPenilaiIndividualData[$penilaiName] = [
+                    'invalid_fields' => $penilaiInvalidFields,
+                    'general_notes' => $penilaiGeneralNotes,
+                    'has_assessment' => $hasAssessment,
+                    'assessment_date' => $penilai->pivot->tanggal_penilaian ?? $penilai->pivot->updated_at ?? null
+                ];
+            }
+        }
     }
 
         // Function to check if field has validation issues - ENHANCED
@@ -166,10 +349,16 @@
             // Cek kelengkapan data profil
             $requiredFields = [
                 'nama_lengkap', 'nip', 'email', 'tempat_lahir', 'tanggal_lahir',
-                'jenis_kelamin', 'nomor_handphone', 'gelar_depan', 'gelar_belakang',
+                'jenis_kelamin', 'nomor_handphone', 'gelar_belakang',
+                'nama_universitas_sekolah', 'nama_prodi_jurusan',
                 'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_pangkat_terakhir',
                 'sk_jabatan_terakhir', 'skp_tahun_pertama', 'skp_tahun_kedua'
             ];
+
+            // Tambahkan Disertasi/Thesis Terakhir jika usulan jabatan dosen reguler
+            if ($pegawai->jenis_pegawai === 'Dosen' && isset($jenisUsulanPeriode) && str_contains($jenisUsulanPeriode, 'dosen-regular')) {
+                $requiredFields[] = 'disertasi_thesis_terakhir';
+            }
 
             $missingFields = [];
             foreach ($requiredFields as $field) {
@@ -200,42 +389,374 @@
                     @csrf
             @endif
 
-            {{-- Notification for Revision Status --}}
-            @if($isEditMode && $usulan && $usulan->status_usulan === 'Perbaikan Usulan')
-            @php
-                // Determine which role sent the revision request
-                $adminUnivValidation = $usulan->getValidasiByRole('admin_universitas');
-                $adminFakultasValidation = $usulan->getValidasiByRole('admin_fakultas');
+            {{-- Detail Field Bermasalah untuk Pegawai --}}
+            @if($isEditMode && $usulan && !empty($validationData))
+                @php
+                    // Define role labels and colors
+                    $roleConfigs = [
+                        'admin_fakultas' => [
+                            'label' => 'Admin Fakultas',
+                            'color' => 'amber',
+                            'icon' => 'building-2'
+                        ],
+                        'kepegawaian_universitas' => [
+                            'label' => 'Kepegawaian Universitas',
+                            'color' => 'blue',
+                            'icon' => 'university'
+                        ],
+                        'tim_penilai' => [
+                            'label' => 'Tim Penilai',
+                            'color' => 'purple',
+                            'icon' => 'users'
+                        ]
+                    ];
 
-                $revisionFromRole = 'Admin Fakultas'; // Default
-                $revisionFromRoleColor = 'amber';
+                    // Define field group labels
+                    $fieldGroupLabels = [
+                        'data_pribadi' => 'Data Pribadi',
+                        'data_kepegawaian' => 'Data Kepegawaian',
+                        'data_pendidikan' => 'Data Pendidikan & Fungsional',
+                        'data_kinerja' => 'Data Kinerja',
+                        'dokumen_profil' => 'Dokumen Profil',
+                        'bkd' => 'Beban Kinerja Dosen (BKD)',
+                        'karya_ilmiah' => 'Karya Ilmiah',
+                        'dokumen_usulan' => 'Dokumen Usulan',
+                        'syarat_guru_besar' => 'Syarat Guru Besar'
+                    ];
 
-                if (!empty($adminUnivValidation)) {
-                    $revisionFromRole = 'Admin Universitas';
-                    $revisionFromRoleColor = 'blue';
-                } elseif (!empty($adminFakultasValidation)) {
-                    $revisionFromRole = 'Admin Fakultas';
-                    $revisionFromRoleColor = 'amber';
-                }
-            @endphp
+                    // Define field labels
+                    $fieldLabels = [
+                        'data_pribadi' => [
+                            'jenis_pegawai' => 'Jenis Pegawai',
+                            'status_kepegawaian' => 'Status Kepegawaian',
+                            'nip' => 'NIP',
+                            'nuptk' => 'NUPTK',
+                            'gelar_depan' => 'Gelar Depan',
+                            'nama_lengkap' => 'Nama Lengkap',
+                            'gelar_belakang' => 'Gelar Belakang',
+                            'email' => 'Email',
+                            'tempat_lahir' => 'Tempat Lahir',
+                            'tanggal_lahir' => 'Tanggal Lahir',
+                            'jenis_kelamin' => 'Jenis Kelamin',
+                            'nomor_handphone' => 'Nomor Handphone'
+                        ],
+                        'data_kepegawaian' => [
+                            'pangkat_saat_usul' => 'Pangkat',
+                            'tmt_pangkat' => 'TMT Pangkat',
+                            'jabatan_saat_usul' => 'Jabatan',
+                            'tmt_jabatan' => 'TMT Jabatan',
+                            'tmt_cpns' => 'TMT CPNS',
+                            'tmt_pns' => 'TMT PNS',
+                            'unit_kerja_saat_usul' => 'Unit Kerja'
+                        ],
+                        'data_pendidikan' => [
+                            'pendidikan_terakhir' => 'Pendidikan Terakhir',
+                            'nama_universitas_sekolah' => 'Nama Universitas/Sekolah',
+                            'nama_prodi_jurusan' => 'Nama Program Studi/Jurusan',
+                            'mata_kuliah_diampu' => 'Mata Kuliah Diampu',
+                            'ranting_ilmu_kepakaran' => 'Bidang Kepakaran',
+                            'url_profil_sinta' => 'Profil SINTA'
+                        ],
+                        'data_kinerja' => [
+                            'predikat_kinerja_tahun_pertama' => 'Predikat SKP Tahun ' . (date('Y') - 1),
+                            'predikat_kinerja_tahun_kedua' => 'Predikat SKP Tahun ' . (date('Y') - 2),
+                            'nilai_konversi' => 'Nilai Konversi ' . (date('Y') - 1)
+                        ],
+                        'dokumen_profil' => [
+                            'ijazah_terakhir' => 'Ijazah Terakhir',
+                            'transkrip_nilai_terakhir' => 'Transkrip Nilai Terakhir',
+                            'sk_pangkat_terakhir' => 'SK Pangkat Terakhir',
+                            'sk_jabatan_terakhir' => 'SK Jabatan Terakhir',
+                            'skp_tahun_pertama' => 'SKP Tahun ' . (date('Y') - 1),
+                            'skp_tahun_kedua' => 'SKP Tahun ' . (date('Y') - 2),
+                            'pak_konversi' => 'PAK Konversi ' . (date('Y') - 1),
+                            'sk_cpns' => 'SK CPNS',
+                            'sk_pns' => 'SK PNS',
+                            'sk_penyetaraan_ijazah' => 'SK Penyetaraan Ijazah',
+                            'disertasi_thesis_terakhir' => 'Disertasi/Thesis Terakhir'
+                        ],
+                        'karya_ilmiah' => [
+                            'karya_ilmiah' => 'Karya Ilmiah',
+                            'nama_jurnal' => 'Nama Jurnal',
+                            'judul_artikel' => 'Judul Artikel',
+                            'penerbit_artikel' => 'Penerbit Artikel',
+                            'volume_artikel' => 'Volume Artikel',
+                            'nomor_artikel' => 'Nomor Artikel',
+                            'edisi_artikel' => 'Edisi Artikel',
+                            'halaman_artikel' => 'Halaman Artikel',
+                            'link_artikel' => 'Link Artikel',
+                            'link_sinta' => 'Link SINTA',
+                            'link_scopus' => 'Link Scopus',
+                            'link_scimago' => 'Link Scimago',
+                            'link_wos' => 'Link Web of Science'
+                        ],
+                        'dokumen_usulan' => [
+                            'pakta_integritas' => 'Pakta Integritas',
+                            'bukti_korespondensi' => 'Bukti Korespondensi',
+                            'turnitin' => 'Turnitin',
+                            'upload_artikel' => 'Upload Artikel',
+                            'bukti_syarat_guru_besar' => 'Bukti Syarat Guru Besar'
+                        ],
+                        'syarat_guru_besar' => [
+                            'bukti_syarat_guru_besar' => 'Bukti Syarat Guru Besar'
+                        ]
+                    ];
 
-            <div class="mb-6 bg-{{ $revisionFromRoleColor }}-50 border border-{{ $revisionFromRoleColor }}-200 rounded-lg p-4">
-                <div class="flex items-start">
-                    <div class="flex-shrink-0">
-                        <i data-lucide="alert-triangle" class="w-5 h-5 text-{{ $revisionFromRoleColor }}-600"></i>
-                    </div>
-                    <div class="ml-3">
-                        <h3 class="text-sm font-medium text-{{ $revisionFromRoleColor }}-800">
-                            Usulan Dikembalikan untuk Perbaikan
-                        </h3>
-                        <div class="mt-2 text-sm text-{{ $revisionFromRoleColor }}-700">
-                            <p class="mb-2"><strong>Catatan dari {{ $revisionFromRole }}:</strong></p>
-                            <p class="bg-white p-3 rounded border border-{{ $revisionFromRoleColor }}-200">{{ $usulan->catatan_verifikator ?? 'Tidak ada catatan spesifik' }}</p>
+                    // Define field categories relevant for Pegawai (role-based filtering)
+                    $pegawaiFieldCategories = [
+                        'data_pribadi',
+                        'data_kepegawaian', 
+                        'data_pendidikan',
+                        'data_kinerja',
+                        'dokumen_profil',
+                        'karya_ilmiah',
+                        'dokumen_usulan',
+                        'syarat_guru_besar'
+                    ];
+
+                    // Collect filtered invalid fields from all roles (only relevant to Pegawai)
+                    $allInvalidFields = [];
+                    foreach ($validationData as $roleKey => $roleValidation) {
+                        if (isset($roleConfigs[$roleKey])) {
+                            $roleConfig = $roleConfigs[$roleKey];
+                            $invalidFields = [];
+                            
+                            foreach ($roleValidation as $groupKey => $groupData) {
+                                // Only process field groups that are relevant to Pegawai
+                                if (in_array($groupKey, $pegawaiFieldCategories) && isset($fieldGroupLabels[$groupKey])) {
+                                    $groupLabel = $fieldGroupLabels[$groupKey];
+                                    
+                                    foreach ($groupData as $fieldKey => $fieldData) {
+                                        if (isset($fieldData['status']) && $fieldData['status'] === 'tidak_sesuai') {
+                                            $fieldLabel = $fieldLabels[$groupKey][$fieldKey] ?? ucwords(str_replace('_', ' ', $fieldKey));
+                                            $invalidFields[] = [
+                                                'group' => $groupLabel,
+                                                'field' => $fieldLabel,
+                                                'keterangan' => $fieldData['keterangan'] ?? 'Tidak ada keterangan spesifik'
+                                            ];
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            if (!empty($invalidFields)) {
+                                $allInvalidFields[$roleKey] = [
+                                    'config' => $roleConfig,
+                                    'fields' => $invalidFields
+                                ];
+                            }
+                        }
+                    }
+                @endphp
+
+                @php
+                    // Check if there are any invalid fields from any source
+                    $hasAnyInvalidFields = !empty($allInvalidFields);
+                    
+                    // Also check if Tim Penilai has invalid fields
+                    $hasTimPenilaiInvalidFields = false;
+                    if (!empty($timPenilaiIndividualData)) {
+                        foreach ($timPenilaiIndividualData as $penilaiData) {
+                            if (!empty($penilaiData['invalid_fields'])) {
+                                $hasTimPenilaiInvalidFields = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    $shouldShowInvalidFields = $hasAnyInvalidFields || $hasTimPenilaiInvalidFields;
+                @endphp
+
+                @if($shouldShowInvalidFields)
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mb-6">
+                        <div class="bg-gradient-to-r from-red-600 to-pink-600 px-6 py-5">
+                            <h2 class="text-xl font-bold text-white flex items-center">
+                                <i data-lucide="alert-circle" class="w-6 h-6 mr-3"></i>
+                                Detail Field yang Perlu Diperbaiki (Relevan untuk Pegawai)
+                            </h2>
+                        </div>
+                        <div class="p-6">
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                                <div class="flex items-start">
+                                    <i data-lucide="info" class="w-5 h-5 text-red-600 mr-2 mt-0.5"></i>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-red-800">Informasi Perbaikan</h4>
+                                        <p class="text-sm text-red-700 mt-1">
+                                            Berikut adalah daftar field yang memerlukan perbaikan berdasarkan feedback dari tim verifikasi. 
+                                            Hanya field yang relevan dengan tanggung jawab Pegawai yang ditampilkan di bawah ini.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @foreach($allInvalidFields as $roleKey => $roleData)
+                                <div class="mb-6 last:mb-0">
+                                    <div class="bg-gradient-to-r from-{{ $roleData['config']['color'] }}-100 to-{{ $roleData['config']['color'] }}-200 px-4 py-3 rounded-t-lg border-l-4 border-{{ $roleData['config']['color'] }}-500">
+                                        <h5 class="text-sm font-bold text-{{ $roleData['config']['color'] }}-800 flex items-center">
+                                            <i data-lucide="{{ $roleData['config']['icon'] }}" class="w-4 h-4 mr-2"></i>
+                                            Feedback dari {{ $roleData['config']['label'] }}
+                                        </h5>
+                                    </div>
+                                    <div class="bg-gray-50 border border-gray-200 rounded-b-lg p-4">
+                                        <div class="space-y-3">
+                                            @foreach($roleData['fields'] as $field)
+                                                <div class="flex items-start gap-3 p-3 bg-white border border-red-200 rounded-lg">
+                                                    <i data-lucide="x-circle" class="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0"></i>
+                                                    <div class="flex-1">
+                                                        <div class="text-sm font-medium text-red-800">
+                                                            {{ $field['group'] }} - {{ $field['field'] }}
+                                                        </div>
+                                                        <div class="text-sm text-red-700 mt-1">
+                                                            {{ $field['keterangan'] }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                        
+                                        {{-- Catatan Tambahan untuk Admin Fakultas --}}
+                                        @if($roleKey === 'admin_fakultas' && !empty($usulan->catatan_verifikator))
+                                            @php
+                                                // Ekstrak hanya bagian "Catatan Tambahan:" dari catatan verifikator
+                                                $catatanVerifikator = $usulan->catatan_verifikator;
+                                                $catatanTambahan = '';
+                                                
+                                                if (strpos($catatanVerifikator, 'Catatan Tambahan:') !== false) {
+                                                    $parts = explode('Catatan Tambahan:', $catatanVerifikator);
+                                                    if (count($parts) > 1) {
+                                                        $catatanTambahan = trim($parts[1]);
+                                                    }
+                                                }
+                                            @endphp
+                                            
+                                            @if(!empty($catatanTambahan))
+                                                <div class="mt-4 pt-4 border-t border-gray-200">
+                                                    <div class="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                                        <i data-lucide="message-square" class="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0"></i>
+                                                        <div class="flex-1">
+                                                            <div class="text-sm font-medium text-amber-800">
+                                                                Catatan Tambahan
+                                                            </div>
+                                                            <div class="text-sm text-amber-700 mt-1">
+                                                                {{ $catatanTambahan }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+
+
+
+                            <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div class="flex items-start">
+                                    <i data-lucide="lightbulb" class="w-5 h-5 text-blue-600 mt-0.5 mr-3"></i>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-blue-800">Tips Perbaikan</h4>
+                                        <p class="text-sm text-blue-700 mt-1">
+                                            Pastikan untuk memperbaiki semua field yang disebutkan di atas sebelum mengajukan kembali usulan Anda. 
+                                            Hanya field yang relevan dengan tanggung jawab Pegawai yang ditampilkan. Field lain yang tidak ditampilkan mungkin sudah sesuai atau merupakan tanggung jawab role lain.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
+                @else
+                    {{-- Show message when no relevant fields need fixing --}}
+                    <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mb-6">
+                        <div class="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-5">
+                            <h2 class="text-xl font-bold text-white flex items-center">
+                                <i data-lucide="check-circle" class="w-6 h-6 mr-3"></i>
+                                Tidak Ada Field yang Perlu Diperbaiki
+                            </h2>
+                        </div>
+                        <div class="p-6">
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <div class="flex items-start">
+                                    <i data-lucide="info" class="w-5 h-5 text-green-600 mr-2 mt-0.5"></i>
+                                    <div>
+                                        <h4 class="text-sm font-medium text-green-800">Status Perbaikan</h4>
+                                        <p class="text-sm text-green-700 mt-1">
+                                            Semua field yang relevan dengan tanggung jawab Pegawai sudah sesuai. 
+                                            Perbaikan mungkin terkait dengan area lain yang bukan tanggung jawab Pegawai.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
             @endif
+
+            {{-- Hasil Validasi Tim Penilai --}}
+            @if($isEditMode && $usulan && !empty($timPenilaiIndividualData))
+                <div class="bg-white rounded-xl shadow-lg border border-red-200 overflow-hidden mb-6">
+                    <div class="bg-gradient-to-r from-red-600 to-pink-600 px-6 py-5">
+                        <h2 class="text-xl font-bold text-white flex items-center">
+                            <i data-lucide="alert-triangle" class="w-6 h-6 mr-3"></i>
+                            Hasil Validasi Tim Penilai
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        @foreach($timPenilaiIndividualData as $penilaiName => $penilaiData)
+                            <div class="mb-6 last:mb-0">
+                                <div class="flex items-center justify-between mb-3 border-b border-gray-200 pb-2">
+                                    <h3 class="font-semibold text-lg text-gray-800">
+                                        <i data-lucide="user-check" class="w-5 h-5 inline mr-2 text-purple-600"></i>
+                                        {{ $penilaiName }}
+                                    </h3>
+                                    @if($penilaiData['assessment_date'])
+                                        <span class="text-xs text-gray-500">
+                                            <i data-lucide="clock" class="w-3 h-3 inline mr-1"></i>
+                                            {{ \Carbon\Carbon::parse($penilaiData['assessment_date'])->format('d/m/Y H:i') }}
+                                        </span>
+                                    @endif
+                                </div>
+                                
+                                @if(!empty($penilaiData['invalid_fields']))
+                                    <div class="mb-4">
+                                        <h4 class="font-medium text-red-800 mb-2 flex items-center">
+                                            <i data-lucide="alert-triangle" class="w-4 h-4 mr-2"></i>
+                                            Field yang Tidak Sesuai:
+                                        </h4>
+                                        <div class="space-y-2">
+                                            @foreach($penilaiData['invalid_fields'] as $field)
+                                                <div class="text-sm text-red-800 bg-red-50 px-3 py-2 rounded border-l-4 border-red-400 flex items-start">
+                                                    <i data-lucide="x-circle" class="w-4 h-4 mr-2 mt-0.5 text-red-500 flex-shrink-0"></i>
+                                                    <span>{{ $field }}</span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+                                
+                                @if(!empty($penilaiData['general_notes']))
+                                    <div class="border-t border-red-200 pt-4">
+                                        <h4 class="font-medium text-red-800 mb-2 flex items-center">
+                                            <i data-lucide="message-square" class="w-4 h-4 mr-2"></i>
+                                            Keterangan Umum:
+                                        </h4>
+                                        <div class="space-y-2">
+                                            @foreach($penilaiData['general_notes'] as $note)
+                                                <div class="text-sm text-red-700 bg-red-50 px-3 py-2 rounded border-l-4 border-red-400 flex items-start">
+                                                    <i data-lucide="info" class="w-4 h-4 mr-2 mt-0.5 text-red-500 flex-shrink-0"></i>
+                                                    <span>{{ $note }}</span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+
 
             {{-- Informasi Periode Usulan --}}
             <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mb-6">
@@ -324,30 +845,7 @@
 
             {{-- Form Actions --}}
             @if(!$isShowMode)
-            @php
-                // Determine who sent the revision request based on validation data
-                $isRevisionFromUniversity = false;
-                $isRevisionFromFakultas = false;
-
-                if ($isEditMode && $usulan && $usulan->status_usulan === 'Perbaikan Usulan') {
-                    // Check validation data to determine source of revision
-                    $adminUnivValidation = $usulan->getValidasiByRole('admin_universitas');
-                    $adminFakultasValidation = $usulan->getValidasiByRole('admin_fakultas');
-
-                    // If Admin Universitas has validation data, revision is from university
-                    if (!empty($adminUnivValidation)) {
-                        $isRevisionFromUniversity = true;
-                    }
-                    // If only Admin Fakultas has validation data, revision is from fakultas
-                    elseif (!empty($adminFakultasValidation)) {
-                        $isRevisionFromFakultas = true;
-                    }
-                    // Default: if uncertain, assume from fakultas
-                    else {
-                        $isRevisionFromFakultas = true;
-                    }
-                }
-            @endphp
+            {{-- Button conditions simplified based on status --}}
 
             <div class="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
                 <div class="flex items-center justify-between">
@@ -356,37 +854,74 @@
                         Pastikan semua data yang diperlukan telah diisi dengan benar
                     </div>
                     <div class="flex items-center gap-3">
-                        <button type="button" onclick="history.back()"
-                                class="px-6 py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                            Batal
-                        </button>
-
                         {{-- Save Draft Button (always available) --}}
-                        <button type="submit" name="action" value="save_draft"
+                        <button type="button" onclick="showConfirmationModal('save_draft', document.getElementById('usulan-form'))" 
                                 class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
                             <i data-lucide="save" class="w-4 h-4"></i>
                             Simpan Usulan
                         </button>
-
+            
                         {{-- Conditional Submit Buttons --}}
-                        @if($isEditMode && $usulan && $usulan->status_usulan === 'Perbaikan Usulan')
-                            {{-- Revision Mode: Show appropriate button based on who requested revision --}}
-                            @if($isRevisionFromUniversity)
-                                <button type="submit" name="action" value="submit_to_university"
-                                        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
-                                    <i data-lucide="send" class="w-4 h-4"></i>
-                                    Kirim ke Universitas
-                                </button>
-                            @elseif($isRevisionFromFakultas)
-                                <button type="submit" name="action" value="submit_to_fakultas"
-                                        class="px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-2">
-                                    <i data-lucide="send" class="w-4 h-4"></i>
-                                    Kirim ke Fakultas
-                                </button>
-                            @endif
+                        @if($isEditMode && $usulan && $usulan->status_usulan === UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_DARI_ADMIN_FAKULTAS)
+                            <button type="button" onclick="showConfirmationModal('submit_perbaikan_fakultas', document.getElementById('usulan-form'))"
+                                    class="px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                                Kirim Permintaan Perbaikan dari Admin Fakultas
+                            </button>
+                        @elseif($isEditMode && $usulan && $usulan->status_usulan === UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS)
+                            <button type="button" onclick="showConfirmationModal('submit_perbaikan_university', document.getElementById('usulan-form'))"
+                                    class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                                Kirim Usulan Perbaikan dari Kepegawaian Universitas
+                            </button>
+            
+                        @elseif($isEditMode && $usulan && $usulan->status_usulan === UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS)
+                            <button type="button" onclick="showConfirmationModal('submit_perbaikan_penilai', document.getElementById('usulan-form'))"
+                                    class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                                Kirim Perbaikan ke Penilai Universitas
+                            </button>
+            
+                        @elseif($isEditMode && $usulan && $usulan->status_usulan === UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_USULAN_DARI_TIM_SISTER)
+                            <button type="button" onclick="showConfirmationModal('submit_perbaikan_tim_sister', document.getElementById('usulan-form'))"
+                                    class="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                                Kirim Perbaikan ke Tim Sister
+                            </button>
+                        {{-- Draft Status Buttons --}}
+                        @elseif($isEditMode && $usulan && $usulan->status_usulan === UsulanModel::STATUS_DRAFT_USULAN)
+                            <button type="button" onclick="showConfirmationModal('submit_to_fakultas', document.getElementById('usulan-form'))"
+                                    class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                                Usulan Dikirim ke Admin Fakultas
+                            </button>
+                        @elseif($isEditMode && $usulan && $usulan->status_usulan === UsulanModel::STATUS_DRAFT_PERBAIKAN_ADMIN_FAKULTAS)
+                            <button type="button" onclick="showConfirmationModal('submit_perbaikan_fakultas', document.getElementById('usulan-form'))"
+                                    class="px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                                Kirim Permintaan Perbaikan dari Admin Fakultas
+                            </button>
+                        @elseif($isEditMode && $usulan && $usulan->status_usulan === UsulanModel::STATUS_DRAFT_PERBAIKAN_KEPEGAWAIAN_UNIVERSITAS)
+                            <button type="button" onclick="showConfirmationModal('submit_perbaikan_university', document.getElementById('usulan-form'))"
+                                    class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                                Kirim Usulan Perbaikan dari Kepegawaian Universitas
+                            </button>
+                        @elseif($isEditMode && $usulan && $usulan->status_usulan === UsulanModel::STATUS_DRAFT_PERBAIKAN_PENILAI_UNIVERSITAS)
+                            <button type="button" onclick="showConfirmationModal('submit_perbaikan_penilai', document.getElementById('usulan-form'))"
+                                    class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                                Kirim Perbaikan ke Penilai Universitas
+                            </button>
+                        @elseif($isEditMode && $usulan && $usulan->status_usulan === UsulanModel::STATUS_DRAFT_PERBAIKAN_TIM_SISTER)
+                            <button type="button" onclick="showConfirmationModal('submit_perbaikan_tim_sister', document.getElementById('usulan-form'))"
+                                    class="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2">
+                                <i data-lucide="send" class="w-4 h-4"></i>
+                                Kirim Perbaikan ke Tim Sister
+                            </button>
                         @else
-                            {{-- Normal Mode: Submit to fakultas --}}
-                            <button type="submit" name="action" value="submit"
+                            {{-- Default button untuk create new --}}
+                            <button type="button" onclick="showConfirmationModal('submit_to_fakultas', document.getElementById('usulan-form'))"
                                     class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
                                 <i data-lucide="send" class="w-4 h-4"></i>
                                 Kirim Usulan
@@ -395,41 +930,196 @@
                     </div>
                 </div>
             </div>
-            @endif
 
             </form>
+        @endif
+        @else
+            {{-- Profile Incomplete Message --}}
+            <div class="bg-white rounded-xl shadow-lg border border-red-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-red-600 to-pink-600 px-6 py-5">
+                    <h2 class="text-xl font-bold text-white flex items-center">
+                        <i data-lucide="alert-triangle" class="w-6 h-6 mr-3"></i>
+                        Profil Tidak Lengkap
+                    </h2>
+                </div>
+                <div class="p-6">
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-start">
+                            <i data-lucide="info" class="w-5 h-5 text-red-600 mr-2 mt-0.5"></i>
+                            <div>
+                                <h4 class="text-sm font-medium text-red-800">Data Profil Wajib Dilengkapi</h4>
+                                <p class="text-sm text-red-700 mt-1">
+                                    Untuk dapat membuat usulan jabatan, Anda harus melengkapi data profil terlebih dahulu. 
+                                    Berikut adalah field yang masih kosong:
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        @foreach($missingFields as $field)
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                                <div class="flex items-center">
+                                    <i data-lucide="x-circle" class="w-4 h-4 text-red-500 mr-2"></i>
+                                    <span class="text-sm text-red-800 font-medium">
+                                        @switch($field)
+                                            @case('nama_lengkap')
+                                                Nama Lengkap
+                                                @break
+                                            @case('nip')
+                                                NIP
+                                                @break
+                                            @case('email')
+                                                Email
+                                                @break
+                                            @case('tempat_lahir')
+                                                Tempat Lahir
+                                                @break
+                                            @case('tanggal_lahir')
+                                                Tanggal Lahir
+                                                @break
+                                            @case('jenis_kelamin')
+                                                Jenis Kelamin
+                                                @break
+                                            @case('nomor_handphone')
+                                                Nomor Handphone
+                                                @break
+
+                                            @case('gelar_belakang')
+                                                Gelar Belakang
+                                                @break
+                                            @case('nama_universitas_sekolah')
+                                                Nama Universitas/Sekolah
+                                                @break
+                                            @case('nama_prodi_jurusan')
+                                                Nama Program Studi/Jurusan
+                                                @break
+                                            @case('disertasi_thesis_terakhir')
+                                                Disertasi/Thesis Terakhir
+                                                @break
+                                            @case('ijazah_terakhir')
+                                                Ijazah Terakhir
+                                                @break
+                                            @case('transkrip_nilai_terakhir')
+                                                Transkrip Nilai Terakhir
+                                                @break
+                                            @case('sk_pangkat_terakhir')
+                                                SK Pangkat Terakhir
+                                                @break
+                                            @case('sk_jabatan_terakhir')
+                                                SK Jabatan Terakhir
+                                                @break
+                                            @case('skp_tahun_pertama')
+                                                SKP Tahun {{ date('Y') - 1 }}
+                                                @break
+                                            @case('skp_tahun_kedua')
+                                                SKP Tahun {{ date('Y') - 2 }}
+                                                @break
+                                            @default
+                                                {{ ucwords(str_replace('_', ' ', $field)) }}
+                                        @endswitch
+                                    </span>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    
+                    <div class="mt-6 flex justify-center">
+                        <a href="{{ route('pegawai-unmul.profile.show') }}" 
+                           class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2">
+                            <i data-lucide="user" class="w-4 h-4"></i>
+                            My Profil
+                        </a>
+                    </div>
+                </div>
+            </div>
         @endif
     </div>
 </div>
 
+{{-- Include Confirmation Modal --}}
+@include('backend.layouts.views.pegawai-unmul.usul-jabatan.components.confirmation-modal')
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Form validation - SIMPLIFIED
     const form = document.getElementById('usulan-form');
-    if (form) {
-        console.log('Form found, validation active');
-
-        form.addEventListener('submit', function(e) {
-            console.log('Form submission attempted');
-            console.log('Form action:', form.action);
-            console.log('Form method:', form.method);
-
-            // Check if action is selected
-            const actionField = form.querySelector('input[name="action"]:checked, button[name="action"][type="submit"]');
-            if (!actionField) {
-                e.preventDefault();
-                console.log('No action selected - preventing submission');
-                alert('Mohon pilih aksi (Simpan Usulan, Kirim Usulan, atau Kirim ke Universitas/Fakultas).');
-                return;
-            }
-
-            console.log('Action selected:', actionField.value);
-            console.log('Basic validation passed - allowing submission');
+    if (!form) return;
+    
+    // Track which button was clicked
+    let clickedButton = null;
+    
+    // Add click listeners to all submit buttons
+    const submitButtons = form.querySelectorAll('button[type="submit"][name="action"]');
+    submitButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            clickedButton = this;
+            // Don't prevent default here - let form submit naturally
         });
-    } else {
-        console.log('Form not found');
-    }
+    });
+    
+    // Form submit handler
+    form.addEventListener('submit', function(e) {
+        console.log('Form submission attempted');
+        
+        // Check if we have a clicked button
+        if (!clickedButton) {
+            e.preventDefault();
+            alert('Mohon pilih aksi (Simpan Usulan atau Kirim Usulan).');
+            return false;
+        }
+        
+        // Add hidden input for action value
+        let actionInput = form.querySelector('input[name="action"][type="hidden"]');
+        if (!actionInput) {
+            actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'action';
+            form.appendChild(actionInput);
+        }
+        actionInput.value = clickedButton.value;
+        
+        console.log('Action selected:', clickedButton.value);
+        console.log('Form submitting with action:', actionInput.value);
+        
+        // Reset for next submission
+        clickedButton = null;
+        
+        // Allow form submission
+        return true;
+    });
 });
+function submitForm(action) {
+    const form = document.getElementById('usulan-form');
+    if (!form) {
+        console.error('Form usulan-form not found');
+        return;
+    }
+    
+    // Remove any existing action input
+    const existingAction = form.querySelector('input[name="action"]');
+    if (existingAction) {
+        existingAction.remove();
+    }
+    
+    // Create new hidden input for action
+    const actionInput = document.createElement('input');
+    actionInput.type = 'hidden';
+    actionInput.name = 'action';
+    actionInput.value = action;
+    form.appendChild(actionInput);
+    
+    console.log('Submitting form with action:', action);
+    
+    // Submit form
+    form.submit();
+}
+
+// Optional: Add confirmation modal if needed
+function showConfirmationModal(action, form) {
+    if (confirm('Apakah Anda yakin ingin mengirim usulan ini?')) {
+        submitForm(action);
+    }
+}
 </script>
 @endsection
 

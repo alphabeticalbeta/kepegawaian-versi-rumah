@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Backend\PegawaiUnmul;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\BackendUnivUsulan\Usulan;
-use App\Models\BackendUnivUsulan\Pegawai;
-use App\Models\BackendUnivUsulan\PeriodeUsulan;
+use App\Models\KepegawaianUniversitas\Usulan;
+use App\Models\KepegawaianUniversitas\Pegawai;
+use App\Models\KepegawaianUniversitas\PeriodeUsulan;
 
 class DashboardController extends Controller
 {
@@ -62,11 +62,11 @@ class DashboardController extends Controller
     {
         return [
             'total_usulan' => Usulan::where('pegawai_id', $pegawaiId)->count(),
-            'usulan_pending' => Usulan::where('pegawai_id', $pegawaiId)->where('status_usulan', 'Diajukan')->count(),
-            'usulan_approved' => Usulan::where('pegawai_id', $pegawaiId)->where('status_usulan', 'Direkomendasikan')->count(),
-            'usulan_rejected' => Usulan::where('pegawai_id', $pegawaiId)->where('status_usulan', 'Ditolak')->count(),
-            'usulan_returned' => Usulan::where('pegawai_id', $pegawaiId)->where('status_usulan', 'Perlu Perbaikan')->count(),
-            'usulan_draft' => Usulan::where('pegawai_id', $pegawaiId)->where('status_usulan', 'Draft')->count(),
+            'usulan_pending' => Usulan::where('pegawai_id', $pegawaiId)->where('status_usulan', \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DIKIRIM_KE_ADMIN_FAKULTAS)->count(),
+            'usulan_approved' => Usulan::where('pegawai_id', $pegawaiId)->where('status_usulan', \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN)->count(),
+            'usulan_rejected' => Usulan::where('pegawai_id', $pegawaiId)->where('status_usulan', \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN)->count(),
+            'usulan_returned' => Usulan::where('pegawai_id', $pegawaiId)->where('status_usulan', \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_ADMIN_FAKULTAS)->count(),
+            'usulan_draft' => Usulan::where('pegawai_id', $pegawaiId)->where('status_usulan', \App\Models\KepegawaianUniversitas\Usulan::STATUS_DRAFT_USULAN)->count(),
         ];
     }
 

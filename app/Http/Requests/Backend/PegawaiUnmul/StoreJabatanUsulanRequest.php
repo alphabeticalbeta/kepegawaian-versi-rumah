@@ -4,8 +4,8 @@ namespace App\Http\Requests\Backend\PegawaiUnmul;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
-use App\Models\BackendUnivUsulan\PeriodeUsulan;
-use App\Models\BackendUnivUsulan\Usulan;
+use App\Models\KepegawaianUniversitas\PeriodeUsulan;
+use App\Models\KepegawaianUniversitas\Usulan;
 
 
 class StoreJabatanUsulanRequest extends FormRequest
@@ -18,19 +18,28 @@ class StoreJabatanUsulanRequest extends FormRequest
     public function rules(): array
     {
         $pegawai = Auth::user();
-        $jenisUsulan = $this->determineJenisUsulan($pegawai);
+        $jenisUsulanPeriode = $this->determineJenisUsulanPeriode($pegawai);
+
+        // ADDED: Debug logging untuk rules
+        \Log::info('StoreJabatanUsulanRequest rules generation', [
+            'user_id' => $pegawai->id ?? null,
+            'jenis_pegawai' => $pegawai->jenis_pegawai ?? null,
+            'status_kepegawaian' => $pegawai->status_kepegawaian ?? null,
+            'jabatan_saat_usul' => $pegawai->jabatan_saat_usul ?? null,
+            'jenis_usulan_periode' => $jenisUsulanPeriode
+        ]);
 
         $rules = [
             // PERIODE USULAN - Keep required
             'periode_usulan_id' => [
                 'required',
                 'exists:periode_usulans,id',
-                function ($attribute, $value, $fail) use ($jenisUsulan) {
+                function ($attribute, $value, $fail) use ($jenisUsulanPeriode) {
                     $periode = PeriodeUsulan::find($value);
                     if (!$periode || $periode->status !== 'Buka') {
                         $fail('Periode usulan tidak valid atau sudah tidak aktif.');
                     }
-                    if ($periode->jenis_usulan !== $jenisUsulan) {
+                    if ($periode->jenis_usulan !== $jenisUsulanPeriode) {
                         $fail('Periode usulan tidak sesuai dengan jenis pegawai Anda.');
                     }
                     if ($periode->tanggal_mulai > now() || $periode->tanggal_selesai < now()) {
@@ -78,7 +87,7 @@ class StoreJabatanUsulanRequest extends FormRequest
             'catatan' => 'nullable|string|max:1000',
 
             // ACTION - Keep required
-            'action' => 'required|string|in:save_draft,submit,submit_to_university,submit_to_fakultas',
+            'action' => 'required|string|in:save_draft,submit_to_fakultas,submit_perbaikan_fakultas,submit_perbaikan_university,submit_perbaikan_penilai',
         ];
 
         return $rules;
@@ -90,16 +99,27 @@ class StoreJabatanUsulanRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
+            // ADDED: Debug logging untuk validation
+            $pegawai = Auth::user();
+            $jenisUsulanPeriode = $this->determineJenisUsulanPeriode($pegawai);
+            
+            \Log::info('StoreJabatanUsulanRequest validation debug', [
+                'user_id' => $pegawai->id ?? null,
+                'jenis_pegawai' => $pegawai->jenis_pegawai ?? null,
+                'status_kepegawaian' => $pegawai->status_kepegawaian ?? null,
+                'jabatan_saat_usul' => $pegawai->jabatan_saat_usul ?? null,
+                'jenis_usulan_periode' => $jenisUsulanPeriode,
+                'request_data' => $this->all(),
+                'validation_errors' => $validator->errors()->toArray()
+            ]);
+
             // FIXED: Route parameter name - changed from 'usulanJabatan' to 'usulan'
             // Cek usulan aktif hanya untuk create (bukan update)
             if (!$this->route('usulan')) {
-                $pegawai = Auth::user();
                 if ($pegawai) {
-                    $jenisUsulan = $this->determineJenisUsulan($pegawai);
-
                     $usulanAktif = Usulan::where('pegawai_id', $pegawai->id)
-                        ->where('jenis_usulan', $jenisUsulan)
-                        ->whereNotIn('status_usulan', ['Direkomendasikan', 'Ditolak'])
+                        ->where('jenis_usulan', $jenisUsulanPeriode)
+                        ->whereNotIn('status_usulan', [Usulan::STATUS_DIREKOMENDASIKAN, Usulan::STATUS_TIDAK_DIREKOMENDASIKAN])
                         ->exists();
 
                     if ($usulanAktif) {
@@ -196,7 +216,7 @@ class StoreJabatanUsulanRequest extends FormRequest
             return 'unknown';
         }
 
-        $jabatanTujuan = \App\Models\BackendUnivUsulan\Jabatan::where('jenis_pegawai', $pegawai->jenis_pegawai)
+        $jabatanTujuan = \App\Models\KepegawaianUniversitas\Jabatan::where('jenis_pegawai', $pegawai->jenis_pegawai)
                       ->where('jenis_jabatan', $jabatanLama->jenis_jabatan)
                       ->where('id', '>', $jabatanLama->id)
                       ->orderBy('id', 'asc')
@@ -215,14 +235,28 @@ class StoreJabatanUsulanRequest extends FormRequest
         };
     }
 
-    private function determineJenisUsulan($pegawai): string
+    private function determineJenisUsulanPeriode($pegawai): string
     {
         if ($pegawai->jenis_pegawai === 'Dosen' && $pegawai->status_kepegawaian === 'Dosen PNS') {
-            return 'Usulan Jabatan';
+            // Cek jabatan saat ini untuk menentukan jenis usulan
+            // Gunakan relasi jabatan jika field jabatan_saat_usul kosong
+            $jabatanSaatIni = $pegawai->jabatan_saat_usul ?? $pegawai->jabatan->jabatan ?? null;
+            
+            if ($jabatanSaatIni === 'Tenaga Pengajar') {
+                // Jika jabatan Tenaga Pengajar, untuk pengangkatan pertama
+                return 'jabatan-dosen-pengangkatan';
+            } elseif (in_array($jabatanSaatIni, ['Asisten Ahli', 'Lektor', 'Lektor Kepala', 'Guru Besar'])) {
+                // Jika jabatan minimal Asisten Ahli, untuk kenaikan jabatan regular
+                return 'jabatan-dosen-regular';
+            } else {
+                // Fallback untuk jabatan lain
+                return 'jabatan-dosen-regular';
+            }
         } elseif ($pegawai->jenis_pegawai === 'Tenaga Kependidikan' && $pegawai->status_kepegawaian === 'Tenaga Kependidikan PNS') {
-            return 'Usulan Jabatan';
+            return 'jabatan-tenaga-kependidikan';
         }
-        return 'Usulan Jabatan'; // Fallback
+
+        return 'jabatan-dosen-regular'; // Fallback
     }
 
     private function getFileValidation(string $fieldName, bool $alwaysRequired = false): string

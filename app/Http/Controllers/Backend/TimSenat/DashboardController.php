@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Backend\TimSenat;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\BackendUnivUsulan\Usulan;
-use App\Models\BackendUnivUsulan\Pegawai;
+use App\Models\KepegawaianUniversitas\Usulan;
+use App\Models\KepegawaianUniversitas\Pegawai;
 
 class DashboardController extends Controller
 {
@@ -20,6 +20,7 @@ class DashboardController extends Controller
                 return view('backend.layouts.views.tim-senat.dashboard', [
                     'stats' => $this->getDefaultStats(),
                     'recentUsulans' => collect(),
+                    'usulans' => collect(),
                     'user' => null
                 ]);
             }
@@ -29,10 +30,30 @@ class DashboardController extends Controller
                 'total_usulan_dosen' => Usulan::whereHas('pegawai', function($q) {
                     $q->where('jenis_pegawai', 'Dosen');
                 })->count(),
-                'usulan_pending_review' => Usulan::where('status_usulan', 'Menunggu Review Senat')->count(),
-                'usulan_reviewed' => Usulan::where('status_usulan', 'Sudah Direview Senat')->count(),
+                'usulan_pending_review' => Usulan::where('status_usulan', \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN)->count(),
+                'usulan_reviewed' => Usulan::where('status_usulan', \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DIREKOMENDASIKAN_OLEH_TIM_SENAT)->count(),
                 'total_dosen' => Pegawai::where('jenis_pegawai', 'Dosen')->count(),
             ];
+
+            // Get all usulans for Tim Senat dashboard with all required relationships
+            $usulans = Usulan::with([
+                'pegawai:id,nama_lengkap,nip,unit_kerja_id,sub_sub_unit_kerja_id',
+                'pegawai.unitKerja:id,nama',
+                'pegawai.subSubUnitKerja:id,nama',
+                'jabatanLama:id,jabatan',
+                'jabatanTujuan:id,jabatan',
+                'periodeUsulan:id,nama_periode,tanggal_mulai,tanggal_selesai',
+                'penilais:id,nama_lengkap,nip'
+            ])
+            ->whereIn('status_usulan', [
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DIREKOMENDASIKAN_OLEH_TIM_SENAT,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_USULAN_DARI_TIM_SISTER
+            ])
+            ->latest()
+            ->get();
 
             // Recent activities
             $recentUsulans = Usulan::with(['pegawai:id,nama_lengkap,nip', 'jabatanTujuan'])
@@ -46,6 +67,7 @@ class DashboardController extends Controller
             return view('backend.layouts.views.tim-senat.dashboard', [
                 'stats' => $stats,
                 'recentUsulans' => $recentUsulans,
+                'usulans' => $usulans,
                 'user' => $user
             ]);
         } catch (\Exception $e) {
@@ -59,6 +81,7 @@ class DashboardController extends Controller
             return view('backend.layouts.views.tim-senat.dashboard', [
                 'stats' => $this->getDefaultStats(),
                 'recentUsulans' => collect(),
+                'usulans' => collect(),
                 'user' => Auth::guard('pegawai')->user(),
                 'error' => 'Terjadi kesalahan saat memuat dashboard. Silakan coba lagi.'
             ]);
