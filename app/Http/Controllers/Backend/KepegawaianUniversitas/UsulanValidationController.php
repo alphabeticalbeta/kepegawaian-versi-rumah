@@ -117,6 +117,7 @@ class UsulanValidationController extends Controller
             \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS,
             \App\Models\KepegawaianUniversitas\Usulan::STATUS_MENUNGGU_HASIL_PENILAIAN_TIM_PENILAI,
             \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
+            \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS,
             \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS
         ];
 
@@ -135,6 +136,7 @@ class UsulanValidationController extends Controller
             \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS,
             \App\Models\KepegawaianUniversitas\Usulan::STATUS_MENUNGGU_HASIL_PENILAIAN_TIM_PENILAI,
             \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
+            \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS,
             \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS
         ]);
 
@@ -200,7 +202,7 @@ class UsulanValidationController extends Controller
         }
 
         // Validasi untuk action yang memerlukan catatan
-        if (in_array($actionType, ['perbaikan_ke_pegawai', 'perbaikan_ke_fakultas', 'kirim_perbaikan_ke_penilai', 'tidak_direkomendasikan', 'kirim_ke_senat'])) {
+        if (in_array($actionType, ['perbaikan_ke_pegawai', 'perbaikan_ke_fakultas', 'perbaikan_penilai_ke_pegawai', 'perbaikan_penilai_ke_fakultas', 'kirim_perbaikan_ke_penilai', 'tidak_direkomendasikan', 'kirim_ke_senat'])) {
             $catatan = $request->input('catatan_verifikator');
             if (empty($catatan) || strlen(trim($catatan)) < 10) {
                 return response()->json([
@@ -231,6 +233,10 @@ class UsulanValidationController extends Controller
                 return $this->perbaikanKePegawai($request, $usulan);
             } elseif ($actionType === 'perbaikan_ke_fakultas') {
                 return $this->perbaikanKeFakultas($request, $usulan);
+            } elseif ($actionType === 'perbaikan_penilai_ke_pegawai') {
+                return $this->perbaikanPenilaiKePegawai($request, $usulan);
+            } elseif ($actionType === 'perbaikan_penilai_ke_fakultas') {
+                return $this->perbaikanPenilaiKeFakultas($request, $usulan);
             } elseif ($actionType === 'kirim_perbaikan_ke_penilai') {
                 return $this->kirimPerbaikanKePenilai($request, $usulan);
             } elseif ($actionType === 'kirim_ke_senat') {
@@ -1011,8 +1017,8 @@ class UsulanValidationController extends Controller
 
         $catatan = $request->input('catatan_verifikator');
 
-        // Update usulan status back to review
-        $usulan->status_usulan = \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS;
+        // Update usulan status with new constant
+        $usulan->status_usulan = \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS;
 
         // Add action data to validasi_data
         $currentValidasi = $usulan->validasi_data ?? [];
@@ -1451,5 +1457,93 @@ class UsulanValidationController extends Controller
                 'error' => $e->getMessage()
             ]);
         }
+    }
+
+    /**
+     * Handle perbaikan penilai ke pegawai action
+     */
+    private function perbaikanPenilaiKePegawai(Request $request, Usulan $usulan)
+    {
+        $catatan = $request->input('catatan_verifikator');
+
+        // AUTO-SAVE: Simpan validasi field terlebih dahulu
+        if ($request->has('validation')) {
+            $validationData = $request->input('validation');
+            $usulan->setValidasiByRole('kepegawaian_universitas', $validationData, Auth::id());
+        }
+
+        // Update usulan status dengan konstanta baru
+        $usulan->status_usulan = \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_PENILAI;
+        $usulan->catatan_verifikator = $catatan;
+
+        // Add action data to validasi_data
+        $currentValidasi = $usulan->validasi_data ?? [];
+        $currentValidasi['kepegawaian_universitas'] = $currentValidasi['kepegawaian_universitas'] ?? [];
+        $currentValidasi['kepegawaian_universitas']['perbaikan_penilai_ke_pegawai'] = [
+            'catatan' => $catatan,
+            'tanggal_action' => now()->toDateTimeString(),
+            'admin_id' => Auth::id(),
+            'action' => 'perbaikan_penilai_ke_pegawai',
+            'status_sebelumnya' => $usulan->getOriginal('status_usulan')
+        ];
+        $usulan->validasi_data = $currentValidasi;
+        $usulan->save();
+
+        // Create usulan log
+        $this->createUsulanLog($usulan, 'Permintaan Perbaikan Ke Pegawai Dari Penilai', "Permintaan perbaikan dari Tim Penilai diteruskan ke Pegawai: {$catatan}");
+
+        // Clear caches
+        $cacheKey = "usulan_validation_{$usulan->id}_kepegawaian_universitas";
+        Cache::forget($cacheKey);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Permintaan perbaikan dari Tim Penilai berhasil diteruskan ke Pegawai.',
+            'redirect' => route('backend.kepegawaian-universitas.usulan.index')
+        ]);
+    }
+
+    /**
+     * Handle perbaikan penilai ke fakultas action
+     */
+    private function perbaikanPenilaiKeFakultas(Request $request, Usulan $usulan)
+    {
+        $catatan = $request->input('catatan_verifikator');
+
+        // AUTO-SAVE: Simpan validasi field terlebih dahulu
+        if ($request->has('validation')) {
+            $validationData = $request->input('validation');
+            $usulan->setValidasiByRole('kepegawaian_universitas', $validationData, Auth::id());
+        }
+
+        // Update usulan status dengan konstanta baru
+        $usulan->status_usulan = \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_ADMIN_FAKULTAS_DARI_PENILAI;
+        $usulan->catatan_verifikator = $catatan;
+
+        // Add action data to validasi_data
+        $currentValidasi = $usulan->validasi_data ?? [];
+        $currentValidasi['kepegawaian_universitas'] = $currentValidasi['kepegawaian_universitas'] ?? [];
+        $currentValidasi['kepegawaian_universitas']['perbaikan_penilai_ke_fakultas'] = [
+            'catatan' => $catatan,
+            'tanggal_action' => now()->toDateTimeString(),
+            'admin_id' => Auth::id(),
+            'action' => 'perbaikan_penilai_ke_fakultas',
+            'status_sebelumnya' => $usulan->getOriginal('status_usulan')
+        ];
+        $usulan->validasi_data = $currentValidasi;
+        $usulan->save();
+
+        // Create usulan log
+        $this->createUsulanLog($usulan, 'Permintaan Perbaikan Ke Admin Fakultas Dari Penilai', "Permintaan perbaikan dari Tim Penilai diteruskan ke Admin Fakultas: {$catatan}");
+
+        // Clear caches
+        $cacheKey = "usulan_validation_{$usulan->id}_kepegawaian_universitas";
+        Cache::forget($cacheKey);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Permintaan perbaikan dari Tim Penilai berhasil diteruskan ke Admin Fakultas.',
+            'redirect' => route('backend.kepegawaian-universitas.usulan.index')
+        ]);
     }
 }

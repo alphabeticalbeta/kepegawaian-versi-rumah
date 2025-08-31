@@ -88,30 +88,33 @@ class PenilaiService
         $cacheKey = "penilai_statistics_{$penilaiId}";
 
         return Cache::remember($cacheKey, 300, function () use ($penilaiId) {
-            $usulans = Usulan::whereHas('penilais', function ($penilaiQuery) use ($penilaiId) {
+            // Base query untuk usulan yang ditugaskan ke penilai
+            $baseQuery = Usulan::whereHas('penilais', function ($penilaiQuery) use ($penilaiId) {
                 $penilaiQuery->where('penilai_id', $penilaiId);
             });
 
             return [
-                'total_assigned' => $usulans->count(),
-                'pending_review' => $usulans->whereIn('status_usulan', [
+                'total_assigned' => $baseQuery->count(),
+                'pending_review' => $baseQuery->clone()->whereIn('status_usulan', [
                     Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS,
                     Usulan::STATUS_MENUNGGU_HASIL_PENILAIAN_TIM_PENILAI,
-                    Usulan::STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS
+                    Usulan::STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
+                    Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS
                 ])->count(),
-                'completed_review' => $usulans->whereIn('status_usulan', [
+                'completed_review' => $baseQuery->clone()->whereIn('status_usulan', [
                     Usulan::STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS,
                     Usulan::STATUS_DIREKOMENDASIKAN
                 ])->count(),
                 'by_status' => [
-                    'Usulan Dikirim ke Admin Fakultas' => $usulans->where('status_usulan', Usulan::STATUS_USULAN_DIKIRIM_KE_ADMIN_FAKULTAS)->count(),
-                    'Usulan Disetujui Admin Fakultas' => $usulans->where('status_usulan', Usulan::STATUS_USULAN_DISETUJUI_ADMIN_FAKULTAS)->count(),
-                    'Usulan Disetujui Kepegawaian Universitas' => $usulans->where('status_usulan', Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS)->count(),
-                    'Menunggu Hasil Penilaian Tim Penilai' => $usulans->where('status_usulan', Usulan::STATUS_MENUNGGU_HASIL_PENILAIAN_TIM_PENILAI)->count(),
-                    'Usulan Perbaikan dari Penilai Universitas' => $usulans->where('status_usulan', Usulan::STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS)->count(),
-                    'Usulan Direkomendasi Penilai Universitas' => $usulans->where('status_usulan', Usulan::STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS)->count(),
-                    'Direkomendasikan' => $usulans->where('status_usulan', Usulan::STATUS_DIREKOMENDASIKAN)->count(),
-                    'Tidak Direkomendasikan' => $usulans->where('status_usulan', Usulan::STATUS_TIDAK_DIREKOMENDASIKAN)->count(),
+                    'Usulan Dikirim ke Admin Fakultas' => $baseQuery->clone()->where('status_usulan', Usulan::STATUS_USULAN_DIKIRIM_KE_ADMIN_FAKULTAS)->count(),
+                    'Usulan Disetujui Admin Fakultas' => $baseQuery->clone()->where('status_usulan', Usulan::STATUS_USULAN_DISETUJUI_ADMIN_FAKULTAS)->count(),
+                    'Usulan Disetujui Kepegawaian Universitas' => $baseQuery->clone()->where('status_usulan', Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS)->count(),
+                    'Menunggu Hasil Penilaian Tim Penilai' => $baseQuery->clone()->where('status_usulan', Usulan::STATUS_MENUNGGU_HASIL_PENILAIAN_TIM_PENILAI)->count(),
+                    'Usulan Perbaikan dari Penilai Universitas' => $baseQuery->clone()->where('status_usulan', Usulan::STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS)->count(),
+                    'Usulan Perbaikan Ke Penilai Universitas' => $baseQuery->clone()->where('status_usulan', Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS)->count(),
+                    'Usulan Direkomendasi Penilai Universitas' => $baseQuery->clone()->where('status_usulan', Usulan::STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS)->count(),
+                    'Direkomendasikan' => $baseQuery->clone()->where('status_usulan', Usulan::STATUS_DIREKOMENDASIKAN)->count(),
+                    'Tidak Direkomendasikan' => $baseQuery->clone()->where('status_usulan', Usulan::STATUS_TIDAK_DIREKOMENDASIKAN)->count(),
                 ]
             ];
         });
@@ -353,29 +356,19 @@ class PenilaiService
 
         return Cache::remember($cacheKey, 300, function () use ($penilaiId) {
             // Get active periods that have usulans assigned to this penilai
-            // PERBAIKAN: Ambil periode yang memiliki usulan dengan status yang relevan untuk penilai
+            // Logika: Tampilkan periode jika status "Buka" dan ada penugasan penilai (terlepas dari status usulan)
             $activePeriods = \App\Models\KepegawaianUniversitas\PeriodeUsulan::where('status', 'Buka')
                 ->whereHas('usulans', function($query) use ($penilaiId) {
                     $query->whereHas('penilais', function($penilaiQuery) use ($penilaiId) {
                         $penilaiQuery->where('penilai_id', $penilaiId);
-                    })
-                    ->whereIn('status_usulan', [
-                        Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS,
-                        Usulan::STATUS_MENUNGGU_HASIL_PENILAIAN_TIM_PENILAI,
-                        Usulan::STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
-                        Usulan::STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS
-                    ]);
+                    });
+                    // Tidak ada filter status_usulan - semua usulan yang ditugaskan ke penilai
                 })
                 ->with(['usulans' => function($query) use ($penilaiId) {
                     $query->whereHas('penilais', function($penilaiQuery) use ($penilaiId) {
                         $penilaiQuery->where('penilai_id', $penilaiId);
                     })
-                    ->whereIn('status_usulan', [
-                        Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS,
-                        Usulan::STATUS_MENUNGGU_HASIL_PENILAIAN_TIM_PENILAI,
-                        Usulan::STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
-                        Usulan::STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS
-                    ])
+                    // Tampilkan semua usulan yang ditugaskan ke penilai (terlepas dari status)
                     ->with(['pegawai:id,nama_lengkap,nip', 'penilais:id,nama_lengkap'])
                     ->latest()
                     ->limit(5);
@@ -390,6 +383,7 @@ class PenilaiService
                     Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS,
                     Usulan::STATUS_MENUNGGU_HASIL_PENILAIAN_TIM_PENILAI,
                     Usulan::STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
+                    Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS,
                     Usulan::STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS
                 ])
                 ->with(['pegawai:id,nama_lengkap,nip', 'periodeUsulan'])

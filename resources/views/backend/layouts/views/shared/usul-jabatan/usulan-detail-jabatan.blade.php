@@ -243,7 +243,8 @@
             $canEdit = true;
         } elseif ($currentRole === 'Penilai Universitas' && in_array($usulan->status_usulan, [
             \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS,
-            \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS
+            \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
+            \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS
         ])) {
             $canEdit = true;
         } elseif ($currentRole === 'Kepegawaian Universitas' && in_array($usulan->status_usulan, [

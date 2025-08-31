@@ -34,15 +34,6 @@
             }
         }
 
-        // Debug information
-        \Log::info('Penilai Validation Debug', [
-            'current_penilai_id' => $currentPenilaiId,
-            'has_current_penilai_data' => !empty($currentPenilaiData),
-            'current_penilai_data' => $currentPenilaiData,
-            'invalid_fields_count' => count($invalidFields),
-            'general_notes_count' => count($generalNotes),
-            'validasi_data' => $usulan->validasi_data
-        ]);
     @endphp
 
         @if($currentPenilaiData && is_array($currentPenilaiData))

@@ -212,6 +212,7 @@ const additionalButtons = [
     { id: 'btn-perbaikan-universitas-fakultas', handler: () => showPerbaikanKeFakultasModal() },
     { id: 'btn-perbaikan-penilai-universitas-pegawai', handler: () => showPerbaikanKePegawaiModal() },
     { id: 'btn-perbaikan-penilai-universitas-fakultas', handler: () => showPerbaikanKeFakultasModal() },
+    { id: 'btn-kirim-perbaikan-ke-penilai', handler: () => showKirimPerbaikanKePenilaiModal() },
     // Penilai Universitas buttons
     { id: 'btn-autosave-penilai', handler: () => submitAction('autosave', '') },
     { id: 'btn-rekomendasikan-penilai', handler: () => showRekomendasiPenilaiModal() },
@@ -549,7 +550,7 @@ function showResubmitUniversityModal() {
 
 function showPerbaikanKeFakultasModal() {
     Swal.fire({
-        title: 'Permintaan Perbaikan Ke Admin Fakultas',
+        title: 'Permintaan Perbaikan Penilai Ke Admin Fakultas',
         html: `
             <div class="text-left">
                 <div class="mb-4">
@@ -557,7 +558,7 @@ function showPerbaikanKeFakultasModal() {
                         <div class="flex items-center">
                             <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600 mr-2"></i>
                             <span class="text-sm text-amber-800">
-                                <strong>Peringatan:</strong> Usulan akan dikembalikan ke Admin Fakultas untuk perbaikan.
+                                <strong>Peringatan:</strong> Permintaan perbaikan dari Penilai akan diteruskan ke Admin Fakultas.
                             </span>
                         </div>
                     </div>
@@ -643,7 +644,7 @@ function showPerbaikanKeFakultasModal() {
                     form.appendChild(catatanVerifikatorInput);
 
                     // Auto-save validasi + send perbaikan
-                    submitAction('perbaikan_ke_fakultas', '');
+                    submitAction('perbaikan_penilai_ke_fakultas', '');
                 }
             });
         }
@@ -652,7 +653,7 @@ function showPerbaikanKeFakultasModal() {
 
 function showPerbaikanKePegawaiModal() {
     Swal.fire({
-        title: 'Permintaan Perbaikan Ke Pegawai',
+        title: 'Permintaan Perbaikan Penilai Ke Pegawai',
         html: `
             <div class="text-left">
                 <div class="mb-4">
@@ -660,7 +661,7 @@ function showPerbaikanKePegawaiModal() {
                         <div class="flex items-center">
                             <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600 mr-2"></i>
                             <span class="text-sm text-red-800">
-                                <strong>Peringatan:</strong> Usulan akan dikembalikan ke Pegawai untuk perbaikan.
+                                <strong>Peringatan:</strong> Permintaan perbaikan dari Penilai akan diteruskan ke Pegawai.
                             </span>
                         </div>
                     </div>
@@ -671,7 +672,7 @@ function showPerbaikanKePegawaiModal() {
                                 <strong>Informasi:</strong>
                                 <ul class="mt-2 list-disc list-inside space-y-1">
                                     <li>Pegawai akan menerima notifikasi perbaikan</li>
-                                    <li>Usulan akan kembali ke status "Permintaan Perbaikan dari Kepegawaian Universitas"</li>
+                                    <li>Usulan akan kembali ke status "Permintaan Perbaikan Ke Pegawai Dari Penilai"</li>
                                     <li>Pegawai dapat memperbaiki dan mengirim kembali</li>
                                     <li>Proses dapat berulang hingga usulan sesuai standar</li>
                                 </ul>
@@ -719,7 +720,7 @@ function showPerbaikanKePegawaiModal() {
                             <i data-lucide="alert-circle" class="w-16 h-16 text-red-500 mx-auto mb-4"></i>
                             <p class="text-lg font-semibold text-gray-800 mb-2">Apakah Anda yakin?</p>
                             <p class="text-sm text-gray-600 mb-4">
-                                Usulan akan dikirim kembali ke Pegawai dengan status "Permintaan Perbaikan dari Kepegawaian Universitas"
+                                Usulan akan dikirim kembali ke Pegawai dengan status "Permintaan Perbaikan Ke Pegawai Dari Penilai"
                             </p>
                         </div>
                         <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-left">
@@ -746,7 +747,7 @@ function showPerbaikanKePegawaiModal() {
                     form.appendChild(catatanVerifikatorInput);
 
                     // Auto-save validasi + send perbaikan
-                    submitAction('perbaikan_ke_pegawai', '');
+                    submitAction('perbaikan_penilai_ke_pegawai', '');
                 }
             });
         }
@@ -1206,5 +1207,108 @@ additionalButtons.forEach(button => {
         console.log(`❌ ${button.id} element not found`);
     }
 });
+
+function showKirimPerbaikanKePenilaiModal() {
+    Swal.fire({
+        title: 'Kirim Kembali ke Penilai Universitas',
+        html: `
+            <div class="text-left">
+                <div class="mb-4">
+                    <div class="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-center">
+                            <i data-lucide="alert-triangle" class="w-5 h-5 text-orange-600 mr-2"></i>
+                            <span class="text-sm text-orange-800">
+                                <strong>Peringatan:</strong> Usulan akan dikirim kembali ke Tim Penilai untuk review ulang.
+                            </span>
+                        </div>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex items-center">
+                            <i data-lucide="info" class="w-5 h-5 text-blue-600 mr-2"></i>
+                            <div class="text-sm text-blue-800">
+                                <strong>Informasi:</strong>
+                                <ul class="mt-2 list-disc list-inside space-y-1">
+                                    <li>Tim Penilai akan melakukan review ulang</li>
+                                    <li>Usulan akan kembali ke status "Usulan Perbaikan Ke Penilai Universitas"</li>
+                                    <li>Penilaian sebelumnya mungkin direset</li>
+                                    <li>Proses penilaian akan dimulai dari awal</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i data-lucide="message-square" class="w-4 h-4 inline mr-1"></i>
+                        Catatan untuk Tim Penilai:
+                    </label>
+                    <textarea id="catatan-kirim-ke-penilai"
+                              placeholder="Jelaskan alasan mengirim kembali ke Tim Penilai..."
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none"
+                              rows="4"></textarea>
+                </div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Kirim ke Penilai',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#ea580c',
+        width: '600px',
+        preConfirm: () => {
+            const catatan = document.getElementById('catatan-kirim-ke-penilai').value;
+            if (!catatan || catatan.trim() === '') {
+                Swal.showValidationMessage('Catatan wajib diisi untuk menjelaskan alasan pengiriman ulang ke Tim Penilai');
+                return false;
+            }
+            if (catatan.trim().length < 10) {
+                Swal.showValidationMessage('Catatan minimal 10 karakter untuk memberikan penjelasan yang jelas');
+                return false;
+            }
+            return catatan.trim();
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show confirmation dialog
+            Swal.fire({
+                title: 'Konfirmasi Kirim ke Penilai',
+                html: `
+                    <div class="text-center">
+                        <div class="mb-4">
+                            <i data-lucide="alert-circle" class="w-16 h-16 text-orange-500 mx-auto mb-4"></i>
+                            <p class="text-lg font-semibold text-gray-800 mb-2">Apakah Anda yakin?</p>
+                            <p class="text-sm text-gray-600 mb-4">
+                                Usulan akan dikirim kembali ke Tim Penilai dengan status "Usulan Perbaikan Ke Penilai Universitas"
+                            </p>
+                        </div>
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-left">
+                            <p class="text-sm text-gray-700"><strong>Catatan yang akan dikirim:</strong></p>
+                            <p class="text-sm text-gray-600 mt-1">"${result.value}"</p>
+                        </div>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Kirim ke Penilai',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#ea580c',
+                width: '500px'
+            }).then((finalResult) => {
+                if (finalResult.isConfirmed) {
+                    // AUTO-SAVE + SEND: Simpan validasi dan kirim ke penilai
+                    const form = document.getElementById('action-form');
+
+                    // Set catatan_verifikator
+                    const catatanVerifikatorInput = document.createElement('input');
+                    catatanVerifikatorInput.type = 'hidden';
+                    catatanVerifikatorInput.name = 'catatan_verifikator';
+                    catatanVerifikatorInput.value = result.value;
+                    form.appendChild(catatanVerifikatorInput);
+
+                    // Auto-save validasi + send to penilai
+                    submitAction('kirim_perbaikan_ke_penilai', '');
+                }
+            });
+        }
+    });
+}
 
 </script>

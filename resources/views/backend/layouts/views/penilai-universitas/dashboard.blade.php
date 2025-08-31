@@ -71,10 +71,11 @@
                                 $usulansForAssessment = $periode->usulans->filter(function($usulan) use ($currentPenilaiId) {
                                     return $usulan->penilais->contains('id', $currentPenilaiId) &&
                                            in_array($usulan->status_usulan, [
-                                               'Usulan Disetujui Kepegawaian Universitas',
-                                               'Usulan Disetujui Kepegawaian Universitas dan Menunggu Penilaian',
-                                               'Perbaikan Dari Tim Penilai',
-                                               'Usulan Direkomendasi Tim Penilai'
+                                               \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS,
+                                               \App\Models\KepegawaianUniversitas\Usulan::STATUS_MENUNGGU_HASIL_PENILAIAN_TIM_PENILAI,
+                                               \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
+                                               \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS,
+                                               \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS
                                            ]);
                                 });
                                 $jumlahPenilaian = $usulansForAssessment->count();

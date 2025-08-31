@@ -152,6 +152,7 @@ class Usulan extends Model
                 self::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS,
                 self::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
                 self::STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
+                self::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS,
                 self::STATUS_USULAN_DIREKOMENDASI_DARI_PENILAI_UNIVERSITAS,
                 self::STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS,
                 // Status yang memungkinkan penilai mengakses
@@ -1044,48 +1045,58 @@ class Usulan extends Model
 
         $this->validasi_data = $currentValidasi;
 
-        // Log for debugging
-        \Log::info('setValidasiIndividualPenilai called', [
-            'penilai_id' => $penilaiId,
-            'keterangan_umum' => $keteranganUmum,
-            'input_data' => $validasiData,
-            'individual_penilai_count' => count($currentValidasi['individual_penilai']),
-            'final_structure' => $newPenilaiData,
-            'existing_index' => $existingIndex,
-            'current_validasi_before' => $this->validasi_data,
-            'current_validasi_after' => $currentValidasi
-        ]);
+
     }
 
     /**
      * Get data validasi individual penilai berdasarkan penilai_id
      */
-    public function getValidasiIndividualPenilai(int $penilaiId): ?array
+        public function getValidasiIndividualPenilai(int $penilaiId): ?array
     {
         $currentValidasi = $this->validasi_data ?? [];
         $individualPenilai = $currentValidasi['individual_penilai'] ?? [];
 
-        \Log::info('getValidasiIndividualPenilai called', [
-            'penilai_id' => $penilaiId,
-            'current_validasi' => $currentValidasi,
-            'individual_penilai' => $individualPenilai,
-            'individual_penilai_count' => count($individualPenilai)
-        ]);
 
+
+        // Check in new structure first
         foreach ($individualPenilai as $penilaiData) {
             if (isset($penilaiData['penilai_id']) && $penilaiData['penilai_id'] == $penilaiId) {
-                \Log::info('Found penilai data', [
-                    'penilai_id' => $penilaiId,
-                    'found_data' => $penilaiData
-                ]);
+
                 return $penilaiData;
             }
         }
 
-        \Log::info('No penilai data found', [
-            'penilai_id' => $penilaiId,
-            'searched_in' => $individualPenilai
-        ]);
+        // MIGRATION LOGIC: Check old structure for backward compatibility
+        if (isset($currentValidasi['penilai_universitas']['validation']) &&
+            isset($currentValidasi['penilai_universitas']['validated_by']) &&
+            $currentValidasi['penilai_universitas']['validated_by'] == $penilaiId) {
+
+
+
+            // Convert old structure to new format
+            $oldData = $currentValidasi['penilai_universitas'];
+            $convertedData = [
+                'penilai_id' => $penilaiId,
+                'validation' => $oldData['validation'],
+                'validated_at' => $oldData['validated_at'] ?? now()->toISOString()
+            ];
+
+            // Add keterangan_umum if exists and is not an error message
+            if (isset($oldData['perbaikan_usulan']['catatan'])) {
+                $catatan = $oldData['perbaikan_usulan']['catatan'];
+
+                // Exclude error messages from display
+                if (!str_contains($catatan, 'SQLSTATE') && !str_contains($catatan, 'Terjadi kesalahan')) {
+                    $convertedData['keterangan_umum'] = $catatan;
+                }
+            }
+
+
+
+            return $convertedData;
+        }
+
+
 
         return null;
     }
@@ -1578,6 +1589,9 @@ public function getSenateDecisionCounts(): array
     const STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS = 'Usulan Disetujui Kepegawaian Universitas dan Menunggu Penilaian';
     const STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS = 'Permintaan Perbaikan dari Penilai Universitas';
     const STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS = 'Usulan Perbaikan dari Penilai Universitas';
+    const STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_PENILAI = 'Permintaan Perbaikan Ke Pegawai Dari Penilai';
+    const STATUS_PERMINTAAN_PERBAIKAN_KE_ADMIN_FAKULTAS_DARI_PENILAI = 'Permintaan Perbaikan Ke Admin Fakultas Dari Penilai';
+    const STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS = 'Usulan Perbaikan Ke Penilai Universitas';
     const STATUS_USULAN_DIREKOMENDASI_DARI_PENILAI_UNIVERSITAS = 'Usulan Direkomendasi dari Penilai Universitas';
     const STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS = 'Usulan Direkomendasi Penilai Universitas';
     const STATUS_USULAN_DIREKOMENDASIKAN_OLEH_TIM_SENAT = 'Usulan Direkomendasikan oleh Tim Senat';
