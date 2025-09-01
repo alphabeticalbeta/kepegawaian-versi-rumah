@@ -1667,11 +1667,19 @@ public function getSenateDecisionCounts(): array
         $penilaiAssessmentStatuses = [
             'Usulan Disetujui Kepegawaian Universitas',
             'Permintaan Perbaikan dari Penilai Universitas',
-            'Usulan Direkomendasi dari Penilai Universitas'
+            'Usulan Direkomendasi dari Penilai Universitas',
+            'Usulan Perbaikan Ke Penilai Universitas'
         ];
 
         if (!in_array($this->status_usulan, $penilaiAssessmentStatuses)) {
             return false; // Not in penilai assessment phase
+        }
+
+        // Check if Kepegawaian Universitas has set a flag to prevent auto-update
+        $currentValidasi = $this->validasi_data ?? [];
+        if (isset($currentValidasi['kepegawaian_universitas']['kirim_perbaikan_ke_penilai']['prevent_auto_update']) &&
+            $currentValidasi['kepegawaian_universitas']['kirim_perbaikan_ke_penilai']['prevent_auto_update'] === true) {
+            return false; // Prevent auto-update when flag is set
         }
 
         $penilais = $this->penilais;

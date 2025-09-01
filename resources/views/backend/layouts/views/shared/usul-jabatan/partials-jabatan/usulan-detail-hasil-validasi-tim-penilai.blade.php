@@ -13,24 +13,6 @@
         // Kumpulkan semua field yang tidak sesuai dari Tim Penilai untuk ditampilkan di tabel
         $allPenilaiInvalidFields = [];
 
-        // Proses data individual penilai menggunakan method baru
-        if (!empty($allIndividualPenilaiData)) {
-            foreach ($allIndividualPenilaiData as $penilaiData) {
-                if (isset($penilaiData['penilai_id'])) {
-                    $penilaiId = $penilaiData['penilai_id'];
-                    foreach ($penilaiData as $groupKey => $groupData) {
-                        if (is_array($groupData)) {
-                            foreach ($groupData as $fieldKey => $fieldData) {
-                                if (isset($fieldData['status']) && $fieldData['status'] === 'tidak_sesuai') {
-                                    $allPenilaiInvalidFields[$penilaiId][$groupKey][$fieldKey] = $fieldData;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         // Proses data penilai individual
         if ($penilais->count() > 0) {
             foreach ($penilais as $index => $penilai) {
@@ -496,18 +478,15 @@
                                                         <i data-lucide="x-circle" class="w-4 h-4 mr-2 mt-0.5 text-red-500 flex-shrink-0"></i>
                                                         <span>{{ $field }}</span>
                                                     </div>
-                                                @else
-                                                    <div class="text-sm text-red-800 bg-red-50 px-3 py-2 rounded border-l-4 border-red-400 flex items-start">
-                                                        <i data-lucide="x-circle" class="w-4 h-4 mr-2 mt-0.5 text-red-500 flex-shrink-0"></i>
-                                                        <span>{{ json_encode($field) }}</span>
-                                                    </div>
                                                 @endif
                                             @endforeach
                                         @else
-                                            <div class="text-sm text-red-800 bg-red-50 px-3 py-2 rounded border-l-4 border-red-400 flex items-start">
-                                                <i data-lucide="x-circle" class="w-4 h-4 mr-2 mt-0.5 text-red-500 flex-shrink-0"></i>
-                                                <span>{{ is_string($invalidFields) ? $invalidFields : json_encode($invalidFields) }}</span>
-                                            </div>
+                                            @if(is_string($invalidFields))
+                                                <div class="text-sm text-red-800 bg-red-50 px-3 py-2 rounded border-l-4 border-red-400 flex items-start">
+                                                    <i data-lucide="x-circle" class="w-4 h-4 mr-2 mt-0.5 text-red-500 flex-shrink-0"></i>
+                                                    <span>{{ $invalidFields }}</span>
+                                                </div>
+                                            @endif
                                         @endif
                                     </div>
                                 </div>

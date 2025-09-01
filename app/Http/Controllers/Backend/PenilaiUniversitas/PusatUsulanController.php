@@ -100,7 +100,9 @@ class PusatUsulanController extends Controller
             $allowedStatuses = [
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
-                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_MENUNGGU_HASIL_PENILAIAN_TIM_PENILAI
             ];
 
             $statusAllowed = in_array($usulan->status_usulan, $allowedStatuses);
@@ -109,6 +111,10 @@ class PusatUsulanController extends Controller
             // Khusus untuk STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS,
             // penilai bisa edit meskipun sudah completed sebelumnya
             $isPerbaikanKePenilai = $usulan->status_usulan === \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS;
+
+            // Khusus untuk STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
+            // penilai selalu bisa edit untuk melakukan validasi perbaikan
+            $isPerbaikanDariPenilai = $usulan->status_usulan === \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS;
 
             \Log::info('Penilai canEdit debug', [
                 'usulan_id' => $usulan->id,
@@ -119,14 +125,27 @@ class PusatUsulanController extends Controller
                 'penilai_individual_status' => $penilaiIndividualStatus,
                 'penilai_not_completed' => $penilaiNotCompleted,
                 'is_perbaikan_ke_penilai' => $isPerbaikanKePenilai,
-                'final_can_edit' => $statusAllowed && ($penilaiNotCompleted || $isPerbaikanKePenilai)
+                'is_perbaikan_dari_penilai' => $isPerbaikanDariPenilai,
+                'final_can_edit' => $statusAllowed && ($penilaiNotCompleted || $isPerbaikanKePenilai || $isPerbaikanDariPenilai)
             ]);
 
-            $canEdit = $statusAllowed && ($penilaiNotCompleted || $isPerbaikanKePenilai);
+            $canEdit = $statusAllowed && ($penilaiNotCompleted || $isPerbaikanKePenilai || $isPerbaikanDariPenilai);
 
             // Determine action permissions based on status
-            $canReturn = in_array($usulan->status_usulan, [\App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS, \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS, \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS]);
-            $canForward = in_array($usulan->status_usulan, [\App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS, \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS, \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS]);
+            $canReturn = in_array($usulan->status_usulan, [
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_MENUNGGU_HASIL_PENILAIAN_TIM_PENILAI
+            ]);
+            $canForward = in_array($usulan->status_usulan, [
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_MENUNGGU_HASIL_PENILAIAN_TIM_PENILAI
+            ]);
 
             return view('backend.layouts.views.penilai-universitas.pusat-usulan.detail', [
                 'usulan' => $usulan,
@@ -192,7 +211,10 @@ class PusatUsulanController extends Controller
             // ENHANCED: Check if usulan is in correct status for Penilai Universitas
             $allowedStatuses = [
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS,
-                \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_MENUNGGU_HASIL_PENILAIAN_TIM_PENILAI
             ];
 
             if (!in_array($usulan->status_usulan, $allowedStatuses)) {
@@ -406,8 +428,11 @@ class PusatUsulanController extends Controller
 
         $usulan->validasi_data = $currentValidasi;
 
-        // Set status strictly to the requested constant for correction flow
-        $usulan->status_usulan = \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS;
+        // Determine and update usulan status based on all penilai progress
+        $newStatus = $usulan->determinePenilaiFinalStatus();
+        if ($newStatus) {
+            $usulan->status_usulan = $newStatus;
+        }
 
         $usulan->save();
 
@@ -521,7 +546,9 @@ class PusatUsulanController extends Controller
             // Check 2: Status Validation for Penilai
             $allowedStatuses = [
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS,
-                \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_MENUNGGU_HASIL_PENILAIAN_TIM_PENILAI
             ];
 
             if (!in_array($usulan->status_usulan, $allowedStatuses)) {

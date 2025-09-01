@@ -1028,7 +1028,8 @@ class UsulanValidationController extends Controller
             'tanggal_action' => now()->toDateTimeString(),
             'admin_id' => Auth::id(),
             'action' => 'kirim_perbaikan_ke_penilai',
-            'status_sebelumnya' => $usulan->getOriginal('status_usulan')
+            'status_sebelumnya' => $usulan->getOriginal('status_usulan'),
+            'prevent_auto_update' => true // Flag untuk mencegah auto-update
         ];
         $usulan->validasi_data = $currentValidasi;
         $usulan->save();
