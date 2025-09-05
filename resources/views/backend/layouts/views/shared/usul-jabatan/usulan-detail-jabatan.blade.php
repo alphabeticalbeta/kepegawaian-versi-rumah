@@ -116,6 +116,7 @@
                 'skp_tahun_pertama' => 'SKP Tahun ' . (date('Y') - 1),
                 'skp_tahun_kedua' => 'SKP Tahun ' . (date('Y') - 2),
                 'pak_konversi' => 'PAK Konversi ' . (date('Y') - 1),
+            'pak_integrasi' => 'PAK Integrasi',
                 'sk_cpns' => 'SK CPNS',
                 'sk_pns' => 'SK PNS',
                 'sk_penyetaraan_ijazah' => 'SK Penyetaraan Ijazah',

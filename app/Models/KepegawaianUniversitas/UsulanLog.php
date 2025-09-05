@@ -140,7 +140,7 @@ class UsulanLog extends Model
             Usulan::STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS => 'bg-purple-100 text-purple-800 border-purple-300',
             Usulan::STATUS_USULAN_DIREKOMENDASIKAN_OLEH_TIM_SENAT => 'bg-purple-100 text-purple-800 border-purple-300',
             Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER => 'bg-blue-100 text-blue-800 border-blue-300',
-            Usulan::STATUS_PERMINTAAN_PERBAIKAN_USULAN_DARI_TIM_SISTER => 'bg-red-100 text-red-800 border-red-300',
+            Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER => 'bg-red-100 text-red-800 border-red-300',
             
             // Draft status constants
             Usulan::STATUS_DRAFT_USULAN => 'bg-gray-100 text-gray-800 border-gray-300',
@@ -250,15 +250,36 @@ class UsulanLog extends Model
      */
     public function getActionDescription(): string
     {
+        // Use the fixed accessors that handle arrays
+        $statusBaru = $this->status_baru;
+        $statusSebelumnya = $this->status_sebelumnya;
+        $status = $this->status;
+        
+        // Convert arrays to strings if needed
+        if (is_array($statusBaru)) {
+            $statusBaru = json_encode($statusBaru);
+        }
+        if (is_array($statusSebelumnya)) {
+            $statusSebelumnya = json_encode($statusSebelumnya);
+        }
+        if (is_array($status)) {
+            $status = json_encode($status);
+        }
+        
+        // Convert null to empty string
+        $statusBaru = $statusBaru ?? '';
+        $statusSebelumnya = $statusSebelumnya ?? '';
+        $status = $status ?? '';
+        
         if ($this->isInitialLog()) {
-            return "Usulan dibuat dengan status {$this->status_baru}";
+            return "Usulan dibuat dengan status {$statusBaru}";
         }
 
         if ($this->isStatusChange()) {
-            return "Status diubah dari {$this->status_sebelumnya} ke {$this->status_baru}";
+            return "Status diubah dari {$statusSebelumnya} ke {$statusBaru}";
         }
 
-        return "Update pada usulan dengan status {$this->status}";
+        return "Update pada usulan dengan status {$status}";
     }
 
     /**

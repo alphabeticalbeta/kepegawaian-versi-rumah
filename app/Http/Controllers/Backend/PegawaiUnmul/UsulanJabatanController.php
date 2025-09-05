@@ -667,7 +667,7 @@ class UsulanJabatanController extends BaseUsulanController
             UsulanModel::STATUS_USULAN_DIKIRIM_KE_ADMIN_FAKULTAS,
             UsulanModel::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS,
             UsulanModel::STATUS_USULAN_DISETUJUI_ADMIN_FAKULTAS,
-            UsulanModel::STATUS_DIREKOMENDASIKAN,
+                            UsulanModel::STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS,
             UsulanModel::STATUS_USULAN_PERBAIKAN_DARI_ADMIN_FAKULTAS,
             UsulanModel::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS,
             UsulanModel::STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS
@@ -831,7 +831,7 @@ class UsulanJabatanController extends BaseUsulanController
                     UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_DARI_ADMIN_FAKULTAS,
                     UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS,
                     UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
-                    UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_USULAN_DARI_TIM_SISTER
+                    UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER
                 ]) && in_array($statusUsulan, [
                     UsulanModel::STATUS_USULAN_DIKIRIM_KE_ADMIN_FAKULTAS,
                     UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_DARI_ADMIN_FAKULTAS,
@@ -951,15 +951,6 @@ class UsulanJabatanController extends BaseUsulanController
             'Pragma' => 'no-cache',
             'Expires' => '0'
         ]);
-    }
-
-    /**
-     * Get usulan logs
-     * SIMPLIFIED: Back to standard {usulan} parameter
-     */
-    public function getLogs(UsulanModel $usulan)
-    {
-        return $this->getUsulanLogs($usulan);
     }
 
     /**
@@ -1488,7 +1479,7 @@ class UsulanJabatanController extends BaseUsulanController
             UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_DARI_ADMIN_FAKULTAS => UsulanModel::STATUS_DRAFT_PERBAIKAN_ADMIN_FAKULTAS,
             UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS => UsulanModel::STATUS_DRAFT_PERBAIKAN_KEPEGAWAIAN_UNIVERSITAS,
             UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS => UsulanModel::STATUS_DRAFT_PERBAIKAN_PENILAI_UNIVERSITAS,
-            UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_USULAN_DARI_TIM_SISTER => UsulanModel::STATUS_DRAFT_PERBAIKAN_TIM_SISTER,
+            UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER => UsulanModel::STATUS_DRAFT_PERBAIKAN_TIM_SISTER,
             default => UsulanModel::STATUS_DRAFT_USULAN
         };
     }

@@ -63,6 +63,8 @@ class Usulan extends Model
         'jenis_usulan',
         'jabatan_lama_id',
         'jabatan_tujuan_id',
+        'pangkat_tujuan_id',
+        'jenis_nuptk',
         'status_usulan',
         'status_kepegawaian',
         'data_usulan',
@@ -134,10 +136,10 @@ class Usulan extends Model
                 self::STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS,
                 self::STATUS_USULAN_DIREKOMENDASIKAN_OLEH_TIM_SENAT,
                 self::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER,
-                self::STATUS_PERMINTAAN_PERBAIKAN_USULAN_DARI_TIM_SISTER,
-                self::STATUS_PERBAIKAN_SUDAH_DIKIRIM_KE_SISTER,
-                self::STATUS_DIREKOMENDASIKAN,
-                self::STATUS_TIDAK_DIREKOMENDASIKAN,
+                self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER,
+                self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_TIM_SISTER,
+                self::STATUS_DIREKOMENDASIKAN_SISTER,
+                self::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER,
                 // Legacy status
                 'Disetujui',
                 'Ditolak',
@@ -234,6 +236,14 @@ class Usulan extends Model
     }
 
     /**
+     * Relasi ke Pangkat (pangkat tujuan).
+     */
+    public function pangkatTujuan(): BelongsTo
+    {
+        return $this->belongsTo(Pangkat::class, 'pangkat_tujuan_id');
+    }
+
+    /**
      * Relasi ke dokumen-dokumen pendukung.
      */
     public function dokumens(): HasMany
@@ -302,7 +312,7 @@ class Usulan extends Model
             self::STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS => 'bg-purple-100 text-purple-800',
             self::STATUS_USULAN_DIREKOMENDASIKAN_OLEH_TIM_SENAT => 'bg-purple-100 text-purple-800',
             self::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER => 'bg-blue-100 text-blue-800',
-            self::STATUS_PERMINTAAN_PERBAIKAN_USULAN_DARI_TIM_SISTER => 'bg-red-100 text-red-800',
+            self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER => 'bg-red-100 text-red-800',
 
             // Draft status constants
             self::STATUS_DRAFT_USULAN => 'bg-gray-100 text-gray-800',
@@ -331,7 +341,7 @@ class Usulan extends Model
             self::STATUS_DRAFT_PERBAIKAN_TIM_SISTER,
             self::STATUS_PERMINTAAN_PERBAIKAN_DARI_ADMIN_FAKULTAS,
             self::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
-            self::STATUS_PERMINTAAN_PERBAIKAN_USULAN_DARI_TIM_SISTER
+            self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER
         ]);
     }
 
@@ -661,7 +671,7 @@ class Usulan extends Model
             self::STATUS_DRAFT_PERBAIKAN_TIM_SISTER,
             self::STATUS_PERMINTAAN_PERBAIKAN_DARI_ADMIN_FAKULTAS,
             self::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
-            self::STATUS_PERMINTAAN_PERBAIKAN_USULAN_DARI_TIM_SISTER
+            self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER
         ]);
     }
 
@@ -689,8 +699,8 @@ class Usulan extends Model
         return $query->whereNotIn('status_usulan', [
             self::STATUS_USULAN_DIREKOMENDASIKAN_OLEH_TIM_SENAT,
             self::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER,
-            self::STATUS_DIREKOMENDASIKAN,
-            self::STATUS_TIDAK_DIREKOMENDASIKAN
+            self::STATUS_DIREKOMENDASIKAN_SISTER,
+            self::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER
         ]);
     }
 
@@ -702,8 +712,8 @@ class Usulan extends Model
         return $query->whereIn('status_usulan', [
             self::STATUS_USULAN_DIREKOMENDASIKAN_OLEH_TIM_SENAT,
             self::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER,
-            self::STATUS_DIREKOMENDASIKAN,
-            self::STATUS_TIDAK_DIREKOMENDASIKAN
+            self::STATUS_DIREKOMENDASIKAN_SISTER,
+            self::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER
         ]);
     }
 
@@ -770,7 +780,7 @@ class Usulan extends Model
             self::STATUS_USULAN_DIREKOMENDASI_DARI_PENILAI_UNIVERSITAS,
             self::STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS,
             self::STATUS_USULAN_DIREKOMENDASIKAN_OLEH_TIM_SENAT,
-            self::STATUS_DIREKOMENDASIKAN
+            self::STATUS_DIREKOMENDASIKAN_SISTER
         ]);
     }
 
@@ -780,7 +790,7 @@ class Usulan extends Model
     public function isRejected(): bool
     {
         return in_array($this->status_usulan, [
-            self::STATUS_TIDAK_DIREKOMENDASIKAN
+            self::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER
         ]);
     }
 
@@ -792,7 +802,7 @@ class Usulan extends Model
         return in_array($this->status_usulan, [
             self::STATUS_PERMINTAAN_PERBAIKAN_DARI_ADMIN_FAKULTAS,
             self::STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS,
-            self::STATUS_PERMINTAAN_PERBAIKAN_USULAN_DARI_TIM_SISTER
+            self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER
         ]);
     }
 
@@ -956,7 +966,7 @@ class Usulan extends Model
     /**
      * Set data validasi untuk role tertentu
      */
-    public function setValidasiByRole(string $role, array $validasiData, int $validatedBy): void
+    public function setValidasiByRole(string $role, array $validasiData, int $validatedBy, string $keteranganUmum = ''): void
     {
         $currentValidasi = $this->validasi_data ?? [];
 
@@ -979,6 +989,7 @@ class Usulan extends Model
         // Ensure we don't lose existing data that's not in validation
         $currentValidasi[$role] = array_merge($existingValidation, [
             'validation' => $existingValidationData,
+            'keterangan_umum' => $keteranganUmum,
             'validated_by' => $validatedBy,
             'validated_at' => now()->toISOString()
         ]);
@@ -989,6 +1000,7 @@ class Usulan extends Model
         \Log::info('setValidasiByRole called', [
             'role' => $role,
             'validated_by' => $validatedBy,
+            'keterangan_umum' => $keteranganUmum,
             'input_data' => $validasiData,
             'merged_data' => $existingValidationData,
             'final_structure' => $currentValidasi[$role]
@@ -1596,20 +1608,25 @@ public function getSenateDecisionCounts(): array
     const STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS = 'Usulan Direkomendasi Penilai Universitas';
     const STATUS_USULAN_DIREKOMENDASIKAN_OLEH_TIM_SENAT = 'Usulan Direkomendasikan oleh Tim Senat';
     const STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER = 'Usulan Sudah Dikirim ke Sister';
-    const STATUS_PERMINTAAN_PERBAIKAN_USULAN_DARI_TIM_SISTER = 'Permintaan Perbaikan Usulan dari Tim Sister';
-    const STATUS_PERBAIKAN_SUDAH_DIKIRIM_KE_SISTER = 'Perbaikan Sudah Dikirim ke Sister';
-    const STATUS_DIREKOMENDASIKAN = 'Direkomendasikan';
-    const STATUS_TIDAK_DIREKOMENDASIKAN = 'Tidak Direkomendasikan';
-
-    // Draft status constants (for Pegawai role)
+    const STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER = 'Permintaan Perbaikan Ke Pegawai dari Tim Sister';
+    const STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_TIM_SISTER = 'Usulan Perbaikan Dari Pegawai Ke Sister';
+    const STATUS_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS = 'Usulan Direkomendasikan Kepegawaian Universitas';
+    const STATUS_DIREKOMENDASIKAN_BKN = 'Usulan Direkomendasikan BKN';
+    const STATUS_DIREKOMENDASIKAN_SISTER = 'Usulan Direkomendasikan Sister';
+    const STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS = 'Usulan Belum Direkomendasi Kepegawaian Universitas';
+    const STATUS_TIDAK_DIREKOMENDASIKAN_BKN = 'Usulan Belum Direkomendasi BKN';
+    const STATUS_TIDAK_DIREKOMENDASIKAN_SISTER = 'Usulan Belu   m Direkomendasi Sister';
+    const STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS = 'Usulan Dikirim ke Kepegawaian Universitas';
+    const STATUS_USULAN_SUDAH_DIKIRIM_KE_BKN = 'Usulan Sudah Dikirim ke BKN';
+    const STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_BKN = 'Usulan Perbaikan Dari Pegawai Ke BKN';
+    const STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_BKN = 'Permintaan Perbaikan Ke Pegawai Dari BKN';
     const STATUS_DRAFT_USULAN = 'Draft Usulan';
     const STATUS_DRAFT_PERBAIKAN_ADMIN_FAKULTAS = 'Draft Perbaikan Admin Fakultas';
     const STATUS_DRAFT_PERBAIKAN_KEPEGAWAIAN_UNIVERSITAS = 'Draft Perbaikan Kepegawaian Universitas';
     const STATUS_DRAFT_PERBAIKAN_PENILAI_UNIVERSITAS = 'Draft Perbaikan Penilai Universitas';
     const STATUS_DRAFT_PERBAIKAN_TIM_SISTER = 'Draft Perbaikan Tim Sister';
-
-    // Legacy status constants (for backward compatibility) - HAPUS YANG TIDAK DIGUNAKAN
     const STATUS_MENUNGGU_HASIL_PENILAIAN_TIM_PENILAI = 'Menunggu Hasil Penilaian Tim Penilai';
+    const STATUS_SK_TERBIT = 'SK SUDAH TERBIT';
 
     /**
      * Determine final status based on Tim Penilai assessment results
@@ -1792,7 +1809,7 @@ public function getSenateDecisionCounts(): array
     public function canBeSubmittedInCurrentPeriod()
     {
         // If usulan was not recommended, it cannot be submitted in current period
-        if ($this->status_usulan === self::STATUS_TIDAK_DIREKOMENDASIKAN) {
+        if ($this->status_usulan === self::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER) {
             return false;
         }
 
@@ -1802,5 +1819,317 @@ public function getSenateDecisionCounts(): array
         }
 
         return false;
+    }
+
+    // =====================================================
+    // HELPER METHODS FOR USULAN KEPANGKATAN
+    // =====================================================
+
+    /**
+     * Get valid statuses for usulan kepangkatan (Pegawai & Kepegawaian Universitas only)
+     */
+    public static function getKepangkatanValidStatuses(): array
+    {
+        return [
+            self::STATUS_DRAFT_USULAN,
+            self::STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS,
+            self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS,
+            self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS,
+            self::STATUS_USULAN_SUDAH_DIKIRIM_KE_BKN,
+            self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_BKN,
+            self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_BKN,
+            self::STATUS_DIREKOMENDASIKAN_BKN
+        ];
+    }
+
+    /**
+     * Check if current status is valid for usulan kepangkatan
+     */
+    public function isKepangkatanValidStatus(): bool
+    {
+        return in_array($this->status_usulan, self::getKepangkatanValidStatuses());
+    }
+
+    /**
+     * Get next possible statuses for usulan kepangkatan based on current status and role
+     */
+    public function getKepangkatanNextStatuses(string $role): array
+    {
+        $currentStatus = $this->status_usulan;
+        $nextStatuses = [];
+
+        switch ($role) {
+            case 'Pegawai':
+                switch ($currentStatus) {
+                    case self::STATUS_DRAFT_USULAN:
+                        $nextStatuses = [self::STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS];
+                        break;
+                    case self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS:
+                        $nextStatuses = [self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS];
+                        break;
+                    case self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_BKN:
+                        $nextStatuses = [self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_BKN];
+                        break;
+                }
+                break;
+
+            case 'Kepegawaian Universitas':
+                switch ($currentStatus) {
+                    case self::STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS:
+                        $nextStatuses = [
+                            self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS,
+                            self::STATUS_USULAN_SUDAH_DIKIRIM_KE_BKN
+                        ];
+                        break;
+                    case self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS:
+                        $nextStatuses = [
+                            self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS,
+                            self::STATUS_USULAN_SUDAH_DIKIRIM_KE_BKN
+                        ];
+                        break;
+                    case self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_BKN:
+                        $nextStatuses = [self::STATUS_USULAN_SUDAH_DIKIRIM_KE_BKN];
+                        break;
+                }
+                break;
+        }
+
+        return $nextStatuses;
+    }
+
+    /**
+     * Check if usulan kepangkatan can be transitioned to a specific status
+     */
+    public function canTransitionToKepangkatanStatus(string $targetStatus, string $role): bool
+    {
+        $nextStatuses = $this->getKepangkatanNextStatuses($role);
+        return in_array($targetStatus, $nextStatuses);
+    }
+
+    /**
+     * Get status badge class for usulan kepangkatan statuses
+     */
+    public function getKepangkatanStatusBadgeClass(): string
+    {
+        switch ($this->status_usulan) {
+            case self::STATUS_DRAFT_USULAN:
+                return 'bg-gray-100 text-gray-800';
+            case self::STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS:
+                return 'bg-blue-100 text-blue-800';
+            case self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS:
+                return 'bg-yellow-100 text-yellow-800';
+            case self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS:
+                return 'bg-orange-100 text-orange-800';
+            case self::STATUS_USULAN_SUDAH_DIKIRIM_KE_BKN:
+                return 'bg-purple-100 text-purple-800';
+            case self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_BKN:
+                return 'bg-yellow-100 text-yellow-800';
+            case self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_BKN:
+                return 'bg-red-100 text-red-800';
+            case self::STATUS_DIREKOMENDASIKAN_BKN:
+                return 'bg-green-100 text-green-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
+        }
+    }
+
+    /**
+     * Check if usulan kepangkatan is in final status
+     */
+    public function isKepangkatanFinalStatus(): bool
+    {
+        return in_array($this->status_usulan, [
+            self::STATUS_DIREKOMENDASIKAN_BKN
+        ]);
+    }
+
+    /**
+     * Check if usulan kepangkatan requires action from specific role
+     */
+    public function requiresKepangkatanActionFrom(string $role): bool
+    {
+        switch ($role) {
+            case 'Pegawai':
+                return in_array($this->status_usulan, [
+                    self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS,
+                    self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_BKN
+                ]);
+            case 'Kepegawaian Universitas':
+                return in_array($this->status_usulan, [
+                    self::STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS,
+                    self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS,
+                    self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_BKN
+                ]);
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Accessor untuk status (menggunakan status_usulan)
+     */
+    public function getStatusAttribute()
+    {
+        return $this->status_usulan;
+    }
+
+    /**
+     * Mutator untuk status (menggunakan status_usulan)
+     */
+    public function setStatusAttribute($value)
+    {
+        $this->attributes['status_usulan'] = $value;
+    }
+
+    // =====================================================
+    // HELPER METHODS FOR USULAN NUPTK
+    // =====================================================
+
+    /**
+     * Check if usulan is for NUPTK
+     */
+    public function isNuptkUsulan(): bool
+    {
+        return $this->jenis_usulan === 'usulan-nuptk';
+    }
+
+    /**
+     * Get valid statuses for usulan NUPTK (Pegawai & Kepegawaian Universitas only)
+     */
+    public static function getNuptkValidStatuses(): array
+    {
+        return [
+            self::STATUS_DRAFT_USULAN,
+            self::STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS,
+            self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS,
+            self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS,
+            self::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER,
+            self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_TIM_SISTER,
+                            self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER,
+            self::STATUS_DIREKOMENDASIKAN_SISTER
+        ];
+    }
+
+    /**
+     * Check if current status is valid for usulan NUPTK
+     */
+    public function isNuptkValidStatus(): bool
+    {
+        return in_array($this->status_usulan, self::getNuptkValidStatuses());
+    }
+
+    /**
+     * Get next possible statuses for usulan NUPTK based on current status and role
+     */
+    public function getNuptkNextStatuses(string $role): array
+    {
+        $currentStatus = $this->status_usulan;
+        $nextStatuses = [];
+
+        switch ($role) {
+            case 'Pegawai':
+                switch ($currentStatus) {
+                    case self::STATUS_DRAFT_USULAN:
+                        $nextStatuses = [self::STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS];
+                        break;
+                    case self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS:
+                        $nextStatuses = [self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS];
+                        break;
+                    case self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER:
+                        $nextStatuses = [self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_TIM_SISTER];
+                        break;
+                }
+                break;
+
+            case 'Kepegawaian Universitas':
+                switch ($currentStatus) {
+                    case self::STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS:
+                        $nextStatuses = [
+                            self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS,
+                            self::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER
+                        ];
+                        break;
+                    case self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS:
+                        $nextStatuses = [
+                            self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS,
+                            self::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER
+                        ];
+                        break;
+                    case self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_TIM_SISTER:
+                        $nextStatuses = [self::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER];
+                        break;
+                }
+                break;
+        }
+
+        return $nextStatuses;
+    }
+
+    /**
+     * Check if usulan NUPTK can be transitioned to a specific status
+     */
+    public function canTransitionToNuptkStatus(string $targetStatus, string $role): bool
+    {
+        $nextStatuses = $this->getNuptkNextStatuses($role);
+        return in_array($targetStatus, $nextStatuses);
+    }
+
+    /**
+     * Get status badge class for usulan NUPTK statuses
+     */
+    public function getNuptkStatusBadgeClass(): string
+    {
+        switch ($this->status_usulan) {
+            case self::STATUS_DRAFT_USULAN:
+                return 'bg-gray-100 text-gray-800';
+            case self::STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS:
+                return 'bg-blue-100 text-blue-800';
+            case self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS:
+                return 'bg-yellow-100 text-yellow-800';
+            case self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS:
+                return 'bg-orange-100 text-orange-800';
+            case self::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER:
+                return 'bg-purple-100 text-purple-800';
+            case self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_TIM_SISTER:
+                return 'bg-yellow-100 text-yellow-800';
+            case self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER:
+                return 'bg-red-100 text-red-800';
+            case self::STATUS_DIREKOMENDASIKAN_SISTER:
+                return 'bg-green-100 text-green-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
+        }
+    }
+
+    /**
+     * Check if usulan NUPTK is in final status
+     */
+    public function isNuptkFinalStatus(): bool
+    {
+        return in_array($this->status_usulan, [
+            self::STATUS_DIREKOMENDASIKAN_SISTER
+        ]);
+    }
+
+    /**
+     * Check if usulan NUPTK requires action from specific role
+     */
+    public function requiresNuptkActionFrom(string $role): bool
+    {
+        switch ($role) {
+            case 'Pegawai':
+                return in_array($this->status_usulan, [
+                    self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS,
+                    self::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER
+                ]);
+            case 'Kepegawaian Universitas':
+                return in_array($this->status_usulan, [
+                    self::STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS,
+                    self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS,
+                    self::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_TIM_SISTER
+                ]);
+            default:
+                return false;
+        }
     }
 }

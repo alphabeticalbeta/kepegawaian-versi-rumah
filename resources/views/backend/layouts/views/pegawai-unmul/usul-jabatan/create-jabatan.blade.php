@@ -84,6 +84,7 @@
                 'skp_tahun_pertama' => 'SKP Tahun ' . (date('Y') - 1),
                 'skp_tahun_kedua' => 'SKP Tahun ' . (date('Y') - 2),
                 'pak_konversi' => 'PAK Konversi ' . (date('Y') - 1),
+                'pak_integrasi' => 'PAK Integrasi',
                 'sk_cpns' => 'SK CPNS',
                 'sk_pns' => 'SK PNS',
                 'sk_penyetaraan_ijazah' => 'SK Penyetaraan Ijazah',
@@ -162,6 +163,7 @@
                                             'transkrip_nilai_terakhir' => 'Transkrip Nilai Terakhir',
                                             'disertasi_thesis_terakhir' => 'Disertasi/Thesis Terakhir',
                                             'pak_konversi' => 'PAK Konversi',
+                                            'pak_integrasi' => 'PAK Integrasi',
                                             'sk_penyetaraan_ijazah' => 'SK Penyetaraan Ijazah',
                                             'syarat_guru_besar' => 'Syarat Guru Besar',
                                             'bukti_syarat_guru_besar' => 'Bukti Syarat Guru Besar'
@@ -470,6 +472,7 @@
                             'skp_tahun_pertama' => 'SKP Tahun ' . (date('Y') - 1),
                             'skp_tahun_kedua' => 'SKP Tahun ' . (date('Y') - 2),
                             'pak_konversi' => 'PAK Konversi ' . (date('Y') - 1),
+                            'pak_integrasi' => 'PAK Integrasi',
                             'sk_cpns' => 'SK CPNS',
                             'sk_pns' => 'SK PNS',
                             'sk_penyetaraan_ijazah' => 'SK Penyetaraan Ijazah',
@@ -882,7 +885,7 @@
                                 Kirim Perbaikan ke Penilai Universitas
                             </button>
             
-                        @elseif($isEditMode && $usulan && $usulan->status_usulan === UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_USULAN_DARI_TIM_SISTER)
+                        @elseif($isEditMode && $usulan && $usulan->status_usulan === UsulanModel::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER)
                             <button type="button" onclick="showConfirmationModal('submit_perbaikan_tim_sister', document.getElementById('usulan-form'))"
                                     class="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2">
                                 <i data-lucide="send" class="w-4 h-4"></i>

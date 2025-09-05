@@ -11,6 +11,7 @@
         'sk_cpns'                   => 'SK CPNS',
         'sk_pns'                    => 'SK PNS',
         'pak_konversi'              => 'PAK/PAK Konversi',
+        'pak_integrasi'             => 'PAK Integrasi',
         'sk_penyetaraan_ijazah'     => 'SK Penyetaraan Ijazah',
         'disertasi_thesis_terakhir' => 'Disertasi/Thesis Terakhir',
     ];
@@ -31,7 +32,7 @@
         $profilFields = [
             'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_pangkat_terakhir',
             'sk_jabatan_terakhir', 'skp_tahun_pertama', 'skp_tahun_kedua',
-            'pak_konversi', 'sk_cpns', 'sk_pns', 'sk_penyetaraan_ijazah',
+            'pak_konversi', 'pak_integrasi', 'sk_cpns', 'sk_pns', 'sk_penyetaraan_ijazah',
             'disertasi_thesis_terakhir'
         ];
 

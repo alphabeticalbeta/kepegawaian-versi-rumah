@@ -48,7 +48,7 @@ class PeriodeUsulanController extends Controller
             'pengaktifan-kembali' => 'usulan-pengaktifan-kembali'
         ];
         
-        $query = PeriodeUsulan::withCount('usulans');
+        $query = PeriodeUsulan::withCount(['usulans', 'usulansSubmitted']);
         
         // Filter berdasarkan jenis usulan jika parameter diberikan
         if ($jenisUsulan && $jenisUsulan !== 'all') {
@@ -78,6 +78,7 @@ class PeriodeUsulanController extends Controller
             'all' => 'Semua Usulan Aktif',
             'jabatan-dosen-regular' => 'jabatan-dosen-regular',
             'jabatan-dosen-pengangkatan' => 'jabatan-dosen-pengangkatan',
+            'nuptk' => 'usulan-nuptk',
             'usulan-nuptk' => 'usulan-nuptk',
             'usulan-laporan-lkd' => 'usulan-laporan-lkd',
             'usulan-presensi' => 'usulan-presensi',
@@ -548,6 +549,114 @@ class PeriodeUsulanController extends Controller
                     "Tanggal periode overlapping dengan periode '{$overlappingPeriode->nama_periode}' yang memiliki jenis usulan yang sama ({$jenisUsulan})"
                 ]
             ]);
+        }
+    }
+
+    /**
+     * API untuk mendapatkan count usulan kepangkatan per jenis
+     */
+    public function getUsulanKepangkatanCount(PeriodeUsulan $periodeUsulan)
+    {
+        try {
+            // Pastikan periode ini adalah jenis kepangkatan
+            if ($periodeUsulan->jenis_usulan !== 'usulan-kepangkatan') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Periode ini bukan jenis usulan kepangkatan'
+                ], 400);
+            }
+
+            // Ambil semua usulan dari periode ini
+            $usulans = $periodeUsulan->usulans()->get();
+
+            // Hitung berdasarkan jenis_usulan_pangkat
+            $counts = [
+                'dosen_pns' => 0,
+                'jabatan_administrasi' => 0,
+                'jabatan_fungsional_tertentu' => 0,
+                'jabatan_struktural' => 0
+            ];
+
+            foreach ($usulans as $usulan) {
+                $jenisUsulanPangkat = $usulan->data_usulan['jenis_usulan_pangkat'] ?? null;
+                
+                if ($jenisUsulanPangkat) {
+                    switch ($jenisUsulanPangkat) {
+                        case 'Dosen PNS':
+                            $counts['dosen_pns']++;
+                            break;
+                        case 'Jabatan Administrasi':
+                            $counts['jabatan_administrasi']++;
+                            break;
+                        case 'Jabatan Fungsional Tertentu':
+                            $counts['jabatan_fungsional_tertentu']++;
+                            break;
+                        case 'Jabatan Struktural':
+                            $counts['jabatan_struktural']++;
+                            break;
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'counts' => $counts,
+                'total' => $usulans->count()
+            ]);
+
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menghitung usulan kepangkatan'
+            ], 500);
+        }
+    }
+
+    /**
+     * API untuk mendapatkan count usulan NUPTK per jenis
+     */
+    public function getUsulanNuptkCount(PeriodeUsulan $periodeUsulan)
+    {
+        try {
+            // Pastikan periode ini adalah jenis NUPTK
+            if ($periodeUsulan->jenis_usulan !== 'usulan-nuptk') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Periode ini bukan jenis usulan NUPTK'
+                ], 400);
+            }
+
+            // Ambil semua usulan dari periode ini
+            $usulans = $periodeUsulan->usulans()->get();
+
+            // Hitung berdasarkan jenis_nuptk
+            $counts = [
+                'dosen_tetap' => 0,
+                'dosen_tidak_tetap' => 0,
+                'pengajar_non_dosen' => 0
+            ];
+
+            foreach ($usulans as $usulan) {
+                $jenisNuptk = $usulan->jenis_nuptk ?? null;
+                
+                if ($jenisNuptk && isset($counts[$jenisNuptk])) {
+                    $counts[$jenisNuptk]++;
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'counts' => $counts,
+                'total' => $usulans->count()
+            ]);
+
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menghitung usulan NUPTK'
+            ], 500);
         }
     }
 }

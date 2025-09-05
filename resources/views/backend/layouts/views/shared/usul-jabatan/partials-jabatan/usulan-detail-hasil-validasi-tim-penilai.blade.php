@@ -69,6 +69,7 @@
                                             'transkrip_nilai_terakhir' => 'Transkrip Nilai Terakhir',
                                             'disertasi_thesis_terakhir' => 'Disertasi/Thesis Terakhir',
                                             'pak_konversi' => 'PAK Konversi',
+                                            'pak_integrasi' => 'PAK Integrasi',
                                             'sk_penyetaraan_ijazah' => 'SK Penyetaraan Ijazah',
 
                                             // Syarat Guru Besar
@@ -203,6 +204,7 @@
                                                 'transkrip_nilai_terakhir' => 'Transkrip Nilai Terakhir',
                                                 'disertasi_thesis_terakhir' => 'Disertasi/Thesis Terakhir',
                                                 'pak_konversi' => 'PAK Konversi',
+                                                'pak_integrasi' => 'PAK Integrasi',
                                                 'sk_penyetaraan_ijazah' => 'SK Penyetaraan Ijazah',
 
                                                 // Syarat Guru Besar
@@ -368,6 +370,7 @@
                                         'transkrip_nilai_terakhir' => 'Transkrip Nilai Terakhir',
                                         'disertasi_thesis_terakhir' => 'Disertasi/Thesis Terakhir',
                                         'pak_konversi' => 'PAK Konversi',
+                                        'pak_integrasi' => 'PAK Integrasi',
                                         'sk_penyetaraan_ijazah' => 'SK Penyetaraan Ijazah',
 
                                         // Syarat Guru Besar

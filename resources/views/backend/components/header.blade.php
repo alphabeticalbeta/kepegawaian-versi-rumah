@@ -49,7 +49,7 @@
                 $documentFields = [
                     'ijazah_terakhir', 'transkrip_nilai_terakhir', 'sk_pangkat_terakhir',
                     'sk_jabatan_terakhir', 'skp_tahun_pertama', 'skp_tahun_kedua',
-                    'sk_cpns', 'sk_pns', 'pak_konversi', 'sk_penyetaraan_ijazah',
+                    'sk_cpns', 'sk_pns', 'pak_konversi', 'pak_integrasi', 'sk_penyetaraan_ijazah',
                     'disertasi_thesis_terakhir'
                 ];
                 $uploadedDocs = collect($documentFields)->filter(fn($field) => !empty($user->$field))->count();
@@ -151,9 +151,7 @@
                                 <span class="font-medium">{{ $profileCompleteness }}%</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="h-2 rounded-full transition-all duration-300
-                                    {{ $profileCompleteness == 100 ? 'bg-green-500' : ($profileCompleteness >= 70 ? 'bg-blue-500' : 'bg-orange-500') }}"
-                                     style="width: {{ $profileCompleteness }}%"></div>
+                                <div class="h-2 rounded-full transition-all duration-300 {{ $profileCompleteness == 100 ? 'bg-green-500' : ($profileCompleteness >= 70 ? 'bg-blue-500' : 'bg-orange-500') }}" style="width: {{ $profileCompleteness }}%"></div>
                             </div>
                         </div>
                     </div>
@@ -196,14 +194,14 @@
                         </div>
 
                         @if($canCreateUsulan)
-                            <a href="{{ route('pegawai-unmul.usulan-jabatan.create') }}"
+                            <a href="{{ route('pegawai-unmul.usulan-pegawai.create') }}"
                                class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                                 <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
                                     <i data-lucide="plus-circle" class="w-4 h-4 text-green-600"></i>
                                 </div>
                                 <div class="flex-1">
                                     <div class="font-medium">Buat Usulan Baru</div>
-                                    <div class="text-xs text-gray-500">Usulan jabatan atau pangkat</div>
+                                    <div class="text-xs text-gray-500">Pilih jenis usulan yang ingin diajukan</div>
                                 </div>
                             </a>
                         @endif
