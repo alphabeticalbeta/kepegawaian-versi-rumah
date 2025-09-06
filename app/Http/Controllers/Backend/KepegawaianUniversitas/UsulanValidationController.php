@@ -350,7 +350,7 @@ class UsulanValidationController extends Controller
                     'validation_data' => $validationData,
                     'keterangan_umum' => $keteranganUmum
                 ]);
-                
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Tidak ada data validasi yang perlu disimpan.'
@@ -1626,7 +1626,7 @@ class UsulanValidationController extends Controller
 
         // Get existing validation data
         $existingValidation = $usulan->getValidasiByRole('kepegawaian_universitas') ?? [];
-        
+
         // Get penilai validation if exists
         $penilaiValidation = $usulan->getValidasiByRole('tim_penilai') ?? [];
 
@@ -1643,9 +1643,7 @@ class UsulanValidationController extends Controller
                     'status_kepegawaian' => 'Status Kepegawaian',
                     'nip' => 'NIP',
                     'nuptk' => 'NUPTK',
-                    'gelar_depan' => 'Gelar Depan',
                     'nama_lengkap' => 'Nama Lengkap',
-                    'gelar_belakang' => 'Gelar Belakang',
                     'email' => 'Email',
                     'tempat_lahir' => 'Tempat Lahir',
                     'tanggal_lahir' => 'Tanggal Lahir',
@@ -1709,7 +1707,7 @@ class UsulanValidationController extends Controller
 
         // Add dynamic fields based on jenis usulan pangkat
         $jenisUsulanPangkat = $usulan->data_usulan['jenis_usulan_pangkat'] ?? '';
-        
+
         if ($jenisUsulanPangkat === 'Dosen PNS') {
             $fieldGroups['dokumen_usulan']['fields']['dokumen_ukom_sk_jabatan'] = 'Dokumen UKOM dan SK Jabatan';
         } elseif ($jenisUsulanPangkat === 'Jabatan Administrasi') {
@@ -1795,7 +1793,7 @@ class UsulanValidationController extends Controller
                     'group_data_type' => gettype($groupData),
                     'group_data' => $groupData
                 ]);
-                
+
                 if (is_array($groupData)) {
                     foreach ($groupData as $fieldKey => $fieldData) {
                         Log::info("Field: $groupKey.$fieldKey", [
@@ -1809,7 +1807,7 @@ class UsulanValidationController extends Controller
 
             // Process and restructure validation data
             $validationData = [];
-            
+
             // Process each group (data_pribadi, data_kepegawaian, etc.)
             foreach ($rawValidationData as $groupKey => $groupData) {
                 // Skip if groupData is not an array or is empty
@@ -1821,9 +1819,9 @@ class UsulanValidationController extends Controller
                     ]);
                     continue;
                 }
-                
+
                 $validationData[$groupKey] = [];
-                
+
                 // Process each field in the group
                 foreach ($groupData as $fieldKey => $fieldData) {
                     // Skip if fieldData is not an array or doesn't have status
@@ -1837,11 +1835,11 @@ class UsulanValidationController extends Controller
                         ]);
                         continue;
                     }
-                    
+
                     // Additional validation: ensure status is string and keterangan is string
                     $status = $fieldData['status'] ?? 'sesuai';
                     $keterangan = $fieldData['keterangan'] ?? '';
-                    
+
                     // Convert to string if needed
                     if (!is_string($status)) {
                         $status = (string) $status;
@@ -1852,7 +1850,7 @@ class UsulanValidationController extends Controller
                             'converted_status' => $status
                         ]);
                     }
-                    
+
                     if (!is_string($keterangan)) {
                         $keterangan = (string) $keterangan;
                         Log::warning('Keterangan converted to string', [
@@ -1862,7 +1860,7 @@ class UsulanValidationController extends Controller
                             'converted_keterangan' => $keterangan
                         ]);
                     }
-                    
+
                     $validationData[$groupKey][$fieldKey] = [
                         'status' => $status,
                         'keterangan' => $keterangan
@@ -1899,7 +1897,7 @@ class UsulanValidationController extends Controller
                 }
                 $currentValidasi['kepegawaian_universitas']['keterangan_umum'] = $keteranganUmum;
                 $usulan->validasi_data = $currentValidasi;
-                
+
                 // Debug logging untuk keterangan umum
                 Log::info('Keterangan umum saved for kepangkatan', [
                     'usulan_id' => $usulan->id,
@@ -1915,12 +1913,6 @@ class UsulanValidationController extends Controller
 
             // Save usulan to persist keterangan_umum changes
             $usulan->save();
-
-            // Update usulan status if needed
-            if ($usulan->status_usulan === 'Usulan Dikirim ke Kepegawaian Universitas') {
-                $usulan->status_usulan = 'Usulan Sedang Divalidasi Kepegawaian Universitas';
-                $usulan->save();
-            }
 
             // Clear caches
             $cacheKey = "usulan_validation_{$usulan->id}_kepegawaian_universitas";
@@ -1961,7 +1953,7 @@ class UsulanValidationController extends Controller
 
         // Get existing validation data
         $existingValidation = $usulan->getValidasiByRole('kepegawaian_universitas') ?? [];
-        
+
         // Get current role (hardcoded untuk kepegawaian universitas)
         $currentRole = 'Kepegawaian Universitas';
 
@@ -1971,13 +1963,6 @@ class UsulanValidationController extends Controller
                 'label' => 'Data Pribadi',
                 'icon' => 'user',
                 'fields' => [
-                    'jenis_pegawai' => 'Jenis Pegawai',
-                    'status_kepegawaian' => 'Status Kepegawaian',
-                    'nip' => 'NIP',
-                    'nuptk' => 'NUPTK',
-                    'gelar_depan' => 'Gelar Depan',
-                    'nama_lengkap' => 'Nama Lengkap',
-                    'gelar_belakang' => 'Gelar Belakang',
                     'email' => 'Email',
                     'tempat_lahir' => 'Tempat Lahir',
                     'tanggal_lahir' => 'Tanggal Lahir',
@@ -1990,12 +1975,25 @@ class UsulanValidationController extends Controller
                     'alamat_lengkap' => 'Alamat Lengkap'
                 ]
             ],
+            'data_pendidikan' => [
+                'label' => 'Data Pendidikan',
+                'icon' => 'graduation-cap',
+                'fields' => [
+                    'pendidikan_terakhir' => 'Pendidikan Terakhir',
+                    'nama_universitas_sekolah' => 'Nama Universitas/Sekolah',
+                    'nama_prodi_jurusan' => 'Program Studi/Jurusan'
+                ]
+            ],
             'dokumen_profil' => [
                 'label' => 'Dokumen Profil',
                 'icon' => 'folder',
                 'fields' => [
                     'ktp' => 'KTP',
-                    'kartu_keluarga' => 'Kartu Keluarga'
+                    'kartu_keluarga' => 'Kartu Keluarga',
+                    'sk_cpns' => 'SK CPNS',
+                    'sk_pns' => 'SK PNS',
+                    'sk_pangkat_terakhir' => 'SK Pangkat Terakhir',
+                    'sk_jabatan_terakhir' => 'SK Jabatan Terakhir'
                 ]
             ],
             'dokumen_usulan' => [
@@ -2007,35 +2005,31 @@ class UsulanValidationController extends Controller
 
         // Add dynamic fields based on jenis NUPTK
         $jenisNuptk = $usulan->jenis_nuptk ?? '';
-        
+
         if ($jenisNuptk === 'dosen_tetap') {
             $fieldGroups['dokumen_usulan']['fields']['surat_keterangan_sehat'] = 'Surat Keterangan Sehat Rohani, Jasmani dan Bebas Narkotika';
             $fieldGroups['dokumen_usulan']['fields']['surat_pernyataan_pimpinan'] = 'Surat Pernyataan dari Pimpinan PTN';
             $fieldGroups['dokumen_usulan']['fields']['surat_pernyataan_dosen_tetap'] = 'Surat Pernyataan Dosen Tetap';
             $fieldGroups['dokumen_usulan']['fields']['surat_keterangan_aktif_tridharma'] = 'Surat Keterangan Aktif Melaksanakan Tridharma';
-            $fieldGroups['dokumen_usulan']['fields']['nota_dinas'] = 'Nota Dinas';
         } elseif ($jenisNuptk === 'dosen_tidak_tetap') {
             $fieldGroups['dokumen_usulan']['fields']['surat_keterangan_sehat'] = 'Surat Keterangan Sehat Rohani, Jasmani dan Bebas Narkotika';
             $fieldGroups['dokumen_usulan']['fields']['surat_pernyataan_pimpinan'] = 'Surat Pernyataan dari Pimpinan PTN';
-            $fieldGroups['dokumen_usulan']['fields']['surat_izin_instansi_induk'] = 'Surat Izin Instansi Induk';
+            $fieldGroups['dokumen_usulan']['fields']['surat_izin_instansi_induk'] = 'Surat Izin dari Instansi Induk';
             $fieldGroups['dokumen_usulan']['fields']['surat_perjanjian_kerja'] = 'Surat Perjanjian Kerja';
-            $fieldGroups['dokumen_usulan']['fields']['nota_dinas'] = 'Nota Dinas';
+            $fieldGroups['dokumen_usulan']['fields']['sk_tenaga_pengajar'] = 'SK Tenaga Pengajar';
         } elseif ($jenisNuptk === 'pengajar_non_dosen') {
             $fieldGroups['dokumen_usulan']['fields']['surat_keterangan_sehat'] = 'Surat Keterangan Sehat Rohani, Jasmani dan Bebas Narkotika';
             $fieldGroups['dokumen_usulan']['fields']['surat_pernyataan_pimpinan'] = 'Surat Pernyataan dari Pimpinan PTN';
+            $fieldGroups['dokumen_usulan']['fields']['surat_izin_instansi_induk'] = 'Surat Izin dari Instansi Induk';
+            $fieldGroups['dokumen_usulan']['fields']['surat_perjanjian_kerja'] = 'Surat Perjanjian Kerja';
             $fieldGroups['dokumen_usulan']['fields']['sk_tenaga_pengajar'] = 'SK Tenaga Pengajar';
-            $fieldGroups['dokumen_usulan']['fields']['nota_dinas'] = 'Nota Dinas';
         } elseif ($jenisNuptk === 'jabatan_fungsional_tertentu') {
             $fieldGroups['dokumen_usulan']['fields']['nota_dinas'] = 'Nota Dinas';
         }
 
         // Get validation configuration
         $config = [
-            'validationFields' => [
-                'data_pribadi' => 'Data Pribadi',
-                'dokumen_profil' => 'Dokumen Profil',
-                'dokumen_usulan' => 'Dokumen Usulan'
-            ]
+            'validationFields' => array_keys($fieldGroups)
         ];
 
         // Check if usulan is in view-only status
@@ -2044,10 +2038,10 @@ class UsulanValidationController extends Controller
             Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER,
             Usulan::STATUS_DIREKOMENDASIKAN_SISTER
         ];
-        
+
         $isViewOnly = in_array($usulan->status_usulan, $viewOnlyStatuses);
 
-        return view('backend.layouts.views.kepegawaian-universitas.usulan.validasi-nuptk', compact(
+        return view('backend.layouts.views.shared.usul-nuptk.validasi-nuptk', compact(
             'usulan',
             'existingValidation',
             'fieldGroups',
@@ -2071,7 +2065,7 @@ class UsulanValidationController extends Controller
 
             // Get validation data
             $rawValidationData = $request->input('validation');
-            $keteranganUmum = $request->input('keterangan_umum');
+            $keteranganUmum = $request->input('keterangan_umum', '');
 
             // Debug logging untuk keterangan umum
             Log::info('Keterangan umum received in saveNuptkValidation', [
@@ -2110,7 +2104,7 @@ class UsulanValidationController extends Controller
                     'group_data_type' => gettype($groupData),
                     'group_data' => $groupData
                 ]);
-                
+
                 if (is_array($groupData)) {
                     foreach ($groupData as $fieldKey => $fieldData) {
                         Log::info("Field: $groupKey.$fieldKey", [
@@ -2124,7 +2118,7 @@ class UsulanValidationController extends Controller
 
             // Process and restructure validation data
             $validationData = [];
-            
+
             // Process each group (data_pribadi, data_kepegawaian, etc.)
             foreach ($rawValidationData as $groupKey => $groupData) {
                 // Skip if groupData is not an array or is empty
@@ -2136,9 +2130,9 @@ class UsulanValidationController extends Controller
                     ]);
                     continue;
                 }
-                
+
                 $validationData[$groupKey] = [];
-                
+
                 // Process each field in the group
                 foreach ($groupData as $fieldKey => $fieldData) {
                     // Skip if fieldData is not an array or doesn't have status
@@ -2152,7 +2146,7 @@ class UsulanValidationController extends Controller
                         ]);
                         continue;
                     }
-                    
+
                     // Additional validation: ensure status is string and keterangan is string
                     $status = $fieldData['status'] ?? 'sesuai';
                     $keterangan = $fieldData['keterangan'] ?? '';
@@ -2188,7 +2182,7 @@ class UsulanValidationController extends Controller
             }
 
             // Save validation data with role 'kepegawaian_universitas'
-            $usulan->setValidasiByRole('kepegawaian_universitas', $validationData, Auth::id(), $keteranganUmum);
+            $usulan->setValidasiByRole('kepegawaian_universitas', $validationData, Auth::id(), $keteranganUmum ?? '');
             $usulan->save();
 
             // Log the validation
@@ -2202,14 +2196,14 @@ class UsulanValidationController extends Controller
             // Save keterangan umum if provided
             if (!empty($keteranganUmum)) {
                 $currentValidasi = $usulan->validasi_data ?? [];
-                
+
                 if (!isset($currentValidasi['kepegawaian_universitas'])) {
                     $currentValidasi['kepegawaian_universitas'] = [];
                 }
-                
+
                 $currentValidasi['kepegawaian_universitas']['keterangan_umum'] = $keteranganUmum;
                 $usulan->validasi_data = $currentValidasi;
-                
+
                 // Debug logging untuk keterangan umum
                 Log::info('Keterangan umum saved for NUPTK', [
                     'usulan_id' => $usulan->id,
@@ -2226,18 +2220,14 @@ class UsulanValidationController extends Controller
             // Save usulan to persist keterangan_umum changes
             $usulan->save();
 
-            // Update usulan status if needed
-            if ($usulan->status_usulan === 'Usulan Dikirim ke Kepegawaian Universitas') {
-                $usulan->status_usulan = 'Usulan Sedang Divalidasi Kepegawaian Universitas';
-                $usulan->save();
-            }
-
             // Clear caches
             $cacheKey = "usulan_validation_{$usulan->id}_kepegawaian_universitas";
             Cache::forget($cacheKey);
 
-            return redirect()->route('backend.kepegawaian-universitas.usulan.index')
-                ->with('success', 'Simpan Validasi Berhasil! Data validasi usulan NUPTK telah disimpan.');
+            return response()->json([
+                'success' => true,
+                'message' => 'Data validasi usulan NUPTK telah berhasil disimpan.'
+            ]);
 
         } catch (\Exception $e) {
             Log::error('Failed to save NUPTK validation', [
@@ -2245,9 +2235,10 @@ class UsulanValidationController extends Controller
                 'error' => $e->getMessage()
             ]);
 
-            return redirect()->back()
-                ->with('error', 'Terjadi kesalahan saat menyimpan validasi: ' . $e->getMessage())
-                ->withInput();
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menyimpan validasi: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -2316,6 +2307,10 @@ class UsulanValidationController extends Controller
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_BKN,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_SISTER,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_BKN,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_BKN,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_BKN,
@@ -2333,9 +2328,11 @@ class UsulanValidationController extends Controller
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_BKN,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_BKN,
-                \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_BKN
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_BKN,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_TIM_SISTER
             ];
-            
+
             if (!in_array($usulan->status_usulan, $allowedCurrentStatuses)) {
                 throw new \Exception('Status saat ini tidak memungkinkan perubahan status ini');
             }
@@ -2345,7 +2342,7 @@ class UsulanValidationController extends Controller
             $usulan->status_usulan = $newStatus;
             $usulan->save();
 
-            // Jika status berubah ke STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_BKN, 
+            // Jika status berubah ke STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_BKN,
             // otomatis simpan validasi BKN dengan data default
             if ($newStatus === \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_BKN) {
                 // Data validasi default untuk BKN (field yang bermasalah)

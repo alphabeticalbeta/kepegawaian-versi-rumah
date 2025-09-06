@@ -58,20 +58,20 @@
                 $statusColors = [
                     // Draft statuses (for Pegawai role)
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_DRAFT_USULAN => 'bg-gray-100 text-gray-800 border-gray-300',
-                    
+
                     // Kepegawaian Universitas statuses (for NUPTK)
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS => 'bg-yellow-100 text-yellow-800 border-yellow-300',
-                    
+
                     // SISTER statuses (for NUPTK)
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER => 'bg-indigo-100 text-indigo-800 border-indigo-300',
-                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_SISTER => 'bg-orange-100 text-orange-800 border-orange-300',
+                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_TIM_SISTER => 'bg-orange-100 text-orange-800 border-orange-300',
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER => 'bg-orange-100 text-orange-800 border-orange-300',
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER => 'bg-red-100 text-red-800 border-red-300',
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_SISTER => 'bg-green-100 text-green-800 border-green-300',
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS => 'bg-red-100 text-red-800 border-red-300'
                 ];
                 $statusColor = $statusColors[$usulan->status_usulan] ?? 'bg-gray-100 text-gray-800 border-gray-300';
-                
+
                 // Define view-only statuses
                 $viewOnlyStatuses = [
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER,
@@ -102,7 +102,7 @@
                             Mode View Only
                         </div>
                         <div class="text-sm text-orange-700">
-                            <strong>Perhatian:</strong> Usulan saat ini dalam status yang tidak memungkinkan perubahan validasi. 
+                            <strong>Perhatian:</strong> Usulan saat ini dalam status yang tidak memungkinkan perubahan validasi.
                             Semua field validasi sekarang dalam mode <strong>View Only</strong> dan tidak dapat diedit.
                         </div>
                     </div>
@@ -179,17 +179,17 @@
                             $gelarDepan = $usulan->pegawai->gelar_depan ?? '';
                             $namaLengkap = $usulan->pegawai->nama_lengkap ?? '';
                             $gelarBelakang = $usulan->pegawai->gelar_belakang ?? '';
-                            
+
                             $namaLengkapDisplay = '';
-                            
+
                             // Tambahkan gelar depan jika ada dan bukan "-"
                             if (!empty($gelarDepan) && $gelarDepan !== '-') {
                                 $namaLengkapDisplay .= $gelarDepan . ' ';
                             }
-                            
+
                             // Tambahkan nama lengkap
                             $namaLengkapDisplay .= $namaLengkap;
-                            
+
                             // Tambahkan gelar belakang jika ada dan bukan "-"
                             if (!empty($gelarBelakang) && $gelarBelakang !== '-') {
                                 $namaLengkapDisplay .= ' ' . $gelarBelakang;
@@ -211,17 +211,23 @@
                                class="block w-full border-gray-200 rounded-lg shadow-sm bg-gray-100 px-4 py-3 text-gray-800 font-medium cursor-not-allowed" disabled>
                     </div>
                     <div>
+                        <label class="block text-sm font-semibold text-gray-800">Jenis NUPTK</label>
+                        <p class="text-xs text-gray-600 mb-2">Jenis NUPTK yang diajukan</p>
+                        <input type="text" value="{{ ucwords(str_replace('_', ' ', $usulan->jenis_nuptk ?? '-')) }}"
+                               class="block w-full border-gray-200 rounded-lg shadow-sm bg-gray-100 px-4 py-3 text-gray-800 font-medium cursor-not-allowed" disabled>
+                    </div>
+                    <div>
                         <label class="block text-sm font-semibold text-gray-800">Unit Kerja</label>
                         <p class="text-xs text-gray-600 mb-2">Unit kerja pegawai</p>
                         @php
                             $unitKerjaDisplay = '';
                             if ($usulan->pegawai->unitKerja) {
                                 $unitKerjaDisplay = $usulan->pegawai->unitKerja->nama;
-                                
+
                                 // Tambahkan sub unit kerja jika ada
                                 if ($usulan->pegawai->unitKerja->subUnitKerja) {
                                     $unitKerjaDisplay .= ' - ' . $usulan->pegawai->unitKerja->subUnitKerja->nama;
-                                    
+
                                     // Tambahkan unit kerja utama jika ada
                                     if ($usulan->pegawai->unitKerja->subUnitKerja->unitKerja) {
                                         $unitKerjaDisplay = $usulan->pegawai->unitKerja->subUnitKerja->unitKerja->nama . ' - ' . $unitKerjaDisplay;
@@ -250,7 +256,7 @@ function submitAction(actionType, catatan) {
 
     const form = document.getElementById('validationForm');
     const actionInput = document.querySelector('input[name="action_type"]');
-    
+
     if (actionInput) {
         actionInput.value = actionType;
     }
@@ -285,7 +291,20 @@ function submitAction(actionType, catatan) {
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        // Check if response is ok
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Response is not JSON');
+        }
+
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             // Show success notification
@@ -328,11 +347,31 @@ function submitAction(actionType, catatan) {
     })
     .catch(error => {
         console.error('Error:', error);
-        
-        // Show error notification
+
+        // Show detailed error notification
+        let errorMessage = 'Terjadi kesalahan saat menyimpan validasi.';
+
+        if (error.message.includes('Response is not JSON')) {
+            errorMessage = 'Server mengembalikan response yang tidak valid. Silakan refresh halaman dan coba lagi.';
+        } else if (error.message.includes('HTTP error')) {
+            errorMessage = 'Terjadi kesalahan server. Silakan coba lagi atau hubungi administrator.';
+        } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+            errorMessage = 'Terjadi kesalahan jaringan. Periksa koneksi internet Anda.';
+        }
+
         Swal.fire({
             title: '❌ Error!',
-            text: 'Terjadi kesalahan jaringan. Silakan coba lagi.',
+            html: `
+                <div class="text-center">
+                    <p class="text-lg font-semibold text-gray-800 mb-2">${errorMessage}</p>
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-3 mt-4">
+                        <p class="text-sm text-red-800">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Detail Error: ${error.message}
+                        </p>
+                    </div>
+                </div>
+            `,
             icon: 'error',
             confirmButtonText: 'OK',
             confirmButtonColor: '#ef4444'
@@ -362,7 +401,7 @@ if (typeof Swal === 'undefined') {
 // Function to change usulan status
 function changeStatus(newStatus) {
     console.log('Changing status to:', newStatus);
-    
+
     // Show confirmation dialog for ALL status changes
     Swal.fire({
         title: 'Konfirmasi Kirim Usulan',
@@ -462,11 +501,31 @@ function processStatusChangeRequest(newStatus) {
     })
     .catch(error => {
         console.error('Error:', error);
-        
-        // Show error notification
+
+        // Show detailed error notification
+        let errorMessage = 'Terjadi kesalahan saat menyimpan validasi.';
+
+        if (error.message.includes('Response is not JSON')) {
+            errorMessage = 'Server mengembalikan response yang tidak valid. Silakan refresh halaman dan coba lagi.';
+        } else if (error.message.includes('HTTP error')) {
+            errorMessage = 'Terjadi kesalahan server. Silakan coba lagi atau hubungi administrator.';
+        } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+            errorMessage = 'Terjadi kesalahan jaringan. Periksa koneksi internet Anda.';
+        }
+
         Swal.fire({
             title: '❌ Error!',
-            text: 'Terjadi kesalahan jaringan. Silakan coba lagi.',
+            html: `
+                <div class="text-center">
+                    <p class="text-lg font-semibold text-gray-800 mb-2">${errorMessage}</p>
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-3 mt-4">
+                        <p class="text-sm text-red-800">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Detail Error: ${error.message}
+                        </p>
+                    </div>
+                </div>
+            `,
             icon: 'error',
             confirmButtonText: 'OK',
             confirmButtonColor: '#ef4444'
@@ -477,12 +536,13 @@ function processStatusChangeRequest(newStatus) {
 // Function to get appropriate message based on status
 function getStatusChangeMessage(newStatus) {
     const statusMessages = {
+        '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS }}': 'Permintaan perbaikan berhasil dikirim ke pegawai dari Kepegawaian Universitas.',
         '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER }}': 'Permintaan perbaikan berhasil dikirim ke pegawai dari Tim SISTER.',
         '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER }}': 'Status usulan berhasil diubah ke: Tidak Direkomendasikan SISTER',
         '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_SISTER }}': 'Status usulan berhasil diubah ke: Direkomendasikan SISTER',
         '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS }}': 'Status usulan berhasil diubah ke: Tidak Direkomendasikan Kepegawaian Universitas'
     };
-    
+
     return statusMessages[newStatus] || `Status usulan berhasil diubah ke: ${newStatus}`;
 }
 </script>

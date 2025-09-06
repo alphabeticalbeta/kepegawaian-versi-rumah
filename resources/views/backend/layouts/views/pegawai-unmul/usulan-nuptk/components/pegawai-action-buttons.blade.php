@@ -48,7 +48,7 @@
             {{-- Kirim Usulan Perbaikan Ke Kepegawaian Universitas --}}
             @if($usulan->status_usulan === \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS)
                 <button type="button" onclick="submitAction('kirim_perbaikan_ke_kepegawaian')"
-                        class="inline-flex items-center gap-3 px-6 py-3 text-base font-medium bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 whitespace-nowrap">
+                        class="inline-flex items-center gap-3 px-6 py-3 text-base font-medium bg-gradient-to-r from-orange-500 to-orange-600 text-black rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 whitespace-nowrap">
                     <i data-lucide="refresh-cw" class="w-5 h-5"></i>
                     Kirim Usulan Perbaikan Ke Kepegawaian
                 </button>

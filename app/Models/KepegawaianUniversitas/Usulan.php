@@ -1589,42 +1589,56 @@ public function getSenateDecisionCounts(): array
         });
     }
 
-    // Status constants for standardized status
-    const STATUS_USULAN_DIKIRIM_KE_ADMIN_FAKULTAS = 'Usulan Dikirim ke Admin Fakultas';
-    const STATUS_USULAN_PERBAIKAN_DARI_ADMIN_FAKULTAS = 'Usulan Perbaikan dari Admin Fakultas';
+    // PERMINTAAN PERBAIKAN
     const STATUS_PERMINTAAN_PERBAIKAN_DARI_ADMIN_FAKULTAS = 'Permintaan Perbaikan dari Admin Fakultas';
     const STATUS_PERMINTAAN_PERBAIKAN_KE_ADMIN_FAKULTAS_DARI_KEPEGAWAIAN_UNIVERSITAS = 'Permintaan Perbaikan Ke Admin Fakultas Dari Kepegawaian Universitas';
-    const STATUS_USULAN_PERBAIKAN_DARI_ADMIN_FAKULTAS_KE_KEPEGAWAIAN_UNIVERSITAS = 'Usulan Perbaikan Dari Admin Fakultas Ke Kepegawaian Universitas';
-    const STATUS_USULAN_DISETUJUI_ADMIN_FAKULTAS = 'Usulan Disetujui Admin Fakultas';
-    const STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS = 'Usulan Perbaikan Dari Pegawai Ke Kepegawaian Universitas';
     const STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS = 'Permintaan Perbaikan Ke Pegawai Dari Kepegawaian Universitas';
-    const STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS = 'Usulan Disetujui Kepegawaian Universitas dan Menunggu Penilaian';
     const STATUS_PERMINTAAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS = 'Permintaan Perbaikan dari Penilai Universitas';
-    const STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS = 'Usulan Perbaikan dari Penilai Universitas';
     const STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_PENILAI = 'Permintaan Perbaikan Ke Pegawai Dari Penilai';
     const STATUS_PERMINTAAN_PERBAIKAN_KE_ADMIN_FAKULTAS_DARI_PENILAI = 'Permintaan Perbaikan Ke Admin Fakultas Dari Penilai';
+    const STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER = 'Permintaan Perbaikan Ke Pegawai dari Tim Sister';
+    const STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_BKN = 'Permintaan Perbaikan Ke Pegawai Dari BKN';
+
+    // USULAN DIPERBAIKI
+    const STATUS_USULAN_DIKIRIM_KE_ADMIN_FAKULTAS = 'Usulan Dikirim ke Admin Fakultas';
+    const STATUS_USULAN_PERBAIKAN_DARI_ADMIN_FAKULTAS = 'Usulan Perbaikan dari Admin Fakultas';
+    const STATUS_USULAN_PERBAIKAN_DARI_ADMIN_FAKULTAS_KE_KEPEGAWAIAN_UNIVERSITAS = 'Usulan Perbaikan Dari Admin Fakultas Ke Kepegawaian Universitas';
+    const STATUS_USULAN_PERBAIKAN_DARI_PENILAI_UNIVERSITAS = 'Usulan Perbaikan dari Penilai Universitas';
     const STATUS_USULAN_PERBAIKAN_KE_PENILAI_UNIVERSITAS = 'Usulan Perbaikan Ke Penilai Universitas';
+    const STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_TIM_SISTER = 'Usulan Perbaikan Dari Pegawai Ke Tim Sister';
+    const STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_BKN = 'Usulan Perbaikan Dari Pegawai Ke BKN';
+    const STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS = 'Usulan Perbaikan Dari Pegawai Ke Kepegawaian Universitas';
+
+    // USULAN DISETUJUI
+    const STATUS_USULAN_DISETUJUI_ADMIN_FAKULTAS = 'Usulan Disetujui Admin Fakultas';
+    const STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS = 'Usulan Disetujui Kepegawaian Universitas dan Menunggu Penilaian';
+
+    // USULAN DIREKOMENDASI
     const STATUS_USULAN_DIREKOMENDASI_DARI_PENILAI_UNIVERSITAS = 'Usulan Direkomendasi dari Penilai Universitas';
     const STATUS_USULAN_DIREKOMENDASI_PENILAI_UNIVERSITAS = 'Usulan Direkomendasi Penilai Universitas';
     const STATUS_USULAN_DIREKOMENDASIKAN_OLEH_TIM_SENAT = 'Usulan Direkomendasikan oleh Tim Senat';
-    const STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER = 'Usulan Sudah Dikirim ke Sister';
-    const STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER = 'Permintaan Perbaikan Ke Pegawai dari Tim Sister';
-    const STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_TIM_SISTER = 'Usulan Perbaikan Dari Pegawai Ke Sister';
     const STATUS_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS = 'Usulan Direkomendasikan Kepegawaian Universitas';
     const STATUS_DIREKOMENDASIKAN_BKN = 'Usulan Direkomendasikan BKN';
     const STATUS_DIREKOMENDASIKAN_SISTER = 'Usulan Direkomendasikan Sister';
-    const STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS = 'Usulan Belum Direkomendasi Kepegawaian Universitas';
-    const STATUS_TIDAK_DIREKOMENDASIKAN_BKN = 'Usulan Belum Direkomendasi BKN';
-    const STATUS_TIDAK_DIREKOMENDASIKAN_SISTER = 'Usulan Belu   m Direkomendasi Sister';
+
+    // USULAN SUDAH DIKIRIM
+    const STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER = 'Usulan Sudah Dikirim ke Sister';
     const STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS = 'Usulan Dikirim ke Kepegawaian Universitas';
     const STATUS_USULAN_SUDAH_DIKIRIM_KE_BKN = 'Usulan Sudah Dikirim ke BKN';
-    const STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_BKN = 'Usulan Perbaikan Dari Pegawai Ke BKN';
-    const STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_BKN = 'Permintaan Perbaikan Ke Pegawai Dari BKN';
+
+    // USULAN TIDAK DIREKOMENDASI
+    const STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS = 'Usulan Belum Direkomendasi Kepegawaian Universitas';
+    const STATUS_TIDAK_DIREKOMENDASIKAN_BKN = 'Usulan Belum Direkomendasi BKN';
+    const STATUS_TIDAK_DIREKOMENDASIKAN_SISTER = 'Usulan Belum Direkomendasi Sister';
+
+    // DRAFT USULAN
     const STATUS_DRAFT_USULAN = 'Draft Usulan';
     const STATUS_DRAFT_PERBAIKAN_ADMIN_FAKULTAS = 'Draft Perbaikan Admin Fakultas';
     const STATUS_DRAFT_PERBAIKAN_KEPEGAWAIAN_UNIVERSITAS = 'Draft Perbaikan Kepegawaian Universitas';
     const STATUS_DRAFT_PERBAIKAN_PENILAI_UNIVERSITAS = 'Draft Perbaikan Penilai Universitas';
     const STATUS_DRAFT_PERBAIKAN_TIM_SISTER = 'Draft Perbaikan Tim Sister';
+
+    // TAMBAHAN STATUS
     const STATUS_MENUNGGU_HASIL_PENILAIAN_TIM_PENILAI = 'Menunggu Hasil Penilaian Tim Penilai';
     const STATUS_SK_TERBIT = 'SK SUDAH TERBIT';
 
