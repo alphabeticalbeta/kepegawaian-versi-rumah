@@ -70,33 +70,33 @@ class UsulanJabatanController extends BaseUsulanController
             'periode_ids_with_usulan' => $usulans->pluck('periode_usulan_id')->toArray()
         ]);
 
-        // Get periode IDs yang sudah pernah dibuat usulan oleh pegawai ini (kecuali draft)
-        $periodeIdsWithUsulan = $usulans->where('status_usulan', '!=', 'draft usulan')
-                                       ->pluck('periode_usulan_id')
-                                       ->toArray();
+        // Logika filter yang benar:
+        // 1. Periode BUKA: Tampilkan semua (sesuai status kepegawaian dan jabatan)
+        // 2. Periode TUTUP: Hanya tampilkan jika pegawai pernah submit usulan
 
-        // Jika tidak ada usulan non-draft, return collection kosong
-        if (empty($periodeIdsWithUsulan)) {
-            $periodeUsulans = collect();
-        } else {
-            // Get periode usulan yang sesuai dengan status kepegawaian dan jabatan
-            // Include periode yang aktif (Buka) dan periode yang sudah tutup tapi pernah dibuat usulan (kecuali draft)
-            $periodeUsulans = PeriodeUsulan::where(function($query) use ($pegawai, $periodeIdsWithUsulan, $jenisUsulanPeriode) {
-                    $query->where(function($subQuery) use ($pegawai, $periodeIdsWithUsulan) {
-                        // Periode yang sedang aktif - filter berdasarkan jabatan dan hanya yang memiliki usulan non-draft
-                        $subQuery->where('status', 'Buka')
-                                ->whereJsonContains('status_kepegawaian', $pegawai->status_kepegawaian)
-                                ->where(function($jenisQuery) use ($pegawai) {
-                                    $jenisQuery->whereIn('jenis_usulan', $this->getEligibleJenisUsulan($pegawai));
-                                })
-                                ->whereIn('id', $periodeIdsWithUsulan); // Hanya periode yang memiliki usulan non-draft
-                    })->orWhere(function($subQuery) use ($periodeIdsWithUsulan) {
-                        // Periode yang sudah tutup tapi pernah dibuat usulan (untuk history) - hanya non-draft
-                        $subQuery->whereIn('id', $periodeIdsWithUsulan);
-                    });
-                })
+        // Get periode usulan yang sesuai dengan status kepegawaian dan jabatan (periode buka)
+        $periodeUsulans = PeriodeUsulan::where('status', 'Buka')
+            ->whereJsonContains('status_kepegawaian', $pegawai->status_kepegawaian)
+            ->where(function($jenisQuery) use ($pegawai) {
+                $jenisQuery->whereIn('jenis_usulan', $this->getEligibleJenisUsulan($pegawai));
+            })
+            ->orderBy('tanggal_mulai', 'desc')
+            ->get();
+
+        // Get periode IDs yang pernah submit usulan (bukan draft)
+        $periodeIdsWithSubmittedUsulan = $usulans->where('status_usulan', '!=', 'draft usulan')
+                                                ->pluck('periode_usulan_id')
+                                                ->toArray();
+
+        // Get periode tutup yang pernah submit usulan
+        if (!empty($periodeIdsWithSubmittedUsulan)) {
+            $periodeTutupWithUsulan = PeriodeUsulan::whereIn('id', $periodeIdsWithSubmittedUsulan)
+                ->where('status', 'Tutup')
                 ->orderBy('tanggal_mulai', 'desc')
                 ->get();
+
+            // Gabungkan periode buka + periode tutup yang pernah submit
+            $periodeUsulans = $periodeUsulans->merge($periodeTutupWithUsulan);
         }
 
         // Debug query results
@@ -106,7 +106,7 @@ class UsulanJabatanController extends BaseUsulanController
             'periode_names' => $periodeUsulans->pluck('nama_periode')->toArray(),
             'periode_statuses' => $periodeUsulans->pluck('status', 'id')->toArray(),
             'periode_jenis_usulan' => $periodeUsulans->pluck('jenis_usulan', 'id')->toArray(),
-            'periode_ids_with_usulan' => $periodeIdsWithUsulan,
+            'periode_ids_with_submitted_usulan' => $periodeIdsWithSubmittedUsulan,
             'query_jenis_usulan' => $this->getEligibleJenisUsulan($pegawai),
             'jabatan_saat_usul' => $pegawai->jabatan_saat_usul ?? 'Tidak ada'
         ]);

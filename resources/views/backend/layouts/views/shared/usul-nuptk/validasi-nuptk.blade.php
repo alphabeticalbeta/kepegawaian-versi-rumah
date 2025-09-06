@@ -63,10 +63,10 @@
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS => 'bg-yellow-100 text-yellow-800 border-yellow-300',
 
                     // SISTER statuses (for NUPTK)
-                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER => 'bg-indigo-100 text-indigo-800 border-indigo-300',
+                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_TIM_SISTER => 'bg-indigo-100 text-indigo-800 border-indigo-300',
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_TIM_SISTER => 'bg-orange-100 text-orange-800 border-orange-300',
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER => 'bg-orange-100 text-orange-800 border-orange-300',
-                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER => 'bg-red-100 text-red-800 border-red-300',
+                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_TIM_SISTER => 'bg-red-100 text-red-800 border-red-300',
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_SISTER => 'bg-green-100 text-green-800 border-green-300',
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS => 'bg-red-100 text-red-800 border-red-300'
                 ];
@@ -75,7 +75,7 @@
                 // Define view-only statuses
                 $viewOnlyStatuses = [
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER,
-                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER,
+                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_TIM_SISTER,
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_SISTER,
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS
                 ];
@@ -538,7 +538,7 @@ function getStatusChangeMessage(newStatus) {
     const statusMessages = {
         '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS }}': 'Permintaan perbaikan berhasil dikirim ke pegawai dari Kepegawaian Universitas.',
         '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER }}': 'Permintaan perbaikan berhasil dikirim ke pegawai dari Tim SISTER.',
-        '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER }}': 'Status usulan berhasil diubah ke: Tidak Direkomendasikan SISTER',
+        '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_TIM_SISTER }}': 'Status usulan berhasil diubah ke: Tidak Direkomendasikan SISTER',
         '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_SISTER }}': 'Status usulan berhasil diubah ke: Direkomendasikan SISTER',
         '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS }}': 'Status usulan berhasil diubah ke: Tidak Direkomendasikan Kepegawaian Universitas'
     };

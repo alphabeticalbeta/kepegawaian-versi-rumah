@@ -120,18 +120,23 @@ class UsulanKepangkatanController extends Controller
                           ->with(['periodeUsulan'])
                           ->get();
 
-        // Filter periode usulan untuk hanya menampilkan yang memiliki usulan dengan status selain "draft usulan"
-        $periodeIdsWithNonDraftUsulan = $usulans->where('status_usulan', '!=', 'draft usulan')
-                                               ->pluck('periode_usulan_id')
-                                               ->toArray();
+        // Logika filter yang benar:
+        // 1. Periode BUKA: Tampilkan semua (sesuai status kepegawaian)
+        // 2. Periode TUTUP: Hanya tampilkan jika pegawai pernah submit usulan
 
-        // Jika tidak ada usulan non-draft, set collection kosong
-        if (empty($periodeIdsWithNonDraftUsulan)) {
-            $periodeUsulans = collect();
-        } else {
-            // Update periode usulan untuk hanya menampilkan yang memiliki usulan non-draft
-            $periodeUsulans = $periodeUsulans->whereIn('id', $periodeIdsWithNonDraftUsulan);
-        }
+        $periodeBuka = $periodeUsulans->where('status', 'Buka');
+        $periodeTutup = $periodeUsulans->where('status', 'Tutup');
+
+        // Get periode IDs yang pernah submit usulan (bukan draft)
+        $periodeIdsWithSubmittedUsulan = $usulans->where('status_usulan', '!=', 'draft usulan')
+                                                ->pluck('periode_usulan_id')
+                                                ->toArray();
+
+        // Filter periode tutup: hanya yang pernah submit usulan
+        $periodeTutupWithUsulan = $periodeTutup->whereIn('id', $periodeIdsWithSubmittedUsulan);
+
+        // Gabungkan hasil: periode buka + periode tutup yang pernah submit
+        $periodeUsulans = $periodeBuka->merge($periodeTutupWithUsulan);
 
         // Get status kepegawaian dari pegawai
         $statusKepegawaian = $pegawai->status_kepegawaian ?? null;

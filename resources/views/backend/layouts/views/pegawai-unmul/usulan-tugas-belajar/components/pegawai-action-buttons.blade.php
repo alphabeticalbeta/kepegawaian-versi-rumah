@@ -1,21 +1,21 @@
-{{-- Action Buttons untuk Pegawai NUPTK --}}
+{{-- Action Buttons untuk Pegawai Tugas Belajar --}}
 @if($usulan->exists)
     {{-- Check if usulan is in view-only status --}}
     @php
         $viewOnlyStatuses = [
             \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS,
             \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DISETUJUI_KEPEGAWAIAN_UNIVERSITAS,
-            \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_TIM_SISTER,
-            \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_SISTER,
+            \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_KEMENTERIAN,
+            \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_KEMENTERIAN,
             \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS,
-            \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_TIM_SISTER
+            \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEMENTERIAN
         ];
 
         // Status yang dapat diedit (tidak view-only) - hanya status draft dan permintaan perbaikan
         $editableStatuses = [
             \App\Models\KepegawaianUniversitas\Usulan::STATUS_DRAFT_USULAN,
             \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS,
-            \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER
+            \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEMENTERIAN
         ];
 
         if (in_array($usulan->status_usulan, $editableStatuses)) {
@@ -54,12 +54,12 @@
                 </button>
             @endif
 
-            {{-- Kirim Usulan Perbaikan Dari Tim Sister ke Kepegawaian Universitas --}}
-            @if($usulan->status_usulan === \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER)
-                <button type="button" onclick="submitAction('kirim_perbaikan_tim_sister_ke_kepegawaian')"
+            {{-- Kirim Usulan Perbaikan Dari Kementerian ke Kepegawaian Universitas --}}
+            @if($usulan->status_usulan === \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEMENTERIAN)
+                <button type="button" onclick="submitAction('kirim_perbaikan_kementerian_ke_kepegawaian')"
                         class="inline-flex items-center gap-3 px-6 py-3 text-base font-medium bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105 whitespace-nowrap">
                     <i data-lucide="arrow-right" class="w-5 h-5"></i>
-                    Kirim Usulan Perbaikan Dari Tim Sister ke Kepegawaian
+                    Kirim Usulan Perbaikan Dari Kementerian ke Kepegawaian
                 </button>
             @endif
         </div>
@@ -73,9 +73,9 @@
         <div class="flex items-start">
             <i data-lucide="alert-triangle" class="w-5 h-5 text-yellow-600 mr-3 mt-0.5"></i>
             <div>
-                <h4 class="text-sm font-medium text-yellow-800">Usulan NUPTK Belum Tersimpan</h4>
+                <h4 class="text-sm font-medium text-yellow-800">Usulan Tugas Belajar Belum Tersimpan</h4>
                 <p class="text-sm text-yellow-700 mt-1">
-                    Usulan NUPTK ini belum tersimpan di database. Silakan simpan usulan terlebih dahulu sebelum melanjutkan.
+                    Usulan Tugas Belajar ini belum tersimpan di database. Silakan simpan usulan terlebih dahulu sebelum melanjutkan.
                 </p>
             </div>
         </div>
@@ -83,35 +83,35 @@
 @endif
 
 <script>
-// Action button configurations untuk NUPTK
+// Action button configurations untuk Tugas Belajar
 const actionConfigs = {
     'kirim_ke_kepegawaian': {
-        title: 'Kirim Usulan NUPTK ke Kepegawaian Universitas',
-        message: 'Apakah Anda yakin ingin mengirim usulan NUPTK ini ke Kepegawaian Universitas? Usulan akan diverifikasi oleh tim kepegawaian.',
+        title: 'Kirim Usulan Tugas Belajar ke Kepegawaian Universitas',
+        message: 'Apakah Anda yakin ingin mengirim usulan Tugas Belajar ini ke Kepegawaian Universitas? Usulan akan diverifikasi oleh tim kepegawaian.',
         icon: 'question',
         confirmColor: '#3b82f6',
-        loadingText: 'Mengirim usulan NUPTK ke Kepegawaian Universitas...'
+        loadingText: 'Mengirim usulan Tugas Belajar ke Kepegawaian Universitas...'
     },
     'kirim_perbaikan_ke_kepegawaian': {
-        title: 'Kirim Usulan Perbaikan NUPTK',
-        message: 'Apakah Anda yakin ingin mengirim usulan perbaikan NUPTK ini ke Kepegawaian Universitas? Pastikan semua field telah diperbaiki.',
+        title: 'Kirim Usulan Perbaikan Tugas Belajar',
+        message: 'Apakah Anda yakin ingin mengirim usulan perbaikan Tugas Belajar ini ke Kepegawaian Universitas? Pastikan semua field telah diperbaiki.',
         icon: 'question',
         confirmColor: '#f59e0b',
-        loadingText: 'Mengirim usulan perbaikan NUPTK ke Kepegawaian Universitas...'
+        loadingText: 'Mengirim usulan perbaikan Tugas Belajar ke Kepegawaian Universitas...'
     },
-    'kirim_perbaikan_tim_sister_ke_kepegawaian': {
-        title: 'Kirim Usulan Perbaikan dari Tim Sister',
-        message: 'Apakah Anda yakin ingin mengirim usulan perbaikan dari Tim Sister ini ke Kepegawaian Universitas? Pastikan semua field telah diperbaiki.',
+    'kirim_perbaikan_kementerian_ke_kepegawaian': {
+        title: 'Kirim Usulan Perbaikan dari Kementerian',
+        message: 'Apakah Anda yakin ingin mengirim usulan perbaikan dari Kementerian ini ke Kepegawaian Universitas? Pastikan semua field telah diperbaiki.',
         icon: 'question',
         confirmColor: '#8b5cf6',
-        loadingText: 'Mengirim usulan perbaikan dari Tim Sister ke Kepegawaian Universitas...'
+        loadingText: 'Mengirim usulan perbaikan dari Kementerian ke Kepegawaian Universitas...'
     },
-    'kirim_perbaikan_ke_tim_sister': {
-        title: 'Kirim Usulan Perbaikan ke Tim Sister',
-        message: 'Apakah Anda yakin ingin mengirim usulan perbaikan NUPTK ini ke Tim Sister? Usulan akan diproses oleh tim Sister.',
+    'kirim_perbaikan_ke_kementerian': {
+        title: 'Kirim Usulan Perbaikan ke Kementerian',
+        message: 'Apakah Anda yakin ingin mengirim usulan perbaikan Tugas Belajar ini ke Kementerian? Usulan akan diproses oleh tim Kementerian.',
         icon: 'question',
         confirmColor: '#3b82f6',
-        loadingText: 'Mengirim usulan perbaikan NUPTK ke Tim Sister...'
+        loadingText: 'Mengirim usulan perbaikan Tugas Belajar ke Kementerian...'
     }
 };
 
@@ -189,13 +189,13 @@ function submitAction(action) {
 function processAction(action) {
     try {
 
-        // Gunakan form utama yang sudah ada untuk NUPTK (form dengan id="formAction")
+        // Gunakan form utama yang sudah ada untuk Tugas Belajar (form dengan id="formAction")
         let actionForm = document.querySelector('form input[id="formAction"]')?.closest('form');
         let actionInput = document.getElementById('formAction');
 
         // Fallback: jika tidak ditemukan, cari form yang mengandung button action
         if (!actionForm || !actionInput) {
-            actionForm = document.querySelector('form[action*="usulan-nuptk"]');
+            actionForm = document.querySelector('form[action*="usulan-tugas-belajar"]');
             actionInput = actionForm?.querySelector('input[name="action"]');
         }
 
@@ -245,10 +245,10 @@ function createDynamicForm(action) {
             existingForm.remove();
         }
 
-        // Create new form untuk NUPTK
+        // Create new form untuk Tugas Belajar
         const actionForm = document.createElement('form');
         actionForm.id = 'actionForm';
-        actionForm.action = '{{ route("pegawai-unmul.usulan-nuptk.update", $usulan) }}';
+        actionForm.action = '{{ route("pegawai-unmul.usulan-tugas-belajar.update", $usulan) }}';
         actionForm.method = 'POST';
         actionForm.enctype = 'multipart/form-data';
         actionForm.style.display = 'none';
@@ -274,12 +274,12 @@ function createDynamicForm(action) {
         actionValue.value = action;
         actionForm.appendChild(actionValue);
 
-        // Add jenis_nuptk untuk NUPTK
-        const jenisNuptkInput = document.createElement('input');
-        jenisNuptkInput.type = 'hidden';
-        jenisNuptkInput.name = 'jenis_nuptk';
-        jenisNuptkInput.value = '{{ $usulan->jenis_nuptk ?? "" }}';
-        actionForm.appendChild(jenisNuptkInput);
+        // Add jenis_tubel untuk Tugas Belajar
+        const jenisTubelInput = document.createElement('input');
+        jenisTubelInput.type = 'hidden';
+        jenisTubelInput.name = 'jenis_tubel';
+        jenisTubelInput.value = '{{ $usulan->jenis_tubel ?? "" }}';
+        actionForm.appendChild(jenisTubelInput);
 
         // Add form to body and submit
         document.body.appendChild(actionForm);

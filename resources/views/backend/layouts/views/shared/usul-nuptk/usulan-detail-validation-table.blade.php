@@ -17,7 +17,7 @@
                         View Only
                     </span>
                 @endif
-                @if($usulan->status_usulan === \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER)
+                @if($usulan->status_usulan === \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_TIM_SISTER)
                     <span class="ml-3 px-3 py-1 bg-orange-100 text-orange-800 text-sm font-medium rounded-full border border-orange-200">
                         <i data-lucide="eye" class="w-4 h-4 inline mr-1"></i>
                         View Only
@@ -134,7 +134,7 @@
             @endif
         @endif
 
-        @if($usulan->status_usulan === \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER)
+        @if($usulan->status_usulan === \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_TIM_SISTER)
             <div class="bg-red-50 border-b border-red-200 px-6 py-4">
                 <div class="flex items-center">
                     <i data-lucide="x-circle" class="w-5 h-5 text-red-600 mr-3"></i>
@@ -240,7 +240,7 @@
                                     // Check if current role can edit
                                     $canEdit = $currentRole === 'Kepegawaian Universitas' &&
                                                $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER &&
-                                               $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER &&
+                                               $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_TIM_SISTER &&
                                                $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_SISTER &&
                                                $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS &&
                                                $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS;
@@ -382,7 +382,7 @@
                             $generalNote = $displayValidation['keterangan_umum'] ?? '';
                             $canEditGeneralNote = $currentRole === 'Kepegawaian Universitas' &&
                                                   $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER &&
-                                                  $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER &&
+                                                  $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_TIM_SISTER &&
                                                   $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_SISTER &&
                                                   $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS &&
                                                   $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS;
@@ -436,7 +436,7 @@
 
                 {{-- Button Kirim ke SISTER --}}
                 <button type="button"
-                        onclick="saveAndChangeStatus('{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER }}')"
+                        onclick="saveAndChangeStatus('{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_TIM_SISTER }}')"
                         class="flex items-center px-4 py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-medium rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg">
                     <i data-lucide="send" class="w-4 h-4 mr-2"></i>
                     Kirim Usulan ke SISTER
@@ -445,7 +445,7 @@
             @endif
 
             {{-- Status Change Buttons for "Usulan Sudah Dikirim ke SISTER" --}}
-            @if($usulan->status_usulan === \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_SISTER || $usulan->status_usulan === \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_TIM_SISTER)
+            @if($usulan->status_usulan === \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_TIM_SISTER || $usulan->status_usulan === \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_TIM_SISTER)
             <div class="flex gap-3">
                 {{-- Button Permintaan Perbaikan Ke Pegawai Dari SISTER --}}
                 <button type="button"
@@ -457,7 +457,7 @@
 
                 {{-- Button Belum Direkomendasikan Dari SISTER --}}
                 <button type="button"
-                        onclick="saveAndChangeStatus('{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER }}')"
+                        onclick="saveAndChangeStatus('{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_TIM_SISTER }}')"
                         class="flex items-center px-4 py-3 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg">
                     <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i>
                     Belum Direkomendasikan Dari SISTER
@@ -475,7 +475,7 @@
 
             {{-- Save Validation Button --}}
             @if($usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER &&
-                 $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_SISTER &&
+                 $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_TIM_SISTER &&
                  $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_SISTER &&
                  $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS &&
                  $usulan->status_usulan !== \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS)
