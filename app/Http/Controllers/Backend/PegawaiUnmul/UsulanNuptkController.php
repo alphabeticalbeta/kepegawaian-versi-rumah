@@ -85,6 +85,18 @@ class UsulanNuptkController extends Controller
                           ->with(['periodeUsulan'])
                           ->get();
 
+        // Filter periode usulan untuk hanya menampilkan yang memiliki usulan dengan status selain "draft usulan"
+        $periodeIdsWithNonDraftUsulan = $usulans->where('status_usulan', '!=', 'draft usulan')
+                                               ->pluck('periode_usulan_id')
+                                               ->toArray();
+
+        // Jika tidak ada usulan non-draft, set collection kosong
+        if (empty($periodeIdsWithNonDraftUsulan)) {
+            $periodeUsulans = collect();
+        } else {
+            // Update periode usulan untuk hanya menampilkan yang memiliki usulan non-draft
+            $periodeUsulans = $periodeUsulans->whereIn('id', $periodeIdsWithNonDraftUsulan);
+        }
 
         // Get status kepegawaian dari pegawai
         $statusKepegawaian = $pegawai->status_kepegawaian ?? null;
