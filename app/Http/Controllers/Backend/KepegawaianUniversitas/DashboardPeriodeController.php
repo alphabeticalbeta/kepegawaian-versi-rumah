@@ -197,7 +197,7 @@ class DashboardPeriodeController extends Controller
             $usulansQuery->whereJsonContains('data_usulan->jenis_usulan_pangkat', $filterValue);
         } elseif ($filter === 'jenis_nuptk' && $filterValue) {
             $usulansQuery->where('jenis_nuptk', $filterValue);
-        } elseif ($filter === 'jenis_usulan_tugas_belajar' && $filterValue) {
+        } elseif ($filter === 'jenis_tugas_belajar' && $filterValue) {
             // Filter berdasarkan jenis pegawai untuk tugas belajar
             $usulansQuery->whereHas('pegawai', function($query) use ($filterValue) {
                 if ($filterValue === 'dosen') {

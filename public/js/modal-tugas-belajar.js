@@ -6,6 +6,8 @@ let currentPeriodeIdTugasBelajar = null;
 
 // Fungsi untuk membuka modal tugas belajar
 function openModalLihatPengusulTugasBelajar(periodeId) {
+    console.log('openModalLihatPengusulTugasBelajar called with periodeId:', periodeId);
+
     // Simpan periode ID untuk digunakan nanti
     currentPeriodeIdTugasBelajar = periodeId;
 
@@ -13,8 +15,14 @@ function openModalLihatPengusulTugasBelajar(periodeId) {
     updateCountPengusulTugasBelajar(periodeId);
 
     // Tampilkan modal
-    document.getElementById('modalLihatPengusulTugasBelajar').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
+    const modal = document.getElementById('modalLihatPengusulTugasBelajar');
+    if (modal) {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        console.log('Modal Tugas Belajar opened successfully');
+    } else {
+        console.error('Modal element not found: modalLihatPengusulTugasBelajar');
+    }
 }
 
 // Fungsi untuk menutup modal tugas belajar
@@ -54,7 +62,7 @@ function fetchUsulanTugasBelajarCount(periodeId, timeoutId) {
 
     // Fetch data dari server menggunakan AJAX
     // Gunakan route yang benar sesuai struktur Laravel
-    fetch(`/kepegawaian-universitas/periode-usulan/${periodeId}/usulan-tugas-belajar-count`, {
+    fetch(`/kepegawaian-universitas/dashboard-periode/${periodeId}/usulan-tugas-belajar-count`, {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -130,7 +138,7 @@ function lihatPengusulTugasBelajar(jenisUsulan) {
 
     // Tambahkan parameter filter
     const filterParams = new URLSearchParams();
-    filterParams.append('filter', 'jenis_usulan_tugas_belajar');
+    filterParams.append('filter', 'jenis_tugas_belajar');
     filterParams.append('value', jenisUsulan);
 
     // Redirect ke halaman yang benar
@@ -158,3 +166,14 @@ window.ModalTugasBelajar = {
     updateCount: updateCountPengusulTugasBelajar,
     lihatPengusul: lihatPengusulTugasBelajar
 };
+
+// Pastikan fungsi tersedia secara global
+window.openModalLihatPengusulTugasBelajar = openModalLihatPengusulTugasBelajar;
+window.closeModalLihatPengusulTugasBelajar = closeModalLihatPengusulTugasBelajar;
+window.lihatPengusulTugasBelajar = lihatPengusulTugasBelajar;
+
+console.log('Tugas Belajar functions registered globally:', {
+    openModalLihatPengusulTugasBelajar: typeof window.openModalLihatPengusulTugasBelajar,
+    closeModalLihatPengusulTugasBelajar: typeof window.closeModalLihatPengusulTugasBelajar,
+    lihatPengusulTugasBelajar: typeof window.lihatPengusulTugasBelajar
+});

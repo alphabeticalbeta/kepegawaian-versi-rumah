@@ -2306,10 +2306,14 @@ class UsulanValidationController extends Controller
             $allowedStatuses = [
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_KEMENTERIAN,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_BKN,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_TIM_SISTER,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEMENTERIAN,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_TIM_SISTER,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEMENTERIAN,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_TIM_SISTER,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_KEMENTERIAN,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_SISTER,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_BKN,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_BKN,
@@ -2325,8 +2329,10 @@ class UsulanValidationController extends Controller
             $allowedCurrentStatuses = [
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS,
-                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_BKN,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEPEGAWAIAN_UNIVERSITAS,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_KEMENTERIAN,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEMENTERIAN,
+                \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_BKN,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_BKN,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_BKN,
                 \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_TIM_SISTER,
@@ -2411,6 +2417,263 @@ class UsulanValidationController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengubah status: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Show validation form untuk usulan Tugas Belajar
+     */
+    public function showTubelValidation(Usulan $usulan)
+    {
+        // Load relationships yang diperlukan
+        $usulan = $usulan->load([
+            'pegawai.unitKerja.subUnitKerja.unitKerja',
+            'pegawai.pangkat',
+            'pegawai.jabatan',
+            'periodeUsulan'
+        ]);
+
+        // Cek apakah usulan adalah jenis Tugas Belajar
+        if ($usulan->jenis_usulan !== 'usulan-tugas-belajar') {
+            return redirect()->back()->with('error', 'Halaman ini hanya untuk usulan Tugas Belajar.');
+        }
+
+        // Get existing validation data
+        $existingValidation = $usulan->getValidasiByRole('kepegawaian_universitas') ?? [];
+
+        // Get current role (hardcoded untuk kepegawaian universitas)
+        $currentRole = 'Kepegawaian Universitas';
+
+        // Field groups configuration untuk usulan Tugas Belajar
+        $fieldGroups = [
+            'data_pribadi' => [
+                'label' => 'Data Pribadi Pegawai',
+                'icon' => 'user',
+                'fields' => [
+                    'tempat_lahir' => 'Tempat Lahir',
+                    'tanggal_lahir' => 'Tanggal Lahir',
+                    'nomor_handphone' => 'Nomor Handphone',
+                    'email' => 'Email',
+                    'pendidikan_terakhir' => 'Pendidikan Terakhir',
+                    'pangkat' => 'Pangkat Terakhir',
+                    'tmt_pangkat' => 'TMT Pangkat',
+                    'jabatan' => 'Jabatan Terakhir',
+                    'tmt_jabatan' => 'TMT Jabatan'
+                ]
+            ],
+            'data_usulan_tugas_belajar' => [
+                'label' => 'Data Usulan Tugas Belajar',
+                'icon' => 'book-open',
+                'fields' => [
+                    'tahun_studi' => 'Tahun Studi',
+                    'alamat_lengkap' => 'Alamat Lengkap',
+                    'pendidikan_ditempuh' => 'Pendidikan yang Ditempuh',
+                    'nama_prodi_dituju' => 'Nama Prodi yang Dituju',
+                    'nama_fakultas_dituju' => 'Nama Fakultas yang Dituju',
+                    'nama_universitas_dituju' => 'Nama Universitas yang Dituju',
+                    'negara_studi' => 'Negara Studi'
+                ]
+            ],
+            'dokumen_tugas_belajar' => [
+                'label' => 'Dokumen Tugas Belajar',
+                'icon' => 'folder',
+                'fields' => [
+                    'kartu_pegawai' => 'Kartu Pegawai/Kartu Virtual ASN',
+                    'dokumen_setneg' => 'Dokumen Setneg (Luar Negeri)'
+                ]
+            ]
+        ];
+
+        // Conditional field groups berdasarkan jenis_tubel
+        $jenisTubel = $usulan->data_usulan['jenis_tubel'] ?? null;
+
+        if ($jenisTubel === 'Tugas Belajar') {
+            $fieldGroups['dokumen_tubel'] = [
+                'label' => 'Dokumen Tugas Belajar',
+                'icon' => 'file-text',
+                'fields' => [
+                    'surat_tunjangan_keluarga' => 'Surat Keterangan Pembayaran Tunjangan Keluarga',
+                    'akta_nikah' => 'Akta Nikah/Surat Keterangan Belum Menikah',
+                    'surat_rekomendasi_atasan' => 'Surat Rekomendasi dari Atasan Langsung',
+                    'surat_perjanjian_tubel' => 'Surat Perjanjian Tugas Belajar',
+                    'surat_jaminan_pembiayaan' => 'Surat Jaminan Pembiayaan Tugas Belajar',
+                    'surat_keterangan_pimpinan' => 'Surat Keterangan dari Pimpinan Unit Kerja',
+                    'surat_hasil_kelulusan' => 'Surat Hasil Kelulusan dari Lembaga Pendidikan (LoA)',
+                    'surat_pernyataan_pimpinan' => 'Surat Pernyataan dari Pimpinan Unit Kerja (10 Poin)',
+                    'surat_pernyataan_bersangkutan' => 'Asli Surat Pernyataan yang Bersangkutan (3 Poin)',
+                    'dokumen_akreditasi' => 'Dokumen Akreditasi Prodi dan PT/Tangkap Layar Daftar PTLN'
+                ]
+            ];
+        } elseif ($jenisTubel === 'Perpanjangan Tugas Belajar') {
+            $fieldGroups['dokumen_perpanjangan_tubel'] = [
+                'label' => 'Dokumen Perpanjangan Tugas Belajar',
+                'icon' => 'file-text',
+                'fields' => [
+                    'surat_perjanjian_perpanjangan' => 'Surat Perjanjian Perpanjangan Pemberian Tugas Belajar',
+                    'surat_perpanjangan_jaminan_pembiayaan' => 'Surat Perpanjangan Jaminan Pembiayaan Tugas Belajar',
+                    'surat_rekomendasi_lembaga_pendidikan' => 'Surat Rekomendasi Perpanjangan Pemberian Tugas Belajar dari Lembaga Pendidikan',
+                    'surat_rekomendasi_pimpinan_unit' => 'Surat Rekomendasi Perpanjangan Tugas Belajar dari Pimpinan Unit Kerja',
+                    'sk_tugas_belajar' => 'SK Tugas Belajar'
+                ]
+            ];
+        }
+
+        // Get validation configuration
+        $config = [
+            'validationFields' => array_keys($fieldGroups)
+        ];
+
+        // Check if usulan is in view-only status
+        $viewOnlyStatuses = [
+            Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_KEMENTERIAN,
+            Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEMENTERIAN,
+            Usulan::STATUS_DIREKOMENDASIKAN_KEMENTERIAN
+        ];
+
+        $isViewOnly = in_array($usulan->status_usulan, $viewOnlyStatuses);
+
+        return view('backend.layouts.views.shared.usul-tubel.validasi-tubel', compact(
+            'usulan',
+            'existingValidation',
+            'fieldGroups',
+            'config',
+            'currentRole',
+            'isViewOnly'
+        ));
+    }
+
+    /**
+     * Save validasi field-by-field untuk usulan Tugas Belajar
+     */
+    public function saveTubelValidation(Request $request, Usulan $usulan)
+    {
+        try {
+            // Validate request
+            $request->validate([
+                'validation' => 'required|array',
+                'keterangan_umum' => 'nullable|string|max:1000'
+            ]);
+
+            // Get validation data
+            $rawValidationData = $request->input('validation');
+            $keteranganUmum = $request->input('keterangan_umum', '');
+
+            // Debug logging untuk keterangan umum
+            Log::info('Keterangan umum received in saveTubelValidation', [
+                'usulan_id' => $usulan->id,
+                'keterangan_umum_raw' => $keteranganUmum,
+                'keterangan_umum_type' => gettype($keteranganUmum),
+                'keterangan_umum_empty' => empty($keteranganUmum),
+                'keterangan_umum_null' => is_null($keteranganUmum),
+                'request_all' => $request->all()
+            ]);
+
+            // Validate that rawValidationData is not null and is an array
+            if (empty($rawValidationData) || !is_array($rawValidationData)) {
+                throw new \Exception('Data validasi tidak valid atau kosong');
+            }
+
+            // Additional validation: check if any group contains non-array data
+            foreach ($rawValidationData as $groupKey => $groupData) {
+                if (!is_array($groupData)) {
+                    throw new \Exception("Group '$groupKey' berisi data dengan tipe '" . gettype($groupData) . "', seharusnya array");
+                }
+            }
+
+            // Log raw data structure for debugging
+            Log::info('Raw validation data structure', [
+                'usulan_id' => $usulan->id,
+                'raw_validation_data' => $rawValidationData,
+                'data_type' => gettype($rawValidationData),
+                'data_count' => count($rawValidationData)
+            ]);
+
+            // Process validation data - same logic as NUPTK
+            $validationData = [];
+            foreach ($rawValidationData as $groupKey => $groupData) {
+                if (!is_array($groupData)) {
+                    Log::warning('Skipping non-array group data', [
+                        'group_key' => $groupKey,
+                        'data_type' => gettype($groupData),
+                        'data_value' => $groupData
+                    ]);
+                    continue;
+                }
+
+                $validationData[$groupKey] = [];
+                foreach ($groupData as $fieldKey => $fieldData) {
+                    if (!is_array($fieldData)) {
+                        Log::warning('Skipping non-array field data', [
+                            'group_key' => $groupKey,
+                            'field_key' => $fieldKey,
+                            'data_type' => gettype($fieldData),
+                            'data_value' => $fieldData
+                        ]);
+                        continue;
+                    }
+
+                    $status = $fieldData['status'] ?? 'sesuai';
+                    $keterangan = $fieldData['keterangan'] ?? '';
+
+                    // Validate status
+                    if (!in_array($status, ['sesuai', 'tidak_sesuai'])) {
+                        Log::warning('Invalid status value, defaulting to sesuai', [
+                            'group_key' => $groupKey,
+                            'field_key' => $fieldKey,
+                            'invalid_status' => $status
+                        ]);
+                        $status = 'sesuai';
+                    }
+
+                    // Validate keterangan length
+                    if (strlen($keterangan) > 500) {
+                        $keterangan = substr($keterangan, 0, 500);
+                        Log::warning('Keterangan truncated', [
+                            'group_key' => $groupKey,
+                            'field_key' => $fieldKey,
+                            'original_length' => strlen($fieldData['keterangan']),
+                            'truncated_length' => strlen($keterangan)
+                        ]);
+                    }
+
+                    $validationData[$groupKey][$fieldKey] = [
+                        'status' => $status,
+                        'keterangan' => $keterangan,
+                        'validated_at' => now()->toISOString(),
+                        'validated_by' => Auth::id()
+                    ];
+                }
+            }
+
+            // Save validation data with role 'kepegawaian_universitas'
+            $usulan->setValidasiByRole('kepegawaian_universitas', $validationData, Auth::id(), $keteranganUmum ?? '');
+            $usulan->save();
+
+            // Log the validation
+            Log::info('TUBEL validation saved', [
+                'usulan_id' => $usulan->id,
+                'validated_by' => Auth::id(),
+                'keterangan_umum' => $keteranganUmum,
+                'validation_data' => $validationData
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Validasi berhasil disimpan'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to save TUBEL validation', [
+                'usulan_id' => $usulan->id,
+                'error' => $e->getMessage(),
+                'error_trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menyimpan validasi: ' . $e->getMessage()
             ], 500);
         }
     }

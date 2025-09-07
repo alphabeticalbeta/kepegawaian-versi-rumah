@@ -1,5 +1,5 @@
 {{-- Component Modal Tugas Belajar - Hanya untuk jenis usulan tugas belajar --}}
-@if($jenisUsulan === 'usulan-tugas-belajar')
+@if($jenisUsulan === 'tugas-belajar' || $jenisUsulan === 'usulan-tugas-belajar')
 <!-- Modal Popup untuk Lihat Pengusul Tugas Belajar -->
 <div id="modalLihatPengusulTugasBelajar" class="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
     <div class="relative top-10 mx-auto p-0 border w-11/12 max-w-4xl shadow-2xl rounded-lg bg-white">

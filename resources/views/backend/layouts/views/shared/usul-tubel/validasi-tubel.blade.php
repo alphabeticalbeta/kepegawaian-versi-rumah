@@ -1,6 +1,6 @@
 @extends('backend.layouts.roles.kepegawaian-universitas.app')
 
-@section('title', 'Validasi Usulan Kepangkatan: ' . $usulan->pegawai->nama_lengkap)
+@section('title', 'Validasi Usulan Tugas Belajar: ' . $usulan->pegawai->nama_lengkap)
 
 @section('content')
 <div class="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/30">
@@ -10,10 +10,10 @@
             <div class="py-6 flex flex-wrap gap-4 justify-between items-center">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900">
-                        Validasi Usulan Kepangkatan
+                        Validasi Usulan Tugas Belajar
                     </h1>
                     <p class="mt-1 text-sm text-gray-500">
-                        Validasi field-by-field usulan kepangkatan untuk {{ $usulan->pegawai->nama_lengkap }}
+                        Validasi field-by-field usulan Tugas Belajar untuk {{ $usulan->pegawai->nama_lengkap }}
                     </p>
                 </div>
                 <div class="flex items-center gap-3">
@@ -59,29 +59,26 @@
                     // Draft statuses (for Pegawai role)
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_DRAFT_USULAN => 'bg-gray-100 text-gray-800 border-gray-300',
 
-                    // Kepegawaian Universitas statuses (for kepangkatan)
+                    // Kepegawaian Universitas statuses (for Tugas Belajar)
                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_DIKIRIM_KE_KEPEGAWAIAN_UNIVERSITAS => 'bg-yellow-100 text-yellow-800 border-yellow-300',
 
-                    // BKN statuses (for kepangkatan)
-                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_BKN => 'bg-indigo-100 text-indigo-800 border-indigo-300',
-                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_BKN => 'bg-orange-100 text-orange-800 border-orange-300',
-                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_BKN => 'bg-orange-100 text-orange-800 border-orange-300',
-                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_BKN => 'bg-red-100 text-red-800 border-red-300',
-                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_BKN => 'bg-green-100 text-green-800 border-green-300',
-                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_SK_TERBIT => 'bg-emerald-100 text-emerald-800 border-emerald-300',
-                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS
+                    // Kementerian statuses (for Tugas Belajar)
+                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_SUDAH_DIKIRIM_KE_KEMENTERIAN => 'bg-indigo-100 text-indigo-800 border-indigo-300',
+                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_USULAN_PERBAIKAN_DARI_PEGAWAI_KE_KEMENTERIAN => 'bg-orange-100 text-orange-800 border-orange-300',
+                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEMENTERIAN => 'bg-orange-100 text-orange-800 border-orange-300',
+                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEMENTERIAN => 'bg-red-100 text-red-800 border-red-300',
+                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS => 'bg-red-100 text-red-800 border-red-300'
                 ];
                 $statusColor = $statusColors[$usulan->status_usulan] ?? 'bg-gray-100 text-gray-800 border-gray-300';
 
                 // Define view-only statuses
-                 $viewOnlyStatuses = [
-                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS,
-                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_BKN,
-                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS,
-                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_BKN,
-                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_BKN,
-                     \App\Models\KepegawaianUniversitas\Usulan::STATUS_SK_TERBIT,
-                 ];
+                $viewOnlyStatuses = [
+                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS,
+                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEMENTERIAN,
+                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEMENTERIAN,
+                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS,
+                    \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_KEMENTERIAN
+                ];
                 $isViewOnly = in_array($usulan->status_usulan, $viewOnlyStatuses);
             @endphp
             <div class="inline-flex items-center px-4 py-2 rounded-full border {{ $statusColor }}">
@@ -113,8 +110,6 @@
             </div>
         @endif
 
-
-
         {{-- Informasi Periode Usulan --}}
         <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mb-6">
             <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5">
@@ -141,26 +136,38 @@
             </div>
         </div>
 
-        {{-- Informasi Usulan Kepangkatan --}}
+        {{-- Informasi Usulan Tugas Belajar --}}
         <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden mb-6">
             <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5">
                 <h2 class="text-xl font-bold text-white flex items-center">
-                    <i data-lucide="award" class="w-6 h-6 mr-3"></i>
-                    Informasi Usulan Kepangkatan
+                    <i data-lucide="id-card" class="w-6 h-6 mr-3"></i>
+                    Informasi Usulan Tugas Belajar
                 </h2>
             </div>
             <div class="p-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-800">Jenis Usulan Pangkat</label>
-                        <p class="text-xs text-gray-600 mb-2">Jenis usulan pangkat yang dipilih</p>
-                        <input type="text" value="{{ $usulan->data_usulan['jenis_usulan_pangkat'] ?? '-' }}"
+                        <label class="block text-sm font-semibold text-gray-800">Jenis Tugas Belajar</label>
+                        <p class="text-xs text-gray-600 mb-2">Jenis usulan tugas belajar yang diajukan</p>
+                        <input type="text" value="{{ $usulan->data_usulan['jenis_tubel'] ?? 'N/A' }}"
                                class="block w-full border-gray-200 rounded-lg shadow-sm bg-gray-100 px-4 py-3 text-gray-800 font-medium cursor-not-allowed" disabled>
                     </div>
                     <div>
-                        <label class="block text-sm font-semibold text-gray-800">Pangkat Tujuan</label>
-                        <p class="text-xs text-gray-600 mb-2">Pangkat yang ingin diajukan</p>
-                        <input type="text" value="{{ $usulan->pangkatTujuan->pangkat ?? '-' }}"
+                        <label class="block text-sm font-semibold text-gray-800">Tahun Studi</label>
+                        <p class="text-xs text-gray-600 mb-2">Tahun studi yang direncanakan</p>
+                        <input type="text" value="{{ $usulan->data_usulan['tahun_studi'] ?? 'N/A' }}"
+                               class="block w-full border-gray-200 rounded-lg shadow-sm bg-gray-100 px-4 py-3 text-gray-800 font-medium cursor-not-allowed" disabled>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-800">Pendidikan yang Ditempuh</label>
+                        <p class="text-xs text-gray-600 mb-2">Jenjang pendidikan yang akan ditempuh</p>
+                        <input type="text" value="{{ $usulan->data_usulan['pendidikan_ditempuh'] ?? 'N/A' }}"
+                               class="block w-full border-gray-200 rounded-lg shadow-sm bg-gray-100 px-4 py-3 text-gray-800 font-medium cursor-not-allowed" disabled>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-800">Negara Studi</label>
+                        <p class="text-xs text-gray-600 mb-2">Negara tempat studi akan dilaksanakan</p>
+                        <input type="text" value="{{ $usulan->data_usulan['negara_studi'] ?? 'N/A' }}"
                                class="block w-full border-gray-200 rounded-lg shadow-sm bg-gray-100 px-4 py-3 text-gray-800 font-medium cursor-not-allowed" disabled>
                     </div>
                 </div>
@@ -216,6 +223,12 @@
                                class="block w-full border-gray-200 rounded-lg shadow-sm bg-gray-100 px-4 py-3 text-gray-800 font-medium cursor-not-allowed" disabled>
                     </div>
                     <div>
+                        <label class="block text-sm font-semibold text-gray-800">Jenis Tugas Belajar</label>
+                        <p class="text-xs text-gray-600 mb-2">Jenis tugas belajar yang diajukan</p>
+                        <input type="text" value="{{ $usulan->data_usulan['jenis_tubel'] ?? '-' }}"
+                               class="block w-full border-gray-200 rounded-lg shadow-sm bg-gray-100 px-4 py-3 text-gray-800 font-medium cursor-not-allowed" disabled>
+                    </div>
+                    <div>
                         <label class="block text-sm font-semibold text-gray-800">Unit Kerja</label>
                         <p class="text-xs text-gray-600 mb-2">Unit kerja pegawai</p>
                         @php
@@ -242,57 +255,15 @@
         </div>
 
         {{-- Include Tabel Validasi --}}
-        @include('backend.layouts.views.shared.usul-kepangkatan.usulan-detail-validation-table', ['isViewOnly' => $isViewOnly])
+        @include('backend.layouts.views.shared.usul-tubel.usulan-detail-validation-table', ['isViewOnly' => $isViewOnly])
+
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Check if there's a success message in session
-    @if(session('success') && session('reload'))
-        // Show success notification
-        showSuccessNotification("{{ session('success') }}");
-
-        // Reload page after 1.5 seconds
-        setTimeout(() => {
-            window.location.reload();
-        }, 1500);
-    @endif
-
-    // Function to show success notification
-    function showSuccessNotification(message) {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = 'fixed top-4 right-4 z-50 p-4 bg-green-50 border border-green-200 rounded-xl shadow-lg animate-fade-in';
-        notification.innerHTML = `
-            <div class="flex items-center gap-3">
-                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span class="text-green-800 font-medium">${message}</span>
-            </div>
-        `;
-
-        // Add to page
-        document.body.appendChild(notification);
-
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            notification.style.opacity = '0';
-            notification.style.transform = 'translateY(-10px)';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 300);
-        }, 5000);
-    }
-});
-</script>
 
 @push('scripts')
 <script>
-// Standardized submitAction function for kepangkatan validation
+// Standardized submitAction function for TUBEL validation
 function submitAction(actionType, catatan) {
     console.log('submitAction called with:', { actionType, catatan });
 
@@ -309,11 +280,6 @@ function submitAction(actionType, catatan) {
         text: 'Sedang menyimpan validasi',
         allowOutsideClick: false,
         showConfirmButton: false,
-        customClass: {
-            popup: 'dark:bg-gray-800 dark:text-white',
-            title: 'dark:text-white',
-            content: 'dark:text-gray-200'
-        },
         willOpen: () => {
             Swal.showLoading();
         }
@@ -338,7 +304,20 @@ function submitAction(actionType, catatan) {
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        // Check if response is ok
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            throw new Error('Response is not JSON');
+        }
+
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             // Show success notification
@@ -349,9 +328,9 @@ function submitAction(actionType, catatan) {
                         <div class="mb-4">
                             <i class="fas fa-check-circle text-6xl text-green-500"></i>
                         </div>
-                        <p class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">${data.message}</p>
-                        <div class="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-3 mt-4">
-                            <p class="text-sm text-blue-800 dark:text-blue-200">
+                        <p class="text-lg font-semibold text-gray-800 mb-2">${data.message}</p>
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                            <p class="text-sm text-blue-800">
                                 <i class="fas fa-info-circle mr-2"></i>
                                 Data validasi telah berhasil disimpan.
                             </p>
@@ -361,13 +340,7 @@ function submitAction(actionType, catatan) {
                 icon: 'success',
                 confirmButtonText: 'Lanjutkan',
                 confirmButtonColor: '#10b981',
-                allowOutsideClick: false,
-                customClass: {
-                    popup: 'dark:bg-gray-800 dark:text-white',
-                    title: 'dark:text-white',
-                    content: 'dark:text-gray-200',
-                    confirmButton: 'dark:bg-green-600 dark:hover:bg-green-700'
-                }
+                allowOutsideClick: false
             }).then((result) => {
                 // Reload halaman setelah save berhasil
                 setTimeout(() => {
@@ -388,10 +361,30 @@ function submitAction(actionType, catatan) {
     .catch(error => {
         console.error('Error:', error);
 
-        // Show error notification
+        // Show detailed error notification
+        let errorMessage = 'Terjadi kesalahan saat menyimpan validasi.';
+
+        if (error.message.includes('Response is not JSON')) {
+            errorMessage = 'Server mengembalikan response yang tidak valid. Silakan refresh halaman dan coba lagi.';
+        } else if (error.message.includes('HTTP error')) {
+            errorMessage = 'Terjadi kesalahan server. Silakan coba lagi atau hubungi administrator.';
+        } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+            errorMessage = 'Terjadi kesalahan jaringan. Periksa koneksi internet Anda.';
+        }
+
         Swal.fire({
             title: '❌ Error!',
-            text: 'Terjadi kesalahan jaringan. Silakan coba lagi.',
+            html: `
+                <div class="text-center">
+                    <p class="text-lg font-semibold text-gray-800 mb-2">${errorMessage}</p>
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-3 mt-4">
+                        <p class="text-sm text-red-800">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Detail Error: ${error.message}
+                        </p>
+                    </div>
+                </div>
+            `,
             icon: 'error',
             confirmButtonText: 'OK',
             confirmButtonColor: '#ef4444',
@@ -482,8 +475,6 @@ function changeStatus(newStatus) {
     });
 }
 
-
-
 // Function to send status change request
 function processStatusChangeRequest(newStatus) {
     fetch(`{{ route('backend.kepegawaian-universitas.usulan.change-status', $usulan->id) }}`, {
@@ -495,7 +486,7 @@ function processStatusChangeRequest(newStatus) {
         },
         body: JSON.stringify({
             new_status: newStatus,
-            keterangan: 'Status diubah melalui halaman validasi kepangkatan'
+            keterangan: 'Status diubah melalui halaman validasi TUBEL'
         })
     })
     .then(response => response.json())
@@ -541,17 +532,43 @@ function processStatusChangeRequest(newStatus) {
                 text: data.message || 'Terjadi kesalahan saat mengubah status',
                 icon: 'error',
                 confirmButtonText: 'OK',
-                confirmButtonColor: '#ef4444'
+                confirmButtonColor: '#ef4444',
+                customClass: {
+                    popup: 'dark:bg-gray-800 dark:text-white',
+                    title: 'dark:text-white',
+                    content: 'dark:text-gray-200',
+                    confirmButton: 'dark:bg-red-600 dark:hover:bg-red-700'
+                }
             });
         }
     })
     .catch(error => {
         console.error('Error:', error);
 
-        // Show error notification
+        // Show detailed error notification
+        let errorMessage = 'Terjadi kesalahan saat menyimpan validasi.';
+
+        if (error.message.includes('Response is not JSON')) {
+            errorMessage = 'Server mengembalikan response yang tidak valid. Silakan refresh halaman dan coba lagi.';
+        } else if (error.message.includes('HTTP error')) {
+            errorMessage = 'Terjadi kesalahan server. Silakan coba lagi atau hubungi administrator.';
+        } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+            errorMessage = 'Terjadi kesalahan jaringan. Periksa koneksi internet Anda.';
+        }
+
         Swal.fire({
             title: '❌ Error!',
-            text: 'Terjadi kesalahan jaringan. Silakan coba lagi.',
+            html: `
+                <div class="text-center">
+                    <p class="text-lg font-semibold text-gray-800 mb-2">${errorMessage}</p>
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-3 mt-4">
+                        <p class="text-sm text-red-800">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            Detail Error: ${error.message}
+                        </p>
+                    </div>
+                </div>
+            `,
             icon: 'error',
             confirmButtonText: 'OK',
             confirmButtonColor: '#ef4444',
@@ -569,14 +586,13 @@ function processStatusChangeRequest(newStatus) {
 function getStatusChangeMessage(newStatus) {
     const statusMessages = {
         '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEPEGAWAIAN_UNIVERSITAS }}': 'Permintaan perbaikan berhasil dikirim ke pegawai dari Kepegawaian Universitas.',
-        '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_BKN }}': 'Permintaan perbaikan berhasil dikirim ke pegawai dari BKN.',
-        '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_BKN }}': 'Status usulan berhasil diubah ke: Belum Direkomendasikan Dari BKN',
-        '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_DIREKOMENDASIKAN_BKN }}': 'Status usulan berhasil diubah ke: Usulan Direkomendasikan BKN'
+        '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_PERMINTAAN_PERBAIKAN_KE_PEGAWAI_DARI_KEMENTERIAN }}': 'Permintaan perbaikan berhasil dikirim ke pegawai dari Kementerian.',
+        '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEMENTERIAN }}': 'Status usulan berhasil diubah ke: Tidak Direkomendasikan Kementerian',
+        '{{ \App\Models\KepegawaianUniversitas\Usulan::STATUS_TIDAK_DIREKOMENDASIKAN_KEPEGAWAIAN_UNIVERSITAS }}': 'Status usulan berhasil diubah ke: Tidak Direkomendasikan Kepegawaian Universitas'
     };
 
     return statusMessages[newStatus] || `Status usulan berhasil diubah ke: ${newStatus}`;
 }
 </script>
 @endpush
-
 @endsection

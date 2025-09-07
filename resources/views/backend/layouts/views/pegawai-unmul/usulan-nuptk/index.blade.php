@@ -38,11 +38,11 @@
                     </div>
                     <div class="flex flex-col">
                         <h1 class="text-2xl text-black font-bold leading-tight">
-                            Usulan NUPTK Saya
-                        </h1>
+                    Usulan NUPTK Saya
+                </h1>
                         <p class="text-black text-sm mt-1 leading-tight">
-                            Pantau status dan riwayat usulan NUPTK yang telah Anda ajukan.
-                        </p>
+                    Pantau status dan riwayat usulan NUPTK yang telah Anda ajukan.
+                </p>
                     </div>
                 </div>
             </div>
@@ -58,9 +58,9 @@
             <p class="text-sm text-gray-500 mt-1">
                 Berikut adalah periode usulan NUPTK yang tersedia untuk status kepegawaian Anda.
             </p>
-        </div>
+    </div>
 
-        <div class="overflow-x-auto">
+    <div class="overflow-x-auto">
         @if($periodeUsulans->count() > 0)
             <table class="w-full text-sm text-center text-gray-600">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-100">

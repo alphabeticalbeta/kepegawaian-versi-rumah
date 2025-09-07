@@ -494,7 +494,7 @@
                                             <i class="fas fa-users mr-1"></i>
                                             Lihat {{ $periode->usulans_submitted_count }} Pengusul
                                         </button>
-                                    @elseif($jenisUsulan === 'usulan-tugas-belajar')
+                                    @elseif($jenisUsulan === 'tugas-belajar' || $jenisUsulan === 'usulan-tugas-belajar')
                                         <button onclick="openModalLihatPengusulTugasBelajar({{ $periode->id }})"
                                                class="inline-flex items-center px-3 py-1 text-xs font-medium text-cyan-600 bg-cyan-50 rounded-full hover:bg-cyan-100 hover:text-cyan-700 dark:text-cyan-300 dark:bg-cyan-900 dark:hover:bg-cyan-800 dark:hover:text-cyan-200 transition-all duration-200 shadow-sm hover:shadow-md">
                                             <i class="fas fa-users mr-1"></i>

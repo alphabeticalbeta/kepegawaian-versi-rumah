@@ -353,7 +353,7 @@ Route::middleware(['web', 'auth:pegawai'])->group(function () {
                     ->name('usulan-nuptk-count');
 
                 // API route untuk menghitung usulan Tugas Belajar per jenis
-                Route::get('/{periodeUsulan}/usulan-tugas-belajar-count', [App\Http\Controllers\Backend\KepegawaianUniversitas\PeriodeUsulanController::class, 'getUsulanTugasBelajarCount'])
+                Route::get('/{periodeUsulan}/usulan-tugas-belajar-count', [App\Http\Controllers\Backend\KepegawaianUniversitas\DashboardPeriodeController::class, 'getUsulanTugasBelajarCount'])
                     ->name('usulan-tugas-belajar-count');
             });
 
@@ -411,6 +411,12 @@ Route::middleware(['web', 'auth:pegawai'])->group(function () {
                     ->name('validasi-nuptk');
                 Route::post('/{usulan}/validasi-nuptk', [App\Http\Controllers\Backend\KepegawaianUniversitas\UsulanValidationController::class, 'saveNuptkValidation'])
                     ->name('save-validasi-nuptk');
+
+                // Validasi Tugas Belajar Routes
+                Route::get('/{usulan}/validasi-tubel', [App\Http\Controllers\Backend\KepegawaianUniversitas\UsulanValidationController::class, 'showTubelValidation'])
+                    ->name('validasi-tubel');
+                Route::post('/{usulan}/validasi-tubel', [App\Http\Controllers\Backend\KepegawaianUniversitas\UsulanValidationController::class, 'saveTubelValidation'])
+                    ->name('save-validasi-tubel');
 
                 // Change Status Route
                 Route::post('/{usulan}/change-status', [App\Http\Controllers\Backend\KepegawaianUniversitas\UsulanValidationController::class, 'changeStatus'])

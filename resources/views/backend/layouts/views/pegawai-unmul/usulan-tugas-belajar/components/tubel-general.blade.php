@@ -41,10 +41,10 @@
                     Alamat Lengkap <span class="text-red-500">*</span>
                 </label>
                 <p class="text-xs text-gray-600 mb-2">Alamat tempat tinggal selama tugas belajar</p>
-                <textarea id="alamat" name="alamat" rows="3"
+                <textarea id="alamat_lengkap" name="alamat_lengkap" rows="3"
                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent @if($isViewOnly) bg-gray-100 cursor-not-allowed @endif"
-                          @if($isViewOnly) disabled @endif required>{{ old('alamat', $usulan->data_usulan['alamat'] ?? '') }}</textarea>
-                @error('alamat')
+                          @if($isViewOnly) disabled @endif required>{{ old('alamat_lengkap', $usulan->data_usulan['alamat_lengkap'] ?? '') }}</textarea>
+                @error('alamat_lengkap')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
@@ -55,7 +55,7 @@
                     Pendidikan yang Ditempuh <span class="text-red-500">*</span>
                 </label>
                 <p class="text-xs text-gray-600 mb-2">Jenjang pendidikan yang akan diambil</p>
-                <select id="jenjang_pendidikan" name="jenjang_pendidikan"
+                <select id="pendidikan_ditempuh" name="pendidikan_ditempuh"
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent @if($isViewOnly) bg-gray-100 cursor-not-allowed @endif"
                         @if($isViewOnly) disabled @endif required>
                     <option value="">Pilih Jenjang</option>
@@ -107,12 +107,12 @@
                     @endphp
                     @foreach($filteredOptions as $option)
                         <option value="{{ $option }}"
-                                {{ old('jenjang_pendidikan', $usulan->data_usulan['jenjang_pendidikan'] ?? '') == $option ? 'selected' : '' }}>
+                                {{ old('pendidikan_ditempuh', $usulan->data_usulan['pendidikan_ditempuh'] ?? '') == $option ? 'selected' : '' }}>
                             {{ $option }}
                         </option>
                     @endforeach
                 </select>
-                @error('jenjang_pendidikan')
+                @error('pendidikan_ditempuh')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
@@ -123,12 +123,12 @@
                     Nama Prodi yang Dituju <span class="text-red-500">*</span>
                 </label>
                 <p class="text-xs text-gray-600 mb-2">Program studi yang akan diambil</p>
-                <input type="text" id="program_studi" name="program_studi"
-                       value="{{ old('program_studi', $usulan->data_usulan['program_studi'] ?? '') }}"
+                <input type="text" id="nama_prodi_dituju" name="nama_prodi_dituju"
+                       value="{{ old('nama_prodi_dituju', $usulan->data_usulan['nama_prodi_dituju'] ?? '') }}"
                        placeholder="Prodi Doktor Manajemen atau Prodi Magister Manajemen"
                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent @if($isViewOnly) bg-gray-100 cursor-not-allowed @endif"
                        @if($isViewOnly) disabled @endif required>
-                @error('program_studi')
+                @error('nama_prodi_dituju')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
@@ -139,12 +139,12 @@
                     Nama Fakultas yang Dituju <span class="text-red-500">*</span>
                 </label>
                 <p class="text-xs text-gray-600 mb-2">Fakultas tempat program studi berada</p>
-                <input type="text" id="fakultas_tujuan" name="fakultas_tujuan"
-                       value="{{ old('fakultas_tujuan', $usulan->data_usulan['fakultas_tujuan'] ?? '') }}"
+                <input type="text" id="nama_fakultas_dituju" name="nama_fakultas_dituju"
+                       value="{{ old('nama_fakultas_dituju', $usulan->data_usulan['nama_fakultas_dituju'] ?? '') }}"
                        placeholder="Fakultas Ekonomi dan Bisnis"
                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent @if($isViewOnly) bg-gray-100 cursor-not-allowed @endif"
                        @if($isViewOnly) disabled @endif required>
-                @error('fakultas_tujuan')
+                @error('nama_fakultas_dituju')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
@@ -155,11 +155,11 @@
                     Nama Universitas yang Dituju <span class="text-red-500">*</span>
                 </label>
                 <p class="text-xs text-gray-600 mb-2">Universitas tempat tugas belajar</p>
-                <input type="text" id="universitas_tujuan" name="universitas_tujuan"
-                       value="{{ old('universitas_tujuan', $usulan->data_usulan['universitas_tujuan'] ?? '') }}" placeholder="Universitas Mulawarman"
+                <input type="text" id="nama_universitas_dituju" name="nama_universitas_dituju"
+                       value="{{ old('nama_universitas_dituju', $usulan->data_usulan['nama_universitas_dituju'] ?? '') }}" placeholder="Universitas Mulawarman"
                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent @if($isViewOnly) bg-gray-100 cursor-not-allowed @endif"
                        @if($isViewOnly) disabled @endif required>
-                @error('universitas_tujuan')
+                @error('nama_universitas_dituju')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
@@ -181,6 +181,7 @@
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
+
         </div>
     </div>
     {{-- Section Dokumen Pendukung --}}

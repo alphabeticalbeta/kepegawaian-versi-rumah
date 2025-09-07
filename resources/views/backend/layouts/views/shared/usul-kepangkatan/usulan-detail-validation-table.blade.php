@@ -701,6 +701,11 @@ document.addEventListener('DOMContentLoaded', function() {
             title: 'Memproses Permintaan Perbaikan',
             text: loadingText,
             allowOutsideClick: false,
+            customClass: {
+                popup: 'dark:bg-gray-800 dark:text-white',
+                title: 'dark:text-white',
+                content: 'dark:text-gray-200'
+            },
             didOpen: () => {
                 Swal.showLoading();
             }
@@ -729,7 +734,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 Swal.fire({
                     title: 'Gagal Menyimpan',
                     text: data.message || 'Terjadi kesalahan saat menyimpan validasi',
-                    icon: 'error'
+                    icon: 'error',
+                    customClass: {
+                        popup: 'dark:bg-gray-800 dark:text-white',
+                        title: 'dark:text-white',
+                        content: 'dark:text-gray-200',
+                        confirmButton: 'dark:bg-red-600 dark:hover:bg-red-700'
+                    }
                 });
             }
         })
@@ -738,7 +749,13 @@ document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 title: 'Gagal Menyimpan',
                 text: 'Terjadi kesalahan saat menyimpan validasi',
-                icon: 'error'
+                icon: 'error',
+                customClass: {
+                    popup: 'dark:bg-gray-800 dark:text-white',
+                    title: 'dark:text-white',
+                    content: 'dark:text-gray-200',
+                    confirmButton: 'dark:bg-red-600 dark:hover:bg-red-700'
+                }
             });
         });
     };

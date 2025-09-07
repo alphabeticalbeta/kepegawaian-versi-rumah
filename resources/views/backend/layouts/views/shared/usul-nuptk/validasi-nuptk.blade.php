@@ -374,7 +374,13 @@ function submitAction(actionType, catatan) {
             `,
             icon: 'error',
             confirmButtonText: 'OK',
-            confirmButtonColor: '#ef4444'
+            confirmButtonColor: '#ef4444',
+            customClass: {
+                popup: 'dark:bg-gray-800 dark:text-white',
+                title: 'dark:text-white',
+                content: 'dark:text-gray-200',
+                confirmButton: 'dark:bg-red-600 dark:hover:bg-red-700'
+            }
         });
     });
 }
@@ -410,9 +416,9 @@ function changeStatus(newStatus) {
                 <div class="mb-4">
                     <i class="fas fa-exclamation-triangle text-6xl text-yellow-500"></i>
                 </div>
-                <p class="text-lg font-semibold text-gray-800 mb-2">Apakah Anda yakin ingin mengirim usulan?</p>
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
-                    <p class="text-sm text-blue-800">
+                <p class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">Apakah Anda yakin ingin mengirim usulan?</p>
+                <div class="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-3 mt-4">
+                    <p class="text-sm text-blue-800 dark:text-blue-200">
                         <strong>Status Usulan:</strong> ${newStatus}
                     </p>
                 </div>
@@ -424,7 +430,14 @@ function changeStatus(newStatus) {
         cancelButtonText: 'Batal',
         confirmButtonColor: '#10b981',
         cancelButtonColor: '#6b7280',
-        reverseButtons: true
+        reverseButtons: true,
+        customClass: {
+            popup: 'dark:bg-gray-800 dark:text-white',
+            title: 'dark:text-white',
+            content: 'dark:text-gray-200',
+            confirmButton: 'dark:bg-green-600 dark:hover:bg-green-700',
+            cancelButton: 'dark:bg-gray-600 dark:hover:bg-gray-700'
+        }
     }).then((result) => {
         if (result.isConfirmed) {
             // Show loading
@@ -433,6 +446,11 @@ function changeStatus(newStatus) {
                 text: 'Sedang mengubah status usulan',
                 allowOutsideClick: false,
                 showConfirmButton: false,
+                customClass: {
+                    popup: 'dark:bg-gray-800 dark:text-white',
+                    title: 'dark:text-white',
+                    content: 'dark:text-gray-200'
+                },
                 willOpen: () => {
                     Swal.showLoading();
                 }
@@ -469,9 +487,9 @@ function processStatusChangeRequest(newStatus) {
                         <div class="mb-4">
                             <i class="fas fa-check-circle text-6xl text-green-500"></i>
                         </div>
-                        <p class="text-lg font-semibold text-gray-800 mb-2">${data.message}</p>
-                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
-                            <p class="text-sm text-blue-800">
+                        <p class="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">${data.message}</p>
+                        <div class="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-3 mt-4">
+                            <p class="text-sm text-blue-800 dark:text-blue-200">
                                 <i class="fas fa-info-circle mr-2"></i>
                                 ${getStatusChangeMessage(newStatus)}
                             </p>
@@ -481,7 +499,13 @@ function processStatusChangeRequest(newStatus) {
                 icon: 'success',
                 confirmButtonText: 'Lanjutkan',
                 confirmButtonColor: '#10b981',
-                allowOutsideClick: false
+                allowOutsideClick: false,
+                customClass: {
+                    popup: 'dark:bg-gray-800 dark:text-white',
+                    title: 'dark:text-white',
+                    content: 'dark:text-gray-200',
+                    confirmButton: 'dark:bg-green-600 dark:hover:bg-green-700'
+                }
             }).then((result) => {
                 // Reload halaman setelah status berhasil diubah
                 setTimeout(() => {
@@ -528,7 +552,13 @@ function processStatusChangeRequest(newStatus) {
             `,
             icon: 'error',
             confirmButtonText: 'OK',
-            confirmButtonColor: '#ef4444'
+            confirmButtonColor: '#ef4444',
+            customClass: {
+                popup: 'dark:bg-gray-800 dark:text-white',
+                title: 'dark:text-white',
+                content: 'dark:text-gray-200',
+                confirmButton: 'dark:bg-red-600 dark:hover:bg-red-700'
+            }
         });
     });
 }

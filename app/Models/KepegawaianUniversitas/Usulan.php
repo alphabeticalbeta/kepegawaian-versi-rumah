@@ -972,8 +972,21 @@ class Usulan extends Model
     {
         $currentValidasi = $this->validasi_data ?? [];
 
+        // FIXED: Handle role name mapping for case sensitivity
+        $roleMapping = [
+            'Admin Fakultas' => 'admin_fakultas',
+            'Admin Universitas' => 'admin_universitas',
+            'Penilai Universitas' => 'penilai_universitas',
+            'Kepegawaian Universitas' => 'kepegawaian_universitas',
+            'Tim Senat' => 'tim_senat',
+            'Pegawai' => 'pegawai'
+        ];
+
+        // Map role name to database key
+        $dbRole = $roleMapping[$role] ?? strtolower(str_replace(' ', '_', $role));
+
         // FIXED: Preserve existing validation data and merge with new data
-        $existingValidation = $currentValidasi[$role] ?? [];
+        $existingValidation = $currentValidasi[$dbRole] ?? [];
         $existingValidationData = $existingValidation['validation'] ?? [];
 
         // Deep merge validation data
@@ -989,7 +1002,7 @@ class Usulan extends Model
 
         // FIXED: Update validation structure - preserve existing data like dokumen_pendukung
         // Ensure we don't lose existing data that's not in validation
-        $currentValidasi[$role] = array_merge($existingValidation, [
+        $currentValidasi[$dbRole] = array_merge($existingValidation, [
             'validation' => $existingValidationData,
             'keterangan_umum' => $keteranganUmum,
             'validated_by' => $validatedBy,
@@ -1000,12 +1013,13 @@ class Usulan extends Model
 
         // FIXED: Add logging for debugging
         \Log::info('setValidasiByRole called', [
-            'role' => $role,
+            'input_role' => $role,
+            'db_role' => $dbRole,
             'validated_by' => $validatedBy,
             'keterangan_umum' => $keteranganUmum,
             'input_data' => $validasiData,
             'merged_data' => $existingValidationData,
-            'final_structure' => $currentValidasi[$role]
+            'final_structure' => $currentValidasi[$dbRole]
         ]);
     }
 

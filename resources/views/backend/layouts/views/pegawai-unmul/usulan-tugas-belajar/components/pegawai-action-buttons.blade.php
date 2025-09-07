@@ -213,6 +213,8 @@ function processAction(action) {
             }
 
 
+        // Submit form
+
             // Submit form utama tanpa mencegah redirect
             actionForm.submit();
         } else {
