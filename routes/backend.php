@@ -116,15 +116,6 @@ Route::middleware(['web', 'auth:pegawai'])->group(function () {
             Route::get('/dashboard', [App\Http\Controllers\Backend\AdminUniversitas\DashboardController::class, 'index'])
                 ->name('dashboard');
 
-            // Periode Usulan Management
-            Route::resource('/periode-usulan', App\Http\Controllers\Backend\AdminUniversitas\PeriodeUsulanController::class)
-                ->parameters(['periode-usulan' => 'periode']);
-
-            // Dashboard Usulan (Dashboard for each period)
-            Route::get('/dashboard-usulan', [App\Http\Controllers\Backend\AdminUniversitas\DashboardUsulanController::class, 'index'])
-                ->name('dashboard-usulan.index');
-            Route::get('/dashboard-usulan/{periode}', [App\Http\Controllers\Backend\AdminUniversitas\DashboardUsulanController::class, 'show'])
-                ->name('dashboard-usulan.show');
         });
 
     // ======================================================================
