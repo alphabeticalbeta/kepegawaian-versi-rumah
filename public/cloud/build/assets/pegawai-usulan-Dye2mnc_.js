@@ -1,0 +1,23 @@
+var u=(s,e)=>()=>(e||s((e={exports:{}}).exports,e),e.exports);var m=u((g,r)=>{class d{constructor(){this.formInitialized=!1,this.init()}init(){this.initializeForm(),this.initializeSyaratGuruBesar(),this.initializeFileUploads()}initializeForm(){if(console.log("Initializing form..."),this.formInitialized){console.log("Form already initialized, skipping...");return}try{const e=document.getElementById("usulan-form");if(!e)if(console.log("Usulan form not found, trying fallback..."),document.querySelector('form[action*="usulan-jabatan"]'))console.log("Found form via action attribute");else{console.warn("No usulan form found");return}console.log("Form found:",e?e.constructor.name:"null"),console.log("Form is HTMLFormElement:",e instanceof HTMLFormElement),e&&e instanceof HTMLFormElement?(console.log("Valid form found"),this.formInitialized=!0,console.log("Form initialization complete - using button onclick handlers")):console.warn("No valid HTMLFormElement found")}catch(e){console.error("Error in initializeForm:",e)}}initializeSyaratGuruBesar(){const e=new MutationObserver((t,n)=>{const i=document.getElementById("syarat_guru_besar");i&&(this.setupSyaratGuruBesar(i),n.disconnect())});e.observe(document.body,{childList:!0,subtree:!0}),setTimeout(()=>{e.disconnect();const t=document.getElementById("syarat_guru_besar");t&&this.setupSyaratGuruBesar(t)},500)}setupSyaratGuruBesar(e){try{if(e&&e.tagName==="SELECT"){let i=function(a){try{console.log("updateSyaratDisplay called with value:",a);const o=document.getElementById("bukti_container"),l=document.getElementById("keterangan_div"),c=document.getElementById("keterangan_text");o&&(o.style.display=a?"block":"none"),l&&(l.style.display=a?"block":"none",c&&n[a]&&(c.textContent=n[a]))}catch(o){console.error("Error in updateSyaratDisplay:",o)}};var t=i;console.log("Syarat guru besar select found");const n={hibah:"Dokumen yang di-upload: MoU, SK Hibah, Laporan Hibah.",bimbingan:"Dokumen yang di-upload: SK Pembimbing, Halaman Pengesahan, Cover Tesis yang dibimbing.",pengujian:"Dokumen yang di-upload: SK Penguji, Berita Acara Hasil Ujian, Cover Tesis yang diuji.",reviewer:"Dokumen yang di-upload: Surat Permohonan Reviewer, Dokumen yang di review."};i(e.value),e.addEventListener("change",function(){i(this.value)})}}catch(n){console.error("Error in setupSyaratGuruBesar:",n)}}initializeFileUploads(){window.previewUploadedFile=function(e,t){const n=e.files[0],i=document.getElementById(t);if(n){if(n.type!=="application/pdf"){alert("Hanya file PDF yang diperbolehkan!"),e.value="";return}if(n.size>2097152){alert("Ukuran file maksimal 2MB!"),e.value="";return}const a=(n.size/1024/1024).toFixed(2),o=n.name;i&&(i.innerHTML=`
+                        <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <div class="flex items-center gap-3">
+                                <div class="flex-shrink-0 bg-green-100 rounded-full p-2">
+                                    <i data-lucide="file-check" class="w-4 h-4 text-green-600"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-green-800 truncate">${o}</p>
+                                    <div class="flex items-center gap-4 mt-1">
+                                        <span class="text-xs text-green-600">Ukuran: ${a} MB</span>
+                                        <span class="text-xs text-green-600 flex items-center gap-1">
+                                            <i data-lucide="check-circle" class="w-3 h-3"></i>
+                                            Siap diupload
+                                        </span>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="clearFilePreview('${e.id}', '${t}')"
+                                        class="flex-shrink-0 text-green-600 hover:text-green-800">
+                                    <i data-lucide="x" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `,i.classList.remove("hidden")),typeof lucide<"u"&&lucide.createIcons()}else i&&i.classList.add("hidden")},window.clearFilePreview=function(e,t){const n=document.getElementById(e),i=document.getElementById(t);n&&(n.value=""),i&&i.classList.add("hidden")}}}document.addEventListener("DOMContentLoaded",function(){window.pegawaiUsulanInstance||(window.pegawaiUsulanInstance=new d)});typeof r<"u"&&r.exports&&(r.exports=d)});export default m();

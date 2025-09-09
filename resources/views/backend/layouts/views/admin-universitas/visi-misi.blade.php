@@ -114,6 +114,12 @@
         <div class="mx-auto max-w-7xl pt-5 mt-5">
             <!-- Data Table -->
             <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+                <!-- Table Header -->
+                <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-gray-900">Data Visi dan Misi</h2>
+                    </div>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
@@ -179,12 +185,19 @@
                     <!-- Jenis -->
                     <div>
                         <label for="jenis" class="block text-sm font-medium text-gray-700 mb-2">
-                            Jenis
+                            Jenis <span class="text-red-500">*</span>
                         </label>
-                        <div class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
-                            <span id="jenisDisplay" class="font-medium">-</span>
+                        <!-- Select dropdown for create mode -->
+                        <select id="jenis" name="jenis" required
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors">
+                            <option value="">Pilih Jenis</option>
+                            <option value="visi">Visi</option>
+                            <option value="misi">Misi</option>
+                        </select>
+                        <!-- Read-only display for edit mode -->
+                        <div id="jenisDisplay" class="hidden w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg">
+                            <span id="jenisText" class="text-gray-700 font-medium"></span>
                         </div>
-                        <input type="hidden" id="jenis" name="jenis" required>
                     </div>
 
                     <!-- Konten -->
@@ -312,7 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (tbody) {
         console.log('✅ Table body exists, proceeding with data load');
-        loadVisiMisiDataFromAPI();
+        loadVisiMisiDataFromServer();
     } else {
         console.error('❌ Table body not found!');
     }
@@ -322,9 +335,10 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Initialization completed');
 });
 
-// Load data from API
-async function loadVisiMisiDataFromAPI() {
-    console.log('🚀 Starting to load data from API...');
+// Load data from server using API
+async function loadVisiMisiDataFromServer() {
+    console.log('🚀 Starting to load data from server...');
+
     try {
         const response = await fetch('/api/visi-misi', {
             method: 'GET',
@@ -343,7 +357,7 @@ async function loadVisiMisiDataFromAPI() {
 
             if (result.success && result.data) {
                 visiMisiData = result.data;
-                console.log('✅ Loaded visi misi data from API:', visiMisiData);
+                console.log('✅ Loaded visi misi data from database:', visiMisiData);
                 console.log('✅ Data count:', visiMisiData.length);
             } else {
                 console.log('⚠️ No data from API, using fallback data');
@@ -406,36 +420,11 @@ async function loadVisiMisiDataFromAPI() {
         ];
     }
 
-    console.log('📋 Final data to load:', visiMisiData);
-    console.log('📋 Data length:', visiMisiData.length);
+    console.log('✅ Final data to load:', visiMisiData);
+    console.log('✅ Data count:', visiMisiData.length);
 
-    // Test if data is valid
-    if (visiMisiData && visiMisiData.length > 0) {
-        console.log('✅ Data is valid, proceeding to load table');
-        // Load data to table
-        loadVisiMisiData();
-    } else {
-        console.error('❌ No valid data to load');
-        // Force show fallback data
-        visiMisiData = [
-            {
-                id: 1,
-                jenis: 'visi',
-                konten: '<p><strong>Test Data - Menjadi universitas terkemuka di Indonesia</strong></p>',
-                status: 'aktif',
-                created_at: '2024-01-15 10:30:00'
-            },
-            {
-                id: 2,
-                jenis: 'misi',
-                konten: '<p><strong>Test Data - Menyelenggarakan pendidikan tinggi yang berkualitas</strong></p>',
-                status: 'aktif',
-                created_at: '2024-01-15 10:35:00'
-            }
-        ];
-        console.log('📋 Using fallback data:', visiMisiData);
-        loadVisiMisiData();
-    }
+    // Load data to table
+    loadVisiMisiData();
 }
 
 // Load data to table
@@ -667,90 +656,141 @@ function updateToolbarStates() {
 // Handle form submit
 function handleFormSubmit(e) {
     e.preventDefault();
+    console.log('📝 Form submitted!');
 
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData);
 
+    console.log('📋 Form data extracted:', data);
+    console.log('🆔 Current edit ID:', currentEditId);
+
+    // Show SweetAlert when submit button is clicked
+    showSubmitConfirmation(data);
+}
+
+// Process form submission after confirmation
+async function processFormSubmission(data) {
     // Show loading
     showSubmitLoading(true);
 
-    // Determine API endpoint and method
-    let url, method;
-    if (currentEditId) {
-        url = `{{ url('admin-universitas/visi-misi') }}/${currentEditId}`;
-        method = 'PUT';
-    } else {
-        url = `{{ route('admin-universitas.visi-misi.store') }}`;
-        method = 'POST';
-    }
+    try {
+        console.log('🔄 Processing form submission...');
+        console.log('📝 Form data:', data);
+        console.log('🆔 Current edit ID:', currentEditId);
 
-    // Add CSRF token
-    data._token = '{{ csrf_token() }}';
-    if (method === 'PUT') {
-        data._method = 'PUT';
-    }
+        // Determine API endpoint and method
+        let url, method;
+        if (currentEditId) {
+            url = `/admin-universitas/visi-misi/${currentEditId}`;
+            method = 'PUT';
+        } else {
+            url = '/admin-universitas/visi-misi';
+            method = 'POST';
+        }
 
-    // Make API call
-    fetch(url, {
-        method: method,
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(result => {
+        // Add CSRF token
+        data._token = '{{ csrf_token() }}';
+        if (method === 'PUT') {
+            data._method = 'PUT';
+        }
+
+        console.log('📡 Making API call to:', url, 'with method:', method);
+
+        // Make API call
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(data)
+        });
+
+        console.log('📡 API Response status:', response.status);
+        const result = await response.json();
+        console.log('📊 API Response result:', result);
+
         if (result.success) {
-            if (currentEditId) {
-                // Update existing data
-                const index = visiMisiData.findIndex(item => item.id === currentEditId);
-                if (index !== -1) {
-                    visiMisiData[index] = {
-                        ...visiMisiData[index],
-                        jenis: data.jenis,
-                        konten: data.konten,
-                        status: data.status
-                    };
-                }
-            } else {
-                // Add new data
-                visiMisiData.push(result.data);
-            }
-
             // Reload data from API to get fresh data
-            loadVisiMisiDataFromAPI().then(() => {
-                closeModal();
-                showSuccess(result.message);
-            });
+            await loadVisiMisiDataFromServer();
+            closeModal();
+            showSuccess(result.message);
         } else {
             showError(result.message);
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
+    } catch (error) {
+        console.error('❌ Error submitting form:', error);
         showError('Terjadi kesalahan saat menyimpan data');
-    })
-    .finally(() => {
+    } finally {
         showSubmitLoading(false);
-    });
+    }
 }
 
+// Open create modal
+function openCreateModal() {
+    currentEditId = null;
+    document.getElementById('modalTitle').textContent = 'Tambah Visi dan Misi';
+    document.getElementById('submitBtnText').textContent = 'Simpan';
+
+    // Reset form
+    document.getElementById('visiMisiForm').reset();
+    document.getElementById('editId').value = '';
+
+    // Reset jenis field display to show select dropdown
+    const jenisSelect = document.getElementById('jenis');
+    const jenisDisplay = document.getElementById('jenisDisplay');
+
+    jenisSelect.classList.remove('hidden');
+    jenisDisplay.classList.add('hidden');
+
+    // Reset editor
+    const editorElement = document.getElementById('editor');
+    const hiddenTextarea = document.getElementById('konten');
+    editorElement.innerHTML = '';
+    hiddenTextarea.value = '';
+
+    // Open modal
+    document.getElementById('visiMisiModal').classList.remove('hidden');
+
+    // Focus jenis select
+    setTimeout(() => {
+        document.getElementById('jenis').focus();
+    }, 100);
+}
 
 // Edit visi misi
 function editVisiMisi(id) {
+    console.log('✏️ Edit button clicked for ID:', id);
     const item = visiMisiData.find(item => item.id === id);
-    if (!item) return;
+    console.log('📋 Found item:', item);
+
+    if (!item) {
+        console.error('❌ Item not found for ID:', id);
+        return;
+    }
 
     currentEditId = id;
+    console.log('🆔 Set currentEditId to:', currentEditId);
+
+    document.getElementById('modalTitle').textContent = 'Edit Visi dan Misi';
+    document.getElementById('submitBtnText').textContent = 'Perbarui';
     document.getElementById('editId').value = item.id;
-    document.getElementById('jenis').value = item.jenis;
     document.getElementById('status').value = item.status;
 
-    // Set jenis display
+    // Hide select dropdown and show read-only display for jenis
+    const jenisSelect = document.getElementById('jenis');
     const jenisDisplay = document.getElementById('jenisDisplay');
-    jenisDisplay.textContent = item.jenis === 'visi' ? 'Visi' : 'Misi';
+    const jenisText = document.getElementById('jenisText');
+
+    jenisSelect.classList.add('hidden');
+    jenisDisplay.classList.remove('hidden');
+    jenisText.textContent = item.jenis === 'visi' ? 'Visi' : 'Misi';
+
+    // Set hidden value for form submission
+    jenisSelect.value = item.jenis;
+
+    console.log('📝 Form values set - jenis:', item.jenis, 'status:', item.status);
 
     // Set editor content
     const editorElement = document.getElementById('editor');
@@ -775,6 +815,40 @@ function editVisiMisi(id) {
     }, 100);
 }
 
+// Delete visi misi
+function deleteVisiMisi(id) {
+    const item = visiMisiData.find(item => item.id === id);
+    if (!item) return;
+
+    Swal.fire({
+        title: 'Konfirmasi Hapus',
+        text: `Apakah Anda yakin ingin menghapus ${item.jenis === 'visi' ? 'Visi' : 'Misi'} ini?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal',
+        customClass: {
+            popup: 'bg-gray-800 text-white',
+            title: 'text-white',
+            content: 'text-gray-300',
+            confirmButton: 'bg-red-600 hover:bg-red-700 text-white',
+            cancelButton: 'bg-gray-600 hover:bg-gray-700 text-white'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Remove item from data
+            visiMisiData = visiMisiData.filter(item => item.id !== id);
+
+            // Reload table
+            loadVisiMisiData();
+
+            showSuccess('Data berhasil dihapus!');
+        }
+    });
+}
+
 
 // Close modal
 function closeModal() {
@@ -787,8 +861,12 @@ function closeModal() {
     editorElement.innerHTML = '';
     hiddenTextarea.value = '';
 
-    // Reset jenis display
-    document.getElementById('jenisDisplay').textContent = '-';
+    // Reset jenis field display
+    const jenisSelect = document.getElementById('jenis');
+    const jenisDisplay = document.getElementById('jenisDisplay');
+
+    jenisSelect.classList.remove('hidden');
+    jenisDisplay.classList.add('hidden');
 
     // Reset form
     document.getElementById('visiMisiForm').reset();
@@ -809,6 +887,38 @@ function showSubmitLoading(show) {
         text.textContent = 'Simpan';
         loader.classList.add('hidden');
     }
+}
+
+// Show submit confirmation
+function showSubmitConfirmation(data) {
+    const action = currentEditId ? 'memperbarui' : 'menyimpan';
+    const jenis = data.jenis === 'visi' ? 'Visi' : 'Misi';
+
+    Swal.fire({
+        title: 'Konfirmasi',
+        text: `Apakah Anda yakin ingin ${action} data ${jenis} ini?`,
+        icon: 'question',
+        confirmButtonText: 'Ya, Simpan',
+        showCancelButton: true,
+        cancelButtonText: 'Batal',
+        customClass: {
+            popup: 'bg-gradient-to-br from-green-50 to-emerald-100',
+            title: 'text-green-800',
+            content: 'text-green-600',
+            confirmButton: 'bg-green-600 hover:bg-green-700 text-white',
+            cancelButton: 'bg-gray-500 hover:bg-gray-600 text-white'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            console.log('✅ User confirmed submit');
+            // Continue with form submission
+            processFormSubmission(data);
+        } else {
+            console.log('❌ User cancelled submit');
+            // Hide loading and don't submit
+            showSubmitLoading(false);
+        }
+    });
 }
 
 // Show success message

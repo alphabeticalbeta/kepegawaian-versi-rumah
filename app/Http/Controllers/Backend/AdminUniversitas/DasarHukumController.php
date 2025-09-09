@@ -408,7 +408,6 @@ class DasarHukumController extends Controller
                 $query->where('sub_jenis', $request->sub_jenis);
             }
 
-
             // Sort
             $sort = $request->get('sort', 'latest');
             switch ($sort) {
@@ -424,22 +423,43 @@ class DasarHukumController extends Controller
 
             // Pagination
             $perPage = $request->get('per_page', 10);
-            $dasarHukum = $query->paginate($perPage);
+            $page = $request->get('page', 1);
+            
+            Log::info('Dasar Hukum API Request', [
+                'page' => $page,
+                'per_page' => $perPage,
+                'search' => $request->search,
+                'jenis' => $request->jenis,
+                'status' => $request->status
+            ]);
+
+            $dasarHukum = $query->paginate($perPage, ['*'], 'page', $page);
+
+            Log::info('Dasar Hukum API Response', [
+                'total' => $dasarHukum->total(),
+                'current_page' => $dasarHukum->currentPage(),
+                'last_page' => $dasarHukum->lastPage(),
+                'per_page' => $dasarHukum->perPage(),
+                'items_count' => count($dasarHukum->items())
+            ]);
 
             return response()->json([
                 'success' => true,
                 'data' => $dasarHukum->items(),
-                'pagination' => [
-                    'current_page' => $dasarHukum->currentPage(),
-                    'last_page' => $dasarHukum->lastPage(),
-                    'per_page' => $dasarHukum->perPage(),
-                    'total' => $dasarHukum->total(),
-                    'from' => $dasarHukum->firstItem(),
-                    'to' => $dasarHukum->lastItem()
-                ]
+                'current_page' => $dasarHukum->currentPage(),
+                'last_page' => $dasarHukum->lastPage(),
+                'per_page' => $dasarHukum->perPage(),
+                'total' => $dasarHukum->total(),
+                'from' => $dasarHukum->firstItem(),
+                'to' => $dasarHukum->lastItem()
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Dasar Hukum API Error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()

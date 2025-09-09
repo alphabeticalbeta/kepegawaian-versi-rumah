@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (tbody) {
         console.log('✅ Table body exists, proceeding with data load');
-        loadAplikasiDataFromAPI();
+        loadAplikasiDataFromServer();
     } else {
         console.error('❌ Table body not found!');
     }
@@ -188,9 +188,9 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Initialization completed');
 });
 
-// Load data from API
-async function loadAplikasiDataFromAPI() {
-    console.log('🚀 Starting to load data from API...');
+// Load data from server using database
+async function loadAplikasiDataFromServer() {
+    console.log('🚀 Starting to load data from server...');
     try {
         const response = await fetch('/api/aplikasi-kepegawaian', {
             method: 'GET',
@@ -200,20 +200,20 @@ async function loadAplikasiDataFromAPI() {
             }
         });
 
-        console.log('📡 API Response status:', response.status);
-        console.log('📡 API Response ok:', response.ok);
+        console.log('📡 Server Response status:', response.status);
+        console.log('📡 Server Response ok:', response.ok);
 
         if (response.ok) {
             const result = await response.json();
-            console.log('📊 API Response data:', result);
+            console.log('📊 Server Response data:', result);
 
             if (result.success && result.data) {
                 aplikasiData = result.data;
-                console.log('✅ Loaded aplikasi data from API:', aplikasiData);
+                console.log('✅ Loaded aplikasi data from database:', aplikasiData);
                 console.log('✅ Data count:', aplikasiData.length);
             } else {
-                console.log('⚠️ No data from API, using fallback data');
-                // Fallback to sample data if no data from API
+                console.log('⚠️ No data from server, using fallback data');
+                // Fallback to sample data if no data from server
                 aplikasiData = [
                     {
                         id: 1,
@@ -236,8 +236,8 @@ async function loadAplikasiDataFromAPI() {
                 ];
             }
         } else {
-            console.error('❌ API failed, using fallback data');
-            // Fallback to sample data if API fails
+            console.error('❌ Server failed, using fallback data');
+            // Fallback to sample data if server fails
             aplikasiData = [
                 {
                     id: 1,
@@ -260,8 +260,8 @@ async function loadAplikasiDataFromAPI() {
             ];
         }
     } catch (error) {
-        console.error('❌ Error loading data from API:', error);
-        // Fallback to sample data if API fails
+        console.error('❌ Error loading data from server:', error);
+        // Fallback to sample data if server fails
         aplikasiData = [
             {
                 id: 1,
@@ -464,8 +464,8 @@ function handleFormSubmit(event) {
                 aplikasiData.push(result.data);
             }
 
-            // Reload data from API to get fresh data
-            loadAplikasiDataFromAPI().then(() => {
+            // Reload data from server to get fresh data
+            loadAplikasiDataFromServer().then(() => {
                 closeModal();
                 showSuccess(result.message);
             });

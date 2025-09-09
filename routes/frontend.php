@@ -118,7 +118,7 @@ Route::prefix('layanan')->group(function () {
 Route::view('/blangko-surat', 'frontend.layouts.blangko-surat')->name('blangko.surat');
 
 // API Routes for Frontend
-Route::get('/api/visi-misi', [App\Http\Controllers\Api\VisiMisiController::class, 'index']);
+Route::get('/api/visi-misi', [App\Http\Controllers\Backend\AdminUniversitas\VisiMisiController::class, 'getData']);
 Route::options('/api/visi-misi', function () {
     return response('', 200)
         ->header('Access-Control-Allow-Origin', '*')

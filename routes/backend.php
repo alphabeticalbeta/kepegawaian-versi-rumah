@@ -116,6 +116,7 @@ Route::middleware(['web', 'auth:pegawai'])->group(function () {
             Route::get('/dashboard', [App\Http\Controllers\Backend\AdminUniversitas\DashboardController::class, 'index'])
                 ->name('dashboard');
 
+
         });
 
     // ======================================================================
