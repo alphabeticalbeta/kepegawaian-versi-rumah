@@ -314,114 +314,54 @@ let editor = null;
 // Data array (will be loaded from API)
 let visiMisiData = [];
 
+// Escape HTML function for XSS protection
+function escapeHtml(text) {
+    if (text === null || text === undefined) {
+        return '';
+    }
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 DOM Content Loaded - Starting initialization');
-
-    // Test basic functionality first
-    console.log('Testing basic functionality...');
     const tbody = document.getElementById('visiMisiTableBody');
-    console.log('Table body found:', tbody);
 
     if (tbody) {
-        console.log('✅ Table body exists, proceeding with data load');
         loadVisiMisiDataFromServer();
-    } else {
-        console.error('❌ Table body not found!');
     }
 
     initializeForm();
     initializeRichTextEditor();
-    console.log('✅ Initialization completed');
 });
 
 // Load data from server using API
 async function loadVisiMisiDataFromServer() {
-    console.log('🚀 Starting to load data from server...');
-
     try {
-        const response = await fetch('/api/visi-misi', {
+        const response = await fetch('/admin-universitas/visi-misi/data', {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            credentials: 'same-origin'
         });
-
-        console.log('📡 API Response status:', response.status);
-        console.log('📡 API Response ok:', response.ok);
 
         if (response.ok) {
             const result = await response.json();
-            console.log('📊 API Response data:', result);
 
             if (result.success && result.data) {
                 visiMisiData = result.data;
-                console.log('✅ Loaded visi misi data from database:', visiMisiData);
-                console.log('✅ Data count:', visiMisiData.length);
             } else {
-                console.log('⚠️ No data from API, using fallback data');
-                // Fallback to sample data if no data from API
-                visiMisiData = [
-                    {
-                        id: 1,
-                        jenis: 'visi',
-                        konten: '<p><strong>Menjadi universitas terkemuka di Indonesia</strong> yang unggul dalam pengembangan ilmu pengetahuan, teknologi, dan seni untuk kesejahteraan masyarakat.</p>',
-                        status: 'aktif',
-                        created_at: '2024-01-15 10:30:00'
-                    },
-                    {
-                        id: 2,
-                        jenis: 'misi',
-                        konten: '<ol><li>Menyelenggarakan <em>pendidikan tinggi yang berkualitas</em> dan relevan dengan kebutuhan masyarakat</li><li>Mengembangkan penelitian yang inovatif dan bermanfaat</li><li>Melaksanakan pengabdian kepada masyarakat yang berkelanjutan</li><li>Membangun tata kelola universitas yang baik dan akuntabel</li></ol>',
-                        status: 'aktif',
-                        created_at: '2024-01-15 10:35:00'
-                    }
-                ];
+                visiMisiData = [];
             }
         } else {
-            console.error('❌ API failed, using fallback data');
-            // Fallback to sample data if API fails
-            visiMisiData = [
-                {
-                    id: 1,
-                    jenis: 'visi',
-                    konten: '<p><strong>Menjadi universitas terkemuka di Indonesia</strong> yang unggul dalam pengembangan ilmu pengetahuan, teknologi, dan seni untuk kesejahteraan masyarakat.</p>',
-                    status: 'aktif',
-                    created_at: '2024-01-15 10:30:00'
-                },
-                {
-                    id: 2,
-                    jenis: 'misi',
-                    konten: '<ol><li>Menyelenggarakan <em>pendidikan tinggi yang berkualitas</em> dan relevan dengan kebutuhan masyarakat</li><li>Mengembangkan penelitian yang inovatif dan bermanfaat</li><li>Melaksanakan pengabdian kepada masyarakat yang berkelanjutan</li><li>Membangun tata kelola universitas yang baik dan akuntabel</li></ol>',
-                    status: 'aktif',
-                    created_at: '2024-01-15 10:35:00'
-                }
-            ];
+            visiMisiData = [];
         }
     } catch (error) {
-        console.error('❌ Error loading data from API:', error);
-        // Fallback to sample data if API fails
-        visiMisiData = [
-            {
-                id: 1,
-                jenis: 'visi',
-                konten: '<p><strong>Menjadi universitas terkemuka di Indonesia</strong> yang unggul dalam pengembangan ilmu pengetahuan, teknologi, dan seni untuk kesejahteraan masyarakat.</p>',
-                status: 'aktif',
-                created_at: '2024-01-15 10:30:00'
-            },
-            {
-                id: 2,
-                jenis: 'misi',
-                konten: '<ol><li>Menyelenggarakan <em>pendidikan tinggi yang berkualitas</em> dan relevan dengan kebutuhan masyarakat</li><li>Mengembangkan penelitian yang inovatif dan bermanfaat</li><li>Melaksanakan pengabdian kepada masyarakat yang berkelanjutan</li><li>Membangun tata kelola universitas yang baik dan akuntabel</li></ol>',
-                status: 'aktif',
-                created_at: '2024-01-15 10:35:00'
-            }
-        ];
+        visiMisiData = [];
     }
-
-    console.log('✅ Final data to load:', visiMisiData);
-    console.log('✅ Data count:', visiMisiData.length);
 
     // Load data to table
     loadVisiMisiData();
@@ -429,20 +369,13 @@ async function loadVisiMisiDataFromServer() {
 
 // Load data to table
 function loadVisiMisiData() {
-    console.log('📋 loadVisiMisiData called');
-    console.log('📋 Data to load:', visiMisiData);
-    console.log('📋 Data length:', visiMisiData.length);
-
     const tbody = document.getElementById('visiMisiTableBody');
-    console.log('📋 Table body element:', tbody);
 
     if (!tbody) {
-        console.error('❌ Table body not found!');
         return;
     }
 
     if (visiMisiData.length === 0) {
-        console.log('📋 No data available, showing no data message');
         tbody.innerHTML = `
             <tr>
                 <td colspan="6" class="px-6 py-12 text-center text-gray-500">
@@ -457,7 +390,6 @@ function loadVisiMisiData() {
         return;
     }
 
-    console.log('📋 Rendering data rows for', visiMisiData.length, 'items');
     tbody.innerHTML = visiMisiData.map((item, index) => `
         <tr class="hover:bg-gray-50 transition-colors">
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -473,8 +405,8 @@ function loadVisiMisiData() {
                 </span>
             </td>
             <td class="px-6 py-4 text-sm text-gray-900 max-w-md">
-                <div class="truncate" title="${stripHtml(item.konten)}">
-                    ${stripHtml(item.konten).length > 100 ? stripHtml(item.konten).substring(0, 100) + '...' : stripHtml(item.konten)}
+                <div class="truncate" title="${escapeHtml(stripHtml(item.konten))}">
+                    ${escapeHtml(stripHtml(item.konten).length > 100 ? stripHtml(item.konten).substring(0, 100) + '...' : stripHtml(item.konten))}
                 </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
@@ -490,7 +422,7 @@ function loadVisiMisiData() {
                 ${formatDate(item.created_at)}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button onclick="editVisiMisi(${item.id})"
+                <button onclick="editVisiMisi(${escapeHtml(item.id)})"
                         class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg"
                         title="Edit">
                     <i data-lucide="edit" class="h-4 w-4 mr-2"></i>
@@ -656,13 +588,15 @@ function updateToolbarStates() {
 // Handle form submit
 function handleFormSubmit(e) {
     e.preventDefault();
-    console.log('📝 Form submitted!');
 
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData);
 
-    console.log('📋 Form data extracted:', data);
-    console.log('🆔 Current edit ID:', currentEditId);
+    // Validate form data
+    if (!data.jenis || !data.konten || !data.status) {
+        showError('Semua field harus diisi!');
+        return;
+    }
 
     // Show SweetAlert when submit button is clicked
     showSubmitConfirmation(data);
@@ -674,10 +608,6 @@ async function processFormSubmission(data) {
     showSubmitLoading(true);
 
     try {
-        console.log('🔄 Processing form submission...');
-        console.log('📝 Form data:', data);
-        console.log('🆔 Current edit ID:', currentEditId);
-
         // Determine API endpoint and method
         let url, method;
         if (currentEditId) {
@@ -694,33 +624,28 @@ async function processFormSubmission(data) {
             data._method = 'PUT';
         }
 
-        console.log('📡 Making API call to:', url, 'with method:', method);
-
         // Make API call
         const response = await fetch(url, {
             method: method,
             headers: {
-                'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                 'X-Requested-With': 'XMLHttpRequest'
             },
-            body: JSON.stringify(data)
+            credentials: 'same-origin',
+            body: new URLSearchParams(data)
         });
 
-        console.log('📡 API Response status:', response.status);
         const result = await response.json();
-        console.log('📊 API Response result:', result);
 
         if (result.success) {
             // Reload data from API to get fresh data
             await loadVisiMisiDataFromServer();
             closeModal();
-            showSuccess(result.message);
+            showSuccess('Data berhasil disimpan');
         } else {
-            showError(result.message);
+            showError('Gagal menyimpan data');
         }
     } catch (error) {
-        console.error('❌ Error submitting form:', error);
         showError('Terjadi kesalahan saat menyimpan data');
     } finally {
         showSubmitLoading(false);
@@ -761,17 +686,13 @@ function openCreateModal() {
 
 // Edit visi misi
 function editVisiMisi(id) {
-    console.log('✏️ Edit button clicked for ID:', id);
     const item = visiMisiData.find(item => item.id === id);
-    console.log('📋 Found item:', item);
 
     if (!item) {
-        console.error('❌ Item not found for ID:', id);
         return;
     }
 
     currentEditId = id;
-    console.log('🆔 Set currentEditId to:', currentEditId);
 
     document.getElementById('modalTitle').textContent = 'Edit Visi dan Misi';
     document.getElementById('submitBtnText').textContent = 'Perbarui';
@@ -789,8 +710,6 @@ function editVisiMisi(id) {
 
     // Set hidden value for form submission
     jenisSelect.value = item.jenis;
-
-    console.log('📝 Form values set - jenis:', item.jenis, 'status:', item.status);
 
     // Set editor content
     const editorElement = document.getElementById('editor');
@@ -822,7 +741,7 @@ function deleteVisiMisi(id) {
 
     Swal.fire({
         title: 'Konfirmasi Hapus',
-        text: `Apakah Anda yakin ingin menghapus ${item.jenis === 'visi' ? 'Visi' : 'Misi'} ini?`,
+        text: `Apakah Anda yakin ingin menghapus ${escapeHtml(item.jenis === 'visi' ? 'Visi' : 'Misi')} ini?`,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
@@ -896,7 +815,7 @@ function showSubmitConfirmation(data) {
 
     Swal.fire({
         title: 'Konfirmasi',
-        text: `Apakah Anda yakin ingin ${action} data ${jenis} ini?`,
+        text: `Apakah Anda yakin ingin ${action} data ${escapeHtml(jenis)} ini?`,
         icon: 'question',
         confirmButtonText: 'Ya, Simpan',
         showCancelButton: true,
@@ -910,11 +829,9 @@ function showSubmitConfirmation(data) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            console.log('✅ User confirmed submit');
             // Continue with form submission
             processFormSubmission(data);
         } else {
-            console.log('❌ User cancelled submit');
             // Hide loading and don't submit
             showSubmitLoading(false);
         }
@@ -925,7 +842,7 @@ function showSubmitConfirmation(data) {
 function showSuccess(message) {
     Swal.fire({
         title: 'Berhasil!',
-        text: message,
+        text: escapeHtml(message),
         icon: 'success',
         confirmButtonText: 'OK',
         customClass: {
@@ -941,7 +858,7 @@ function showSuccess(message) {
 function showError(message) {
     Swal.fire({
         title: 'Error!',
-        text: message,
+        text: escapeHtml(message),
         icon: 'error',
         confirmButtonText: 'OK',
         customClass: {

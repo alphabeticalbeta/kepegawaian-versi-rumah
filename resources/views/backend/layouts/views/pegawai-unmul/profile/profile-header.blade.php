@@ -6,10 +6,10 @@
             {{-- Photo --}}
             <div class="relative">
                 <div class="w-32 h-32 rounded-xl overflow-hidden border-4 border-white shadow-lg">
-                    <img src="{{ $pegawai->foto ? Storage::url($pegawai->foto) : 'https://ui-avatars.com/api/?name=' . urlencode($pegawai->nama_lengkap) . '&size=128&background=6366f1&color=fff' }}"
+                    <img src="{{ $pegawai->foto ? (str_starts_with($pegawai->foto, '/storage/') ? $pegawai->foto : Storage::url($pegawai->foto)) : 'https://ui-avatars.com/api/?name=' . urlencode($pegawai->nama_lengkap) . '&size=128&background=6366f1&color=fff' }}"
                          alt="Foto Profil"
                          id="profile-photo"
-                         data-original-src="{{ $pegawai->foto ? Storage::url($pegawai->foto) : 'https://ui-avatars.com/api/?name=' . urlencode($pegawai->nama_lengkap) . '&size=128&background=6366f1&color=fff' }}"
+                         data-original-src="{{ $pegawai->foto ? (str_starts_with($pegawai->foto, '/storage/') ? $pegawai->foto : Storage::url($pegawai->foto)) : 'https://ui-avatars.com/api/?name=' . urlencode($pegawai->nama_lengkap) . '&size=128&background=6366f1&color=fff' }}"
                          class="w-full h-full object-cover">
                 </div>
                 @if($isEditing)
