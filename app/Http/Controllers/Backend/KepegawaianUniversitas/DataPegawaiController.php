@@ -15,6 +15,10 @@ use Illuminate\Validation\Rules\File;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\File as FileFacade;
 use App\Services\FileStorageService;
+use App\Exports\PegawaiExport;
+use App\Exports\PegawaiTemplate;
+use App\Imports\PegawaiImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DataPegawaiController extends Controller
 {
@@ -31,12 +35,15 @@ class DataPegawaiController extends Controller
     public function index(Request $request)
     {
         // OPTIMASI: Gunakan query builder dengan eager loading yang optimal
-        $query = Pegawai::withOptimalRelations()
+        $query = Pegawai::with(['pangkat', 'jabatan', 'unitKerja.subUnitKerja.unitKerja'])
             ->when($request->filter_jenis_pegawai, function ($q, $jenis_pegawai) {
-                return $q->byJenisPegawai($jenis_pegawai);
+                return $q->where('jenis_pegawai', $jenis_pegawai);
             })
             ->when($request->search, function ($q, $search) {
-                return $q->searchByNameOrNip($search);
+                return $q->where(function($query) use ($search) {
+                    $query->where('nama_lengkap', 'like', "%{$search}%")
+                          ->orWhere('nip', 'like', "%{$search}%");
+                });
             })
             ->latest();
 
@@ -45,187 +52,9 @@ class DataPegawaiController extends Controller
         return view('backend.layouts.views.kepegawaian-universitas.data-pegawai.master-datapegawai', compact('pegawais'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        // OPTIMASI: Cache data yang sering digunakan dengan cache key yang lebih spesifik
-        $pangkats = \Cache::remember('pangkats_all_hierarchy', 3600, function () {
-            return Pangkat::orderByHierarchy('asc')->get(['id', 'pangkat', 'hierarchy_level', 'status_pangkat']);
-        });
+    // Method create dan store dihapus karena menggunakan shared ProfileController
 
-        $jabatans = \Cache::remember('jabatans_all_hierarchy', 3600, function () {
-            return Jabatan::orderByHierarchy('asc')->get(['id', 'jabatan', 'jenis_pegawai', 'jenis_jabatan', 'hierarchy_level']);
-        });
-
-        // OPTIMASI: Ambil data unit kerja dengan struktur yang benar
-        $unitKerjas = \Cache::remember('unit_kerjas_all', 3600, function () {
-            return \App\Models\KepegawaianUniversitas\UnitKerja::orderBy('nama')->get(['id', 'nama']);
-        });
-
-        $subUnitKerjas = \Cache::remember('sub_unit_kerjas_all', 3600, function () {
-            return \App\Models\KepegawaianUniversitas\SubUnitKerja::with('unitKerja:id,nama')
-                ->orderBy('nama')
-                ->get(['id', 'nama', 'unit_kerja_id']);
-        });
-
-        $subSubUnitKerjas = \Cache::remember('sub_sub_unit_kerjas_all', 3600, function () {
-            return \App\Models\KepegawaianUniversitas\SubSubUnitKerja::with(['subUnitKerja:id,nama,unit_kerja_id', 'subUnitKerja.unitKerja:id,nama'])
-                ->orderBy('nama')
-                ->get(['id', 'nama', 'sub_unit_kerja_id']);
-        });
-
-        // Siapkan data untuk dropdown berjenjang dengan struktur yang benar
-        $unitKerjaOptions = [];
-        $subUnitKerjaOptions = [];
-        $subSubUnitKerjaOptions = [];
-
-        // Unit Kerja Options
-        foreach ($unitKerjas as $unitKerja) {
-            $unitKerjaOptions[$unitKerja->id] = $unitKerja->nama;
-        }
-
-        // Sub Unit Kerja Options (grouped by unit_kerja_id)
-        foreach ($subUnitKerjas as $subUnitKerja) {
-            if ($subUnitKerja->unitKerja) {
-                $unitKerjaId = $subUnitKerja->unit_kerja_id;
-                $subUnitKerjaOptions[$unitKerjaId][$subUnitKerja->id] = $subUnitKerja->nama;
-            }
-        }
-
-        // Sub-sub Unit Kerja Options (grouped by sub_unit_kerja_id)
-        foreach ($subSubUnitKerjas as $subSubUnitKerja) {
-            if ($subSubUnitKerja->subUnitKerja) {
-                $subUnitKerjaId = $subSubUnitKerja->sub_unit_kerja_id;
-                $subSubUnitKerjaOptions[$subUnitKerjaId][$subSubUnitKerja->id] = $subSubUnitKerja->nama;
-            }
-        }
-
-        // Buat dummy pegawai untuk form create
-        $pegawai = new \App\Models\KepegawaianUniversitas\Pegawai();
-
-        // Dummy data untuk dropdown yang dipilih (kosong untuk form create)
-        $selectedUnitKerjaId = null;
-        $selectedSubUnitKerjaId = null;
-        $selectedSubSubUnitKerjaId = null;
-
-        return view('backend.layouts.views.kepegawaian-universitas.data-pegawai.form-datapegawai',
-            compact('pangkats', 'jabatans', 'unitKerjas', 'subUnitKerjas', 'subSubUnitKerjas', 'unitKerjaOptions', 'subUnitKerjaOptions', 'subSubUnitKerjaOptions', 'pegawai', 'selectedUnitKerjaId', 'selectedSubUnitKerjaId', 'selectedSubSubUnitKerjaId'));
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        $validated = $this->validateRequest($request);
-        $this->handleFileUploads($request, $validated);
-
-        // Handle unit_kerja_id berdasarkan unit_kerja_id
-        if ($request->filled('unit_kerja_id')) {
-            $subSubUnitKerja = \App\Models\KepegawaianUniversitas\SubSubUnitKerja::with(['subUnitKerja', 'subUnitKerja.unitKerja'])
-                ->find($request->unit_kerja_id);
-
-            if ($subSubUnitKerja && $subSubUnitKerja->subUnitKerja && $subSubUnitKerja->subUnitKerja->unitKerja) {
-                // Set unit_kerja_id berdasarkan parent dari Sub-sub Unit Kerja
-                $validated['unit_kerja_id'] = $subSubUnitKerja->subUnitKerja->unitKerja->id;
-            }
-        }
-
-        Pegawai::create($validated);
-
-        return redirect()->route('backend.kepegawaian-universitas.data-pegawai.index')
-                         ->with('success', 'Data Pegawai berhasil ditambahkan.');
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Pegawai $pegawai)
-    {
-        $pangkats = \Cache::remember('pangkats_all_hierarchy', 3600, function () {
-            return Pangkat::orderByHierarchy('asc')->get(['id', 'pangkat', 'hierarchy_level', 'status_pangkat']);
-        });
-        $jabatans = \Cache::remember('jabatans_all_hierarchy', 3600, function () {
-            return Jabatan::orderByHierarchy('asc')->get(['id', 'jabatan', 'jenis_pegawai', 'jenis_jabatan', 'hierarchy_level']);
-        });
-
-        // OPTIMASI: Ambil data unit kerja dengan struktur yang benar
-        $unitKerjas = \Cache::remember('unit_kerjas_all', 3600, function () {
-            return \App\Models\KepegawaianUniversitas\UnitKerja::orderBy('nama')->get(['id', 'nama']);
-        });
-
-        $subUnitKerjas = \Cache::remember('sub_unit_kerjas_all', 3600, function () {
-            return \App\Models\KepegawaianUniversitas\SubUnitKerja::with('unitKerja:id,nama')
-                ->orderBy('nama')
-                ->get(['id', 'nama', 'unit_kerja_id']);
-        });
-
-        $subSubUnitKerjas = \Cache::remember('sub_sub_unit_kerjas_all', 3600, function () {
-            return \App\Models\KepegawaianUniversitas\SubSubUnitKerja::with(['subUnitKerja:id,nama,unit_kerja_id', 'subUnitKerja.unitKerja:id,nama'])
-                ->orderBy('nama')
-                ->get(['id', 'nama', 'sub_unit_kerja_id']);
-        });
-
-        // Siapkan data untuk dropdown berjenjang dengan struktur yang benar
-        $unitKerjaOptions = [];
-        $subUnitKerjaOptions = [];
-        $subSubUnitKerjaOptions = [];
-
-        // Unit Kerja Options
-        foreach ($unitKerjas as $unitKerja) {
-            $unitKerjaOptions[$unitKerja->id] = $unitKerja->nama;
-        }
-
-        // Sub Unit Kerja Options (grouped by unit_kerja_id)
-        foreach ($subUnitKerjas as $subUnitKerja) {
-            if ($subUnitKerja->unitKerja) {
-                $unitKerjaId = $subUnitKerja->unit_kerja_id;
-                $subUnitKerjaOptions[$unitKerjaId][$subUnitKerja->id] = $subUnitKerja->nama;
-            }
-        }
-
-        // Sub-sub Unit Kerja Options (grouped by sub_unit_kerja_id)
-        foreach ($subSubUnitKerjas as $subSubUnitKerja) {
-            if ($subSubUnitKerja->subUnitKerja) {
-                $subUnitKerjaId = $subSubUnitKerja->sub_unit_kerja_id;
-                $subSubUnitKerjaOptions[$subUnitKerjaId][$subSubUnitKerja->id] = $subSubUnitKerja->nama;
-            }
-        }
-
-        // Jika edit mode, siapkan data untuk mengisi dropdown yang sudah dipilih
-        $selectedUnitKerjaId = null;
-        $selectedSubUnitKerjaId = null;
-        $selectedSubSubUnitKerjaId = null;
-
-        if ($pegawai->unit_kerja_id) {
-            // Cari data berdasarkan unit_kerja_id dengan query terpisah
-            $selectedSubSubUnit = \App\Models\KepegawaianUniversitas\SubSubUnitKerja::with(['subUnitKerja:id,nama,unit_kerja_id', 'subUnitKerja.unitKerja:id,nama'])
-                ->find($pegawai->unit_kerja_id);
-
-            if ($selectedSubSubUnit && $selectedSubSubUnit->subUnitKerja && $selectedSubSubUnit->subUnitKerja->unitKerja) {
-                $selectedSubSubUnitKerjaId = $selectedSubSubUnit->id;
-                $selectedSubUnitKerjaId = $selectedSubSubUnit->subUnitKerja->id;
-                $selectedUnitKerjaId = $selectedSubSubUnit->subUnitKerja->unitKerja->id;
-            }
-        }
-
-        return view('backend.layouts.views.kepegawaian-universitas.data-pegawai.form-datapegawai', compact(
-            'pegawai',
-            'pangkats',
-            'jabatans',
-            'unitKerjas',
-            'subUnitKerjas',
-            'subSubUnitKerjas',
-            'unitKerjaOptions',
-            'subUnitKerjaOptions',
-            'subSubUnitKerjaOptions',
-            'selectedUnitKerjaId',
-            'selectedSubUnitKerjaId',
-            'selectedSubSubUnitKerjaId'
-        ));
-    }
+    // Method edit dihapus karena menggunakan shared profile page
 
     /**
      * Update the specified resource in storage.
@@ -352,12 +181,7 @@ class DataPegawaiController extends Controller
                          ->with('success', 'Data Pegawai berhasil dihapus.');
     }
 
-    public function show(Pegawai $pegawai)
-    {
-        $pegawai->load(['pangkat', 'jabatan', 'unitKerja']);
-
-        return view('backend.layouts.views.kepegawaian-universitas.data-pegawai.show-datapegawai', compact('pegawai'));
-    }
+    // Method show dihapus karena menggunakan shared profile page
 
     /**
      * Reusable validation logic.
@@ -451,7 +275,7 @@ class DataPegawaiController extends Controller
                 // Store new file using FileStorageService
                 $uploadPath = 'pegawai-files/' . $column;
                 $file = $request->file($column);
-                                    $path = $this->fileStorage->uploadFile($file, $uploadPath, $key);
+                $path = $this->fileStorage->uploadFile($file, $uploadPath, $column);
                 $validatedData[$column] = $path;
 
                 \Log::info("File uploaded using FileStorageService", [
@@ -556,19 +380,43 @@ class DataPegawaiController extends Controller
         // 4. **LOGGING** - Catat akses dokumen
         $this->logDocumentAccess($pegawai->id, $currentUser->id ?? 0, $field, request());
 
-        // 5. **FIX STORAGE BUG** - Gunakan disk yang sesuai
-        $fullPath = Storage::disk($disk)->path($filePath);
+        // 5. **HANDLE FILE RESPONSE** - Gunakan disk yang sesuai
+        try {
+            // Untuk foto, gunakan URL langsung jika menggunakan disk public
+            if ($field === 'foto' && $disk === 'public') {
+                $url = Storage::disk($disk)->url($filePath);
+                return redirect($url);
+            }
 
-        if (!file_exists($fullPath)) {
-            abort(404, 'File tidak ditemukan di storage');
+            // Untuk file lainnya, gunakan response()->file
+            $fullPath = Storage::disk($disk)->path($filePath);
+
+            if (!file_exists($fullPath)) {
+                \Log::error('File not found in filesystem', [
+                    'field' => $field,
+                    'filePath' => $filePath,
+                    'disk' => $disk,
+                    'fullPath' => $fullPath
+                ]);
+                abort(404, 'File tidak ditemukan di storage');
+            }
+
+            $mimeType = FileFacade::mimeType($fullPath);
+
+            return response()->file($fullPath, [
+                'Content-Type' => $mimeType,
+                'Content-Disposition' => 'inline; filename="' . basename($fullPath) . '"',
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error serving file', [
+                'field' => $field,
+                'filePath' => $filePath,
+                'disk' => $disk,
+                'error' => $e->getMessage()
+            ]);
+            abort(404, 'Error loading file: ' . $e->getMessage());
         }
-
-        $mimeType = FileFacade::mimeType($fullPath);
-
-        return response()->file($fullPath, [
-            'Content-Type' => $mimeType,
-            'Content-Disposition' => 'inline; filename="' . basename($fullPath) . '"',
-        ]);
     }
 
     /**
@@ -719,6 +567,289 @@ class DataPegawaiController extends Controller
             'pak_konversi', 'pak_integrasi', 'skp_tahun_pertama', 'skp_tahun_kedua', 'sk_cpns', 'sk_pns'
         ];
 
+        // Foto menggunakan disk public untuk akses langsung
+        if ($field === 'foto') {
+            return 'public';
+        }
+
         return in_array($field, $sensitiveFiles) ? 'local' : 'public';
+    }
+
+    /**
+     * Export data pegawai to Excel
+     */
+    public function export(Request $request)
+    {
+        try {
+            // Get filters from request
+            $filters = [
+                'jenis_pegawai' => $request->get('jenis_pegawai'),
+                'status_kepegawaian' => $request->get('status_kepegawaian'),
+                'unit_kerja' => $request->get('unit_kerja'),
+            ];
+
+            // Generate filename with timestamp
+            $filename = 'data_pegawai_' . date('Y-m-d_H-i-s') . '.xlsx';
+
+            // Export to Excel
+            return Excel::download(new PegawaiExport($filters), $filename);
+
+        } catch (\Exception $e) {
+            \Log::error('Error exporting pegawai data: ' . $e->getMessage(), [
+                'error' => $e->getTraceAsString(),
+                'filters' => $filters ?? []
+            ]);
+
+            return redirect()->back()
+                           ->with('error', 'Terjadi kesalahan saat mengexport data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Import data pegawai from Excel
+     */
+    public function import(Request $request)
+    {
+        try {
+            // Validate file
+            $request->validate([
+                'file' => 'required|file|mimes:xlsx,xls|max:10240', // 10MB max
+                'import_mode' => 'required|in:create_only,update_only,create_update'
+            ]);
+
+            $file = $request->file('file');
+            $importMode = $request->get('import_mode', 'create_update');
+
+            // Create import instance
+            $import = new PegawaiImport($importMode);
+
+            // Import the file
+            Excel::import($import, $file);
+
+            // Get statistics
+            $stats = $import->getStatistics();
+            $failures = $import->failures();
+
+            // Prepare success message
+            $message = "Import berhasil! ";
+            $message .= "Data baru: {$stats['created']}, ";
+            $message .= "Data diupdate: {$stats['updated']}";
+
+            if ($stats['failures'] > 0) {
+                $message .= ", Gagal: {$stats['failures']}";
+            }
+
+            return redirect()->back()
+                           ->with('success', $message)
+                           ->with('import_failures', $failures);
+
+        } catch (\Exception $e) {
+            \Log::error('Error importing pegawai data: ' . $e->getMessage(), [
+                'error' => $e->getTraceAsString(),
+                'file' => $request->file('file')?->getClientOriginalName()
+            ]);
+
+            return redirect()->back()
+                           ->with('error', 'Terjadi kesalahan saat mengimport data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download template Excel for import
+     */
+    public function downloadTemplate()
+    {
+        try {
+            // Create template with example data
+            $template = new PegawaiTemplate();
+
+            // Generate filename
+            $filename = 'template_import_pegawai_' . date('Y-m-d') . '.xlsx';
+
+            // Download template
+            return Excel::download($template, $filename);
+
+        } catch (\Exception $e) {
+            \Log::error('Error downloading template: ' . $e->getMessage(), [
+                'error' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                           ->with('error', 'Terjadi kesalahan saat mengunduh template: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Preview import data before actual import
+     */
+    public function previewImport(Request $request)
+    {
+        try {
+            // Validate file
+            $request->validate([
+                'file' => 'required|file|mimes:xlsx,xls|max:10240'
+            ]);
+
+            $file = $request->file('file');
+            $importMode = $request->get('import_mode', 'create_update');
+
+            // Create import instance
+            $import = new PegawaiImport($importMode);
+
+            // Read first 10 rows for preview
+            $data = Excel::toArray($import, $file);
+            $previewData = array_slice($data[0], 0, 10); // First 10 rows
+
+            return response()->json([
+                'success' => true,
+                'preview_data' => $previewData,
+                'total_rows' => count($data[0]),
+                'headers' => array_keys($previewData[0] ?? [])
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error previewing import: ' . $e->getMessage(), [
+                'error' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat preview data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Bulk delete pegawai
+     */
+    public function bulkDelete(Request $request)
+    {
+        try {
+            $request->validate([
+                'selected_ids' => 'required|array|min:1',
+                'selected_ids.*' => 'exists:pegawais,id'
+            ]);
+
+            $selectedIds = $request->selected_ids;
+            $deletedCount = 0;
+
+            foreach ($selectedIds as $id) {
+                $pegawai = Pegawai::find($id);
+                if ($pegawai) {
+                    // Delete associated files
+                    $this->deletePegawaiFiles($pegawai);
+
+                    // Delete pegawai
+                    $pegawai->delete();
+                    $deletedCount++;
+                }
+            }
+
+            \Log::info('Bulk delete pegawai completed', [
+                'deleted_count' => $deletedCount,
+                'selected_ids' => $selectedIds
+            ]);
+
+            return redirect()->back()->with('success', "Berhasil menghapus {$deletedCount} pegawai.");
+
+        } catch (\Exception $e) {
+            \Log::error('Error in bulk delete: ' . $e->getMessage(), [
+                'error' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Bulk update pegawai
+     */
+    public function bulkUpdate(Request $request)
+    {
+        try {
+            $request->validate([
+                'selected_ids' => 'required|string',
+                'status_kepegawaian' => 'nullable|string|in:Dosen PNS,Dosen PPPK,Dosen Non ASN,Tenaga Kependidikan PNS,Tenaga Kependidikan PPPK,Tenaga Kependidikan Non ASN',
+                'jenis_pegawai' => 'nullable|string|in:Dosen,Tenaga Kependidikan',
+                'pangkat_terakhir_id' => 'nullable|exists:pangkats,id',
+                'jabatan_terakhir_id' => 'nullable|exists:jabatans,id',
+                'unit_kerja_id' => 'nullable|exists:sub_sub_unit_kerjas,id',
+            ]);
+
+            $selectedIds = explode(',', $request->selected_ids);
+            $updatedCount = 0;
+            $updateData = [];
+
+            // Prepare update data (only non-empty fields)
+            if ($request->filled('status_kepegawaian')) {
+                $updateData['status_kepegawaian'] = $request->status_kepegawaian;
+            }
+            if ($request->filled('jenis_pegawai')) {
+                $updateData['jenis_pegawai'] = $request->jenis_pegawai;
+            }
+            if ($request->filled('pangkat_terakhir_id')) {
+                $updateData['pangkat_terakhir_id'] = $request->pangkat_terakhir_id;
+            }
+            if ($request->filled('jabatan_terakhir_id')) {
+                $updateData['jabatan_terakhir_id'] = $request->jabatan_terakhir_id;
+            }
+            if ($request->filled('unit_kerja_id')) {
+                $updateData['unit_kerja_id'] = $request->unit_kerja_id;
+            }
+
+            if (empty($updateData)) {
+                return redirect()->back()->with('error', 'Tidak ada data yang diupdate.');
+            }
+
+            foreach ($selectedIds as $id) {
+                $pegawai = Pegawai::find($id);
+                if ($pegawai) {
+                    $pegawai->update($updateData);
+                    $updatedCount++;
+                }
+            }
+
+            \Log::info('Bulk update pegawai completed', [
+                'updated_count' => $updatedCount,
+                'selected_ids' => $selectedIds,
+                'update_data' => $updateData
+            ]);
+
+            return redirect()->back()->with('success', "Berhasil mengupdate {$updatedCount} pegawai.");
+
+        } catch (\Exception $e) {
+            \Log::error('Error in bulk update: ' . $e->getMessage(), [
+                'error' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat mengupdate data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete pegawai files
+     */
+    private function deletePegawaiFiles($pegawai)
+    {
+        $fileFields = [
+            'foto', 'sk_pangkat_terakhir', 'sk_jabatan_terakhir', 'ijazah_terakhir',
+            'transkrip_nilai', 'sk_cpns', 'sk_pns', 'sk_penyesuaian_pangkat',
+            'sk_penyesuaian_jabatan', 'sk_mutasi', 'sk_pensiun', 'sk_hukuman_disiplin',
+            'sk_penghargaan', 'sk_tugas_belajar', 'sk_izin_belajar', 'sk_cuti',
+            'sk_tugas_tambahan', 'sk_pelatihan', 'sk_sertifikasi', 'sk_penilaian_kinerja',
+            'sk_pak_integrasi', 'sk_skp', 'sk_penelitian', 'sk_pengabdian_masyarakat',
+            'sk_publikasi', 'sk_hki', 'sk_penghargaan_akademik', 'sk_organisasi_profesi'
+        ];
+
+        foreach ($fileFields as $field) {
+            if ($pegawai->$field) {
+                try {
+                    // Use Storage facade directly
+                    \Storage::delete($pegawai->$field);
+                } catch (\Exception $e) {
+                    \Log::warning("Failed to delete file for field {$field}: " . $e->getMessage());
+                }
+            }
+        }
     }
 }

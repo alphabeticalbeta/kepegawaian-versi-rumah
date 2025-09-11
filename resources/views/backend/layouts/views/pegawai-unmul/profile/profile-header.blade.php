@@ -75,7 +75,7 @@
             <div class="flex-shrink-0">
                 @if($isEditing)
                     <div class="flex items-center gap-3">
-                        <a href="{{ route('pegawai-unmul.profile.show') }}"
+                        <a href="{{ $isAdmin ? route('backend.kepegawaian-universitas.data-pegawai.index') : route('pegawai-unmul.profile.show') }}"
                            class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2">
                             <i data-lucide="x" class="w-4 h-4"></i>
                             Batal
@@ -87,11 +87,19 @@
                         </button>
                     </div>
                 @else
-                    <a href="{{ route('pegawai-unmul.profile.edit') }}"
-                       class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
-                        <i data-lucide="edit" class="w-4 h-4"></i>
-                        Edit Profil
-                    </a>
+                    @if($isAdmin)
+                        <a href="{{ route('backend.kepegawaian-universitas.data-pegawai.edit', $pegawai->id) }}"
+                           class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
+                            <i data-lucide="edit" class="w-4 h-4"></i>
+                            Edit Data
+                        </a>
+                    @else
+                        <a href="{{ route('pegawai-unmul.profile.edit') }}"
+                           class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
+                            <i data-lucide="edit" class="w-4 h-4"></i>
+                            Edit Profil
+                        </a>
+                    @endif
                 @endif
             </div>
         </div>
