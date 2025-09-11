@@ -137,23 +137,27 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full
-                                        @if($periode->jenis_usulan == 'jabatan-dosen-regular') bg-indigo-100 text-indigo-800
-                                        @elseif($periode->jenis_usulan == 'jabatan-dosen-pengangkatan') bg-cyan-100 text-cyan-800
-                                        @elseif($periode->jenis_usulan == 'nuptk') bg-green-100 text-green-800
-                                        @elseif($periode->jenis_usulan == 'laporan-lkd') bg-blue-100 text-blue-800
-                                        @elseif($periode->jenis_usulan == 'presensi') bg-pink-100 text-pink-800
-                                        @elseif($periode->jenis_usulan == 'id-sinta-sister') bg-teal-100 text-teal-800
-                                        @elseif($periode->jenis_usulan == 'satyalancana') bg-orange-100 text-orange-800
-                                        @elseif($periode->jenis_usulan == 'tugas-belajar') bg-cyan-100 text-cyan-800
-                                        @elseif($periode->jenis_usulan == 'pengaktifan-kembali') bg-emerald-100 text-emerald-800
-                                        @elseif($periode->jenis_usulan == 'penyesuaian-masa-kerja') bg-amber-100 text-amber-800
-                                        @elseif($periode->jenis_usulan == 'ujian-dinas-ijazah') bg-lime-100 text-lime-800
-                                        @elseif($periode->jenis_usulan == 'laporan-serdos') bg-rose-100 text-rose-800
-                                        @elseif($periode->jenis_usulan == 'pensiun') bg-slate-100 text-slate-800
-                                        @elseif($periode->jenis_usulan == 'kepangkatan') bg-violet-100 text-violet-800
-                                        @elseif($periode->jenis_usulan == 'pencantuman-gelar') bg-fuchsia-100 text-fuchsia-800
-                                        @else bg-gray-100 text-gray-800 @endif">
+                                    @php
+                                        $badgeClasses = match($periode->jenis_usulan) {
+                                            'jabatan-dosen-regular' => 'bg-indigo-100 text-indigo-800',
+                                            'jabatan-dosen-pengangkatan' => 'bg-cyan-100 text-cyan-800',
+                                            'nuptk' => 'bg-green-100 text-green-800',
+                                            'laporan-lkd' => 'bg-blue-100 text-blue-800',
+                                            'presensi' => 'bg-pink-100 text-pink-800',
+                                            'id-sinta-sister' => 'bg-teal-100 text-teal-800',
+                                            'satyalancana' => 'bg-orange-100 text-orange-800',
+                                            'tugas-belajar' => 'bg-purple-100 text-purple-800',
+                                            'pengaktifan-kembali' => 'bg-emerald-100 text-emerald-800',
+                                            'penyesuaian-masa-kerja' => 'bg-amber-100 text-amber-800',
+                                            'ujian-dinas-ijazah' => 'bg-lime-100 text-lime-800',
+                                            'laporan-serdos' => 'bg-rose-100 text-rose-800',
+                                            'pensiun' => 'bg-slate-100 text-slate-800',
+                                            'kepangkatan' => 'bg-violet-100 text-violet-800',
+                                            'pencantuman-gelar' => 'bg-fuchsia-100 text-fuchsia-800',
+                                            default => 'bg-gray-100 text-gray-800'
+                                        };
+                                    @endphp
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full {{ $badgeClasses }}">
                                         @if($periode->jenis_usulan == 'jabatan-dosen-regular')
                                             Usulan Jabatan Dosen Reguler
                                         @elseif($periode->jenis_usulan == 'jabatan-dosen-pengangkatan')

@@ -320,45 +320,50 @@
     </div>
 </div>
 
-<!-- Filter Section -->
+<!-- Filter Section - Only View -->
 <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
     <div class="px-6 py-4 border-b border-gray-200">
-        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
             <div class="flex items-center gap-3">
-                <label for="filterJenis" class="text-sm font-medium text-gray-700 flex items-center gap-2">
-                    <i class="fas fa-filter" style="font-size: 14px; color: #6b7280;"></i>
-                    Filter Jenis Usulan:
+            <label class="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    Jenis Usulan:
                 </label>
-                <select id="filterJenis" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
-                    <option value="">Semua Jenis Usulan</option>
-                    <option value="all" {{ $jenisUsulan == 'all' ? 'selected' : '' }}>Semua Usulan Aktif</option>
-                    <optgroup label="Usulan Jabatan">
-                        <option value="jabatan-dosen-regular" {{ $jenisUsulan == 'jabatan-dosen-regular' ? 'selected' : '' }}>Usulan Jabatan Dosen Reguler</option>
-                        <option value="jabatan-dosen-pengangkatan" {{ $jenisUsulan == 'jabatan-dosen-pengangkatan' ? 'selected' : '' }}>Usulan Jabatan Dosen Pengangkatan Pertama</option>
-                    </optgroup>
-                    <option value="nuptk" {{ $jenisUsulan == 'nuptk' ? 'selected' : '' }}>Usulan NUPTK</option>
-                    <option value="laporan-lkd" {{ $jenisUsulan == 'laporan-lkd' ? 'selected' : '' }}>Usulan Laporan LKD</option>
-                    <option value="presensi" {{ $jenisUsulan == 'presensi' ? 'selected' : '' }}>Usulan Presensi</option>
-                    <option value="id-sinta-sister" {{ $jenisUsulan == 'id-sinta-sister' ? 'selected' : '' }}>Usulan ID SINTA ke SISTER</option>
-                    <option value="satyalancana" {{ $jenisUsulan == 'satyalancana' ? 'selected' : '' }}>Usulan Satyalancana</option>
-                    <option value="tugas-belajar" {{ $jenisUsulan == 'tugas-belajar' ? 'selected' : '' }}>Usulan Tugas Belajar</option>
-                    <option value="pengaktifan-kembali" {{ $jenisUsulan == 'pengaktifan-kembali' ? 'selected' : '' }}>Usulan Pengaktifan Kembali</option>
-                    <option value="penyesuaian-masa-kerja" {{ $jenisUsulan == 'penyesuaian-masa-kerja' ? 'selected' : '' }}>Usulan Penyesuaian Masa Kerja</option>
-                    <option value="ujian-dinas-ijazah" {{ $jenisUsulan == 'ujian-dinas-ijazah' ? 'selected' : '' }}>Usulan Ujian Dinas Ijazah</option>
-                    <option value="laporan-serdos" {{ $jenisUsulan == 'laporan-serdos' ? 'selected' : '' }}>Usulan Laporan SERDOS</option>
-                    <option value="pensiun" {{ $jenisUsulan == 'pensiun' ? 'selected' : '' }}>Usulan Pensiun</option>
-                    <option value="kepangkatan" {{ $jenisUsulan == 'kepangkatan' ? 'selected' : '' }}>Usulan Kepangkatan</option>
-                    <option value="pencantuman-gelar" {{ $jenisUsulan == 'pencantuman-gelar' ? 'selected' : '' }}>Usulan Pencantuman Gelar</option>
-                </select>
+            <div class="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-700">
+                @if($jenisUsulan == 'all' || !$jenisUsulan)
+                    Semua Usulan Aktif
+                @elseif($jenisUsulan == 'jabatan-dosen-regular')
+                    Usulan Jabatan Dosen Reguler
+                @elseif($jenisUsulan == 'jabatan-dosen-pengangkatan')
+                    Usulan Jabatan Dosen Pengangkatan Pertama
+                @elseif($jenisUsulan == 'nuptk')
+                    Usulan NUPTK
+                @elseif($jenisUsulan == 'laporan-lkd')
+                    Usulan Laporan LKD
+                @elseif($jenisUsulan == 'presensi')
+                    Usulan Presensi
+                @elseif($jenisUsulan == 'id-sinta-sister')
+                    Usulan ID SINTA ke SISTER
+                @elseif($jenisUsulan == 'satyalancana')
+                    Usulan Satyalancana
+                @elseif($jenisUsulan == 'tugas-belajar')
+                    Usulan Tugas Belajar
+                @elseif($jenisUsulan == 'pengaktifan-kembali')
+                    Usulan Pengaktifan Kembali
+                @elseif($jenisUsulan == 'penyesuaian-masa-kerja')
+                    Usulan Penyesuaian Masa Kerja
+                @elseif($jenisUsulan == 'ujian-dinas-ijazah')
+                    Usulan Ujian Dinas Ijazah
+                @elseif($jenisUsulan == 'laporan-serdos')
+                    Usulan Laporan SERDOS
+                @elseif($jenisUsulan == 'pensiun')
+                    Usulan Pensiun
+                @elseif($jenisUsulan == 'kepangkatan')
+                    Usulan Kepangkatan
+                @elseif($jenisUsulan == 'pencantuman-gelar')
+                    Usulan Pencantuman Gelar
+                @else
+                    {{ ucwords(str_replace('-', ' ', $jenisUsulan)) }}
+                @endif
             </div>
-
-            @if($jenisUsulan && $jenisUsulan !== 'all')
-                <a href="{{ route('backend.kepegawaian-universitas.periode-usulan.index') }}"
-                   class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200">
-                    <i class="fas fa-times" style="font-size: 12px;"></i>
-                    Tampilkan Semua
-                </a>
-            @endif
         </div>
     </div>
 </div>
@@ -366,59 +371,53 @@
 <!-- Main Content Card -->
 <div class="bg-white rounded-lg shadow-sm border border-gray-200">
 
-    <!-- Table Section -->
+    <!-- Table Header with Add Button -->
+    <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+        <h3 class="text-lg font-semibold text-gray-900">Daftar Periode Usulan</h3>
+    </div>
     <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left">
-            <thead class="bg-gray-50 border-b border-gray-200">
+        <table class="w-full divide-y divide-gray-200">
+            <thead class="bg-white">
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Nama Periode (Tahun)
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Jenis Usulan
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Periode Usulan
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Status
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Pendaftar
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Lihat Pengusul
-                    </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                        Aksi
-                    </th>
+                    <th class="px-4 py-3 text-xs font-bold text-black text-center uppercase tracking-wider w-12">No</th>
+                    <th class="px-4 py-3 text-xs font-bold text-black text-center uppercase tracking-wider">Jenis Usulan</th>
+                    <th class="px-4 py-3 text-xs font-bold text-black text-center uppercase tracking-wider">Nama Periode</th>
+                    <th class="px-4 py-3 text-xs font-bold text-black text-center uppercase tracking-wider w-56">Periode</th>
+                    <th class="px-4 py-3 text-xs font-bold text-black text-center uppercase tracking-wider w-32">Status</th>
+                    <th class="px-4 py-3 text-xs font-bold text-black text-center tracking-wider w-40">Aksi</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @forelse ($periodeUsulans as $periode)
-                    <tr class="hover:bg-gray-50 transition-colors duration-200" data-jenis="{{ $periode->jenis_usulan }}" data-periode-id="{{ $periode->id }}">
-                        <td class="px-6 py-4 font-medium text-gray-900">
-                            {{ $periode->nama_periode }} ({{ $periode->tahun_periode }})
+            <tbody id="periodeTableBody" class="bg-white divide-y divide-gray-200">
+                @forelse ($periodeUsulans as $index => $periode)
+                    <tr class="hover:bg-gray-50 transition-colors" data-jenis="{{ $periode->jenis_usulan }}" data-periode-id="{{ $periode->id }}">
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
+                            {{ ($periodeUsulans->currentPage() - 1) * $periodeUsulans->perPage() + $index + 1 }}
                         </td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full
-                                @if($periode->jenis_usulan == 'Semua Usulan Aktif') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
-                                @elseif($periode->jenis_usulan == 'jabatan-dosen-regular') bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200
-                                @elseif($periode->jenis_usulan == 'jabatan-dosen-pengangkatan') bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200
-                                @elseif($periode->jenis_usulan == 'usulan-nuptk') bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
-                                @elseif($periode->jenis_usulan == 'usulan-laporan-lkd') bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200
-                                @elseif($periode->jenis_usulan == 'usulan-presensi') bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200
-                                @elseif($periode->jenis_usulan == 'usulan-id-sinta-sister') bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200
-                                @elseif($periode->jenis_usulan == 'usulan-satyalancana') bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200
-                                @elseif($periode->jenis_usulan == 'usulan-tugas-belajar') bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200
-                                @elseif($periode->jenis_usulan == 'usulan-pengaktifan-kembali') bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200
-                                @elseif($periode->jenis_usulan == 'usulan-penyesuaian-masa-kerja') bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200
-                                @elseif($periode->jenis_usulan == 'usulan-ujian-dinas-ijazah') bg-lime-100 text-lime-800 dark:bg-lime-900 dark:text-lime-200
-                                @elseif($periode->jenis_usulan == 'usulan-laporan-serdos') bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200
-                                @elseif($periode->jenis_usulan == 'usulan-pensiun') bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200
-                                @elseif($periode->jenis_usulan == 'usulan-kepangkatan') bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-200
-                                @elseif($periode->jenis_usulan == 'usulan-pencantuman-gelar') bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900 dark:text-fuchsia-200
-                                @else bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200 @endif">
+
+                        <!-- Jenis Usulan -->
+                        <td class="px-4 py-3 whitespace-nowrap text-center">
+                            @php
+                                $badgeClasses = match($periode->jenis_usulan) {
+                                    'Semua Usulan Aktif' => 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+                                    'jabatan-dosen-regular' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
+                                    'jabatan-dosen-pengangkatan' => 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200',
+                                    'usulan-nuptk' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+                                    'usulan-laporan-lkd' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+                                    'usulan-presensi' => 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
+                                    'usulan-id-sinta-sister' => 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
+                                    'usulan-satyalancana' => 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+                                    'usulan-tugas-belajar' => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+                                    'usulan-pengaktifan-kembali' => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
+                                    'usulan-penyesuaian-masa-kerja' => 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+                                    'usulan-ujian-dinas-ijazah' => 'bg-lime-100 text-lime-800 dark:bg-lime-900 dark:text-lime-200',
+                                    'usulan-laporan-serdos' => 'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200',
+                                    'usulan-pensiun' => 'bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200',
+                                    'usulan-kepangkatan' => 'bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-200',
+                                    'usulan-pencantuman-gelar' => 'bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-900 dark:text-fuchsia-200',
+                                    default => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                                };
+                            @endphp
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $badgeClasses }}">
                                 @if($periode->jenis_usulan == 'Semua Usulan Aktif')
                                     Semua Usulan Aktif
                                 @elseif($periode->jenis_usulan == 'jabatan-dosen-regular')
@@ -456,130 +455,74 @@
                                 @endif
                             </span>
                         </td>
-                            <td class="px-6 py-4">
-                                <div class="flex flex-col">
-                                    <div class="font-medium text-slate-800">
-                                        {{ \Carbon\Carbon::parse($periode->tanggal_mulai)->isoFormat('D MMM YYYY') }}
-                                    </div>
-                                    <div class="font-medium text-slate-800">
-                                        s/d {{ \Carbon\Carbon::parse($periode->tanggal_selesai)->isoFormat('D MMM YYYY') }}
-                                    </div>
-                                </div>
+
+                        <!-- Nama Periode -->
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
+                            <div class="font-medium">{{ $periode->nama_periode }} ({{ $periode->tahun_periode }})</div>
+                        </td>
+
+                        <!-- Periode -->
+                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
+                            <div class="font-medium">{{ \Carbon\Carbon::parse($periode->tanggal_mulai)->isoFormat('D MMM YYYY') }} - {{ \Carbon\Carbon::parse($periode->tanggal_selesai)->isoFormat('D MMM YYYY') }}</div>
                             </td>
-                            <td class="px-6 py-4">
+
+                        <!-- Status -->
+                        <td class="px-4 py-3 whitespace-nowrap text-center">
                                 @if($periode->status == 'Buka')
                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
                                         Buka
                                     </span>
                                 @else
                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
                                         Tutup
                                     </span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-900">
-                                {{ $periode->usulans_submitted_count ?? 0 }}
-                            </td>
-                            <td class="px-6 py-4">
-                                @if(($periode->usulans_submitted_count ?? 0) > 0)
-                                    @if($jenisUsulan === 'kepangkatan')
-                                        <button onclick="openModalLihatPengusulKepangkatan({{ $periode->id }})"
-                                               class="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100 hover:text-blue-700 dark:text-blue-300 dark:bg-blue-900 dark:hover:bg-blue-800 dark:hover:text-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                                            <i class="fas fa-users mr-1"></i>
-                                            Lihat {{ $periode->usulans_submitted_count }} Pengusul
-                                        </button>
-                                    @elseif($jenisUsulan === 'nuptk' || $jenisUsulan === 'usulan-nuptk')
-                                        <button onclick="openModalLihatPengusulNuptk({{ $periode->id }})"
-                                               class="inline-flex items-center px-3 py-1 text-xs font-medium text-green-600 bg-green-50 rounded-full hover:bg-green-100 hover:text-green-700 dark:text-green-300 dark:bg-green-900 dark:hover:bg-green-800 dark:hover:text-green-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                                            <i class="fas fa-users mr-1"></i>
-                                            Lihat {{ $periode->usulans_submitted_count }} Pengusul
-                                        </button>
-                                    @elseif($jenisUsulan === 'tugas-belajar' || $jenisUsulan === 'usulan-tugas-belajar')
-                                        <button onclick="openModalLihatPengusulTugasBelajar({{ $periode->id }})"
-                                               class="inline-flex items-center px-3 py-1 text-xs font-medium text-cyan-600 bg-cyan-50 rounded-full hover:bg-cyan-100 hover:text-cyan-700 dark:text-cyan-300 dark:bg-cyan-900 dark:hover:bg-cyan-800 dark:hover:text-cyan-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                                            <i class="fas fa-users mr-1"></i>
-                                            Lihat {{ $periode->usulans_submitted_count }} Pengusul
-                                        </button>
-                                    @else
-                                        <a href="{{ route('backend.kepegawaian-universitas.dashboard-periode.show', $periode) }}"
-                                           class="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100 hover:text-blue-700 dark:text-blue-300 dark:bg-blue-900 dark:hover:bg-blue-800 dark:hover:text-blue-200 transition-all duration-200 shadow-sm hover:shadow-md">
-                                            <i class="fas fa-users mr-1"></i>
-                                            Lihat {{ $periode->usulans_submitted_count }} Pengusul
-                                        </a>
-                                    @endif
-                                @else
-                                    <span class="text-xs text-gray-500 dark:text-gray-400">Belum ada pengusul yang dikirim</span>
-                                @endif
-                            </td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center space-x-2 action-buttons">
-                                <!-- Toggle Status Button -->
-                                <button onclick="toggleStatus({{ $periode->id }}, '{{ $periode->status }}', event)"
-                                        class="action-button p-2 rounded-lg transition-colors duration-200 {{ $periode->status == 'Buka' ? 'text-green-600 hover:text-green-800 bg-green-50 hover:bg-green-100' : 'text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100' }}"
-                                        title="{{ $periode->status == 'Buka' ? 'Tutup Periode' : 'Buka Periode' }}">
-                                    <i class="fas {{ $periode->status == 'Buka' ? 'fa-toggle-on' : 'fa-toggle-off' }}"></i>
-                                </button>
 
-                                <!-- Edit Button -->
+                        <!-- Aksi -->
+                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
+                            <div class="flex justify-center items-center gap-2">
                                 <a href="{{ route('backend.kepegawaian-universitas.periode-usulan.edit', $periode->id) }}"
-                                   class="action-button p-2 rounded-lg text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 transition-colors duration-200"
-                                   title="Edit Periode">
-                                    <i class="fas fa-edit"></i>
+                                   class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                                   title="Edit Data">
+                                    <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                    Edit
                                 </a>
-
-                                <!-- Delete Button - Disabled if has usulans -->
-                                @if(($periode->usulans_submitted_count ?? 0) > 0)
-                                    <button disabled
-                                            class="action-button p-2 rounded-lg text-gray-400 bg-gray-50 cursor-not-allowed"
-                                            title="Tidak dapat dihapus karena ada {{ $periode->usulans_submitted_count }} usulan yang masuk">
-                                        <i class="fas fa-trash"></i>
+                                <button onclick="deletePeriode({{ $periode->id }})"
+                                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-red-600 to-pink-600 rounded-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                                        title="Hapus Data">
+                                    <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    Hapus
                                     </button>
-                                @else
-                                    <button type="button"
-                                            onclick="confirmDelete({{ $periode->id }}, '{{ $periode->nama_periode }}', event)"
-                                            class="action-button p-2 rounded-lg text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 transition-colors duration-200"
-                                            title="Hapus Periode">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                @endif
                             </div>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-12">
-                            <div class="text-center">
-                                <div class="mx-auto h-24 w-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                    <i class="fas fa-calendar-times text-gray-400" style="font-size: 2rem;"></i>
-                                </div>
-                                <h3 class="text-lg font-medium text-gray-900 mb-2">
-                                    @if($jenisUsulan && $jenisUsulan !== 'all')
-                                        Belum ada periode untuk jenis usulan ini
-                                    @else
-                                        Belum ada data periode usulan
-                                    @endif
-                                </h3>
-                                <p class="text-gray-500 mb-6">
-                                    @if($jenisUsulan && $jenisUsulan !== 'all')
-                                        Jenis usulan "{{ ucwords(str_replace('-', ' ', $jenisUsulan)) }}" belum memiliki periode yang dibuat.
-                                    @else
-                                        Mulai dengan membuat periode usulan pertama untuk mengelola usulan kepegawaian.
-                                    @endif
-                                </p>
-                                <div class="flex justify-center gap-3">
-                                    <a href="{{ route('backend.kepegawaian-universitas.periode-usulan.create') }}"
-                                       class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200">
-                                        <i class="fas fa-plus" style="font-size: 14px; margin-right: 0.5rem;"></i>
-                                        Tambah Periode Pertama
-                                    </a>
-                                    @if($jenisUsulan && $jenisUsulan !== 'all')
-                                        <a href="{{ route('backend.kepegawaian-universitas.periode-usulan.index') }}"
-                                           class="inline-flex items-center px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
-                                            <i class="fas fa-list" style="font-size: 14px; margin-right: 0.5rem;"></i>
-                                            Lihat Semua Periode
-                                        </a>
-                                    @endif
-                                </div>
+                        <td colspan="6" class="px-4 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">Belum ada periode usulan</h3>
+                                <p class="text-gray-500 mb-4">Mulai dengan membuat periode usulan baru untuk jenis {{ $jenisUsulan ?? 'jabatan-dosen-regular' }}.</p>
+                                <a href="{{ route('backend.kepegawaian-universitas.periode-usulan.create', ['jenis' => $jenisUsulan ?? 'jabatan-dosen-regular']) }}"
+                                   class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 border border-transparent rounded-lg font-semibold text-sm text-white hover:from-indigo-700 hover:to-purple-700 focus:from-indigo-700 focus:to-purple-700 active:from-indigo-900 active:to-purple-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-md hover:shadow-lg">
+                                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    Tambah Periode
+                                </a>
                             </div>
                         </td>
                     </tr>
@@ -590,326 +533,106 @@
 
     <!-- Pagination Section -->
     @if($periodeUsulans->hasPages())
-        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
+        <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
             <div class="flex items-center justify-between">
-                <div class="text-sm text-gray-700">
-                    Menampilkan {{ $periodeUsulans->firstItem() ?? 0 }} sampai {{ $periodeUsulans->lastItem() ?? 0 }} dari {{ $periodeUsulans->total() }} data
+                <div class="flex-1 flex justify-between sm:hidden">
+                    @if ($periodeUsulans->onFirstPage())
+                        <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-500 bg-white cursor-not-allowed">
+                            Previous
+                        </span>
+                    @else
+                        <a href="{{ $periodeUsulans->previousPageUrl() }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Previous
+                        </a>
+                    @endif
+
+                    @if ($periodeUsulans->hasMorePages())
+                        <a href="{{ $periodeUsulans->nextPageUrl() }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                            Next
+                        </a>
+                    @else
+                        <span class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-500 bg-white cursor-not-allowed">
+                            Next
+                        </span>
+                    @endif
                 </div>
-                <div class="flex items-center space-x-2">
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Showing
+                            <span class="font-medium">{{ $periodeUsulans->firstItem() }}</span>
+                            to
+                            <span class="font-medium">{{ $periodeUsulans->lastItem() }}</span>
+                            of
+                            <span class="font-medium">{{ $periodeUsulans->total() }}</span>
+                            results
+                        </p>
+                    </div>
+                    <div>
                     {{ $periodeUsulans->links() }}
+                    </div>
                 </div>
             </div>
         </div>
     @endif
 </div>
 
-<!-- Modal Container -->
-<div id="confirmModal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title" id="modalTitle">Konfirmasi</h3>
-        </div>
-        <div class="modal-body">
-            <p class="modal-message" id="modalMessage">Apakah Anda yakin ingin melanjutkan?</p>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" id="modalCancel">Batal</button>
-            <button type="button" class="btn btn-danger" id="modalConfirm">Ya, Lanjutkan</button>
-        </div>
-    </div>
-</div>
-
-<!-- Notification Container -->
-<div id="notificationContainer"></div>
-
-@endsection
-
-<!-- JavaScript untuk Toggle Status Periode -->
+<!-- JavaScript untuk delete functionality -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle filter berdasarkan jenis usulan
-    const filterJenis = document.getElementById('filterJenis');
+function deletePeriode(periodeId) {
+    if (confirm('Apakah Anda yakin ingin menghapus periode ini?')) {
+        fetch(`/kepegawaian-universitas/periode-usulan/${periodeId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove row from table
+                const row = document.querySelector(`tr[data-periode-id="${periodeId}"]`);
+                if (row) {
+                    row.remove();
+                }
 
-    if (filterJenis) {
-        filterJenis.addEventListener('change', function() {
-            const selectedValue = this.value;
-            const currentUrl = new URL(window.location);
-
-            if (selectedValue && selectedValue !== '') {
-                currentUrl.searchParams.set('jenis', selectedValue);
+                // Show success message
+                showNotification('Periode berhasil dihapus', 'success');
             } else {
-                currentUrl.searchParams.delete('jenis');
+                showNotification(data.message || 'Gagal menghapus periode', 'error');
             }
-
-            window.location.href = currentUrl.toString();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Terjadi kesalahan saat menghapus periode', 'error');
         });
     }
-
-
-
-
-});
-
-// Utility functions untuk modal dan notification
-function showModal(title, message, confirmText = 'Ya, Lanjutkan', cancelText = 'Batal', type = 'danger') {
-    return new Promise((resolve) => {
-        const modal = document.getElementById('confirmModal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalMessage = document.getElementById('modalMessage');
-        const modalConfirm = document.getElementById('modalConfirm');
-        const modalCancel = document.getElementById('modalCancel');
-
-        modalTitle.textContent = title;
-        modalMessage.textContent = message;
-        modalConfirm.textContent = confirmText;
-        modalCancel.textContent = cancelText;
-
-        // Set button type
-        modalConfirm.className = `btn btn-${type}`;
-
-        // Show modal
-        modal.classList.add('show');
-
-        // Handle confirm
-        const handleConfirm = () => {
-            modal.classList.remove('show');
-            cleanup();
-            resolve(true);
-        };
-
-        // Handle cancel
-        const handleCancel = () => {
-            modal.classList.remove('show');
-            cleanup();
-            resolve(false);
-        };
-
-        // Handle escape key
-        const handleEscape = (e) => {
-            if (e.key === 'Escape') {
-                handleCancel();
-            }
-        };
-
-        // Handle click outside
-        const handleOutsideClick = (e) => {
-            if (e.target === modal) {
-                handleCancel();
-            }
-        };
-
-        const cleanup = () => {
-            modalConfirm.removeEventListener('click', handleConfirm);
-            modalCancel.removeEventListener('click', handleCancel);
-            document.removeEventListener('keydown', handleEscape);
-            modal.removeEventListener('click', handleOutsideClick);
-        };
-
-        modalConfirm.addEventListener('click', handleConfirm);
-        modalCancel.addEventListener('click', handleCancel);
-        document.addEventListener('keydown', handleEscape);
-        modal.addEventListener('click', handleOutsideClick);
-    });
 }
 
-function showNotification(message, type = 'info', duration = 5000) {
-    const container = document.getElementById('notificationContainer');
+function showNotification(message, type) {
+    // Create notification element
     const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-
-    const icon = type === 'success' ? 'fa-check-circle' :
-                 type === 'error' ? 'fa-exclamation-circle' :
-                 'fa-info-circle';
-
+    notification.className = `notification ${type} show`;
     notification.innerHTML = `
         <div class="notification-content">
             <div class="notification-icon">
-                <i class="fas ${icon}"></i>
+                ${type === 'success' ? '✅' : '❌'}
             </div>
             <div class="notification-message">${message}</div>
-            <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
-                <i class="fas fa-times"></i>
-            </button>
+            <button class="notification-close" onclick="this.parentElement.parentElement.remove()">×</button>
         </div>
     `;
 
-    container.appendChild(notification);
+    // Add to page
+    document.body.appendChild(notification);
 
-    // Trigger animation
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 100);
-
-    // Auto remove
-    if (duration > 0) {
-        setTimeout(() => {
-            notification.classList.remove('show');
+    // Auto remove after 5 seconds
             setTimeout(() => {
                 if (notification.parentElement) {
                     notification.remove();
                 }
-            }, 300);
-        }, duration);
-    }
+    }, 5000);
 }
-
-// Fungsi untuk toggle status periode - dipindah ke luar agar bisa diakses global
-window.toggleStatus = function(periodeId, currentStatus, event) {
-    const newStatus = currentStatus === 'Buka' ? 'Tutup' : 'Buka';
-    const actionText = currentStatus === 'Buka' ? 'menutup' : 'membuka';
-
-    showModal(
-        'Konfirmasi Kirim Usulan',
-        `Anda yakin ingin ${actionText} periode ini?`,
-        'Iya',
-        'Batal',
-        'success'
-    ).then((confirmed) => {
-        if (confirmed) {
-            // Show loading state
-            const button = event.target.closest('button');
-            const originalHTML = button.innerHTML;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            button.disabled = true;
-
-            // Create form data
-            const formData = new FormData();
-            formData.append('_token', '{{ csrf_token() }}');
-            formData.append('periode_id', periodeId);
-
-            // Send request
-            fetch('{{ route('backend.kepegawaian-universitas.usulan.toggle-periode') }}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update button appearance
-                    if (newStatus === 'Buka') {
-                        button.className = 'action-button p-2 rounded-lg transition-colors duration-200 text-green-600 hover:text-green-800 bg-green-50 hover:bg-green-100';
-                        button.innerHTML = '<i class="fas fa-toggle-on"></i>';
-                        button.title = 'Tutup Periode';
-                    } else {
-                        button.className = 'action-button p-2 rounded-lg transition-colors duration-200 text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100';
-                        button.innerHTML = '<i class="fas fa-toggle-off"></i>';
-                        button.title = 'Buka Periode';
-                    }
-
-                    // Update status cell
-                    const statusCell = button.closest('tr').querySelector('td:nth-child(6)'); // Status column
-                    if (statusCell) {
-                        if (newStatus === 'Buka') {
-                            statusCell.innerHTML = '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Buka</span>';
-                        } else {
-                            statusCell.innerHTML = '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">Tutup</span>';
-                        }
-                    }
-
-                    // Show success notification
-                    showNotification(`Status periode berhasil diubah menjadi ${newStatus}`, 'success');
-                } else {
-                    showNotification(data.message || 'Gagal mengubah status periode', 'error');
-                    button.innerHTML = originalHTML;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showNotification('Terjadi kesalahan jaringan', 'error');
-                button.innerHTML = originalHTML;
-            })
-            .finally(() => {
-                button.disabled = false;
-            });
-        }
-    });
-}
-
-// Fungsi untuk konfirmasi delete dengan modal
-window.confirmDelete = function(periodeId, periodeName, event) {
-    showModal(
-        'Konfirmasi Hapus Periode',
-        `Anda yakin ingin menghapus periode "${periodeName}"? Tindakan ini tidak dapat dibatalkan.`,
-        'Ya, Hapus Periode',
-        'Batal',
-        'danger'
-    ).then((confirmed) => {
-        if (confirmed) {
-            // Show loading state
-            const button = event.target.closest('button');
-            const originalHTML = button.innerHTML;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            button.disabled = true;
-
-            // Create form data
-            const formData = new FormData();
-            formData.append('_token', '{{ csrf_token() }}');
-            formData.append('_method', 'DELETE');
-
-            // Send request
-            fetch(`{{ route('backend.kepegawaian-universitas.periode-usulan.destroy', ':id') }}`.replace(':id', periodeId), {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Remove the row from table with animation
-                    const row = button.closest('tr');
-                    row.style.backgroundColor = '#fef2f2';
-                    row.style.transition = 'background-color 0.5s ease';
-
-                    setTimeout(() => {
-                        row.remove();
-                        showNotification('Periode berhasil dihapus', 'success');
-
-                        // Check if table is empty
-                        const tbody = document.querySelector('tbody');
-                        if (tbody.children.length === 0) {
-                            location.reload(); // Reload to show empty state
-                        }
-                    }, 500);
-                } else {
-                    showNotification(data.message || 'Gagal menghapus periode', 'error');
-                    button.innerHTML = originalHTML;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showNotification('Terjadi kesalahan jaringan', 'error');
-                button.innerHTML = originalHTML;
-            })
-            .finally(() => {
-                button.disabled = false;
-            });
-        }
-    });
-}
-
 </script>
-
-{{-- Include Modal Kepangkatan --}}
-@include('backend.layouts.views.periode-usulan.modal-kepangkatan.modal-kepangkatan')
-
-{{-- Include Modal NUPTK --}}
-@include('backend.layouts.views.periode-usulan.modal-nuptk.modal-nuptk')
-
-{{-- Include Modal Tugas Belajar --}}
-@include('backend.layouts.views.periode-usulan.modal-tugas-belajar.modal-tugas-belajar', ['jenisUsulan' => $jenisUsulan])
-
-{{-- Include JavaScript Modal Kepangkatan --}}
-<script src="{{ asset('js/modal-kepangkatan.js') }}"></script>
-
-{{-- Include JavaScript Modal NUPTK --}}
-<script src="{{ asset('js/modal-nuptk.js') }}"></script>
-
-{{-- Include JavaScript Modal Tugas Belajar --}}
-<script src="{{ asset('js/modal-tugas-belajar.js') }}"></script>
-
-
+@endsection

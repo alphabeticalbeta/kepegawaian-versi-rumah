@@ -23,25 +23,37 @@ class RolePegawaiController extends Controller
 
     public function index(Request $request)
     {
-        // Query builder dengan eager loading roles
-        $query = Pegawai::with('roles')->orderBy('nama_lengkap');
+        // Query builder dengan eager loading yang sama seperti DataPegawaiController
+        $query = Pegawai::with(['pangkat', 'jabatan', 'unitKerja.subUnitKerja.unitKerja', 'roles'])
+            ->when($request->filter_jenis_pegawai, function ($q, $jenis_pegawai) {
+                return $q->where('jenis_pegawai', $jenis_pegawai);
+            })
+            ->when($request->search, function ($q, $search) {
+                return $q->where(function($query) use ($search) {
+                    $query->where('nama_lengkap', 'like', "%{$search}%")
+                          ->orWhere('nip', 'like', "%{$search}%")
+                          ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->status_kepegawaian, function ($q, $status) {
+                return $q->where('status_kepegawaian', $status);
+            })
+            ->when($request->unit_kerja, function ($q, $unitKerja) {
+                return $q->whereHas('unitKerja.subUnitKerja.unitKerja', function($query) use ($unitKerja) {
+                    $query->where('nama', $unitKerja);
+                });
+            })
+            ->when($request->role, function ($q, $role) {
+                return $q->whereHas('roles', function($query) use ($role) {
+                    $query->where('name', $role);
+                });
+            })
+            ->latest();
 
-        // Filter berdasarkan pencarian
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('nama_lengkap', 'like', "%{$search}%")
-                  ->orWhere('nip', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
+        $pegawais = $query->paginate(10)->withQueryString();
 
-        // Filter berdasarkan jenis pegawai
-        if ($request->filled('jenis_pegawai')) {
-            $query->where('jenis_pegawai', $request->jenis_pegawai);
-        }
+        // Static pagination - no AJAX needed
 
-        $pegawais = $query->paginate(15)->withQueryString();
         return view('backend.layouts.views.kepegawaian-universitas.role-pegawai.master-rolepegawai', compact('pegawais'));
     }
 

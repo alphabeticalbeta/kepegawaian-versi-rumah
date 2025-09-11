@@ -34,11 +34,11 @@
                 <div class="bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl border border-white/30 p-6 sticky top-8">
                     <div class="text-center mb-6">
                         <div class="relative mx-auto w-24 h-24 mb-4">
-                            @if($pegawai->foto)
-                                                        <img class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
-                             src="{{ $pegawai->foto ? route('backend.kepegawaian-universitas.data-pegawai.show-document', ['pegawai' => $pegawai->id, 'field' => 'foto']) : 'https://ui-avatars.com/api/?name=' . urlencode($pegawai->nama_lengkap) . '&background=6366f1&color=fff&size=96' }}"
-                             alt="{{ $pegawai->nama_lengkap }}"
-                             onerror="this.parentElement.innerHTML='<div class=\'w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl border-4 border-white shadow-lg\'>{{ substr($pegawai->nama_lengkap, 0, 2) }}</div>'">
+                            @if($pegawai->foto && !empty($pegawai->foto))
+                                <img class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+                                     src="{{ route('backend.kepegawaian-universitas.data-pegawai.show-document', ['pegawai' => $pegawai->id, 'field' => 'foto']) }}"
+                                     alt="{{ $pegawai->nama_lengkap }}"
+                                     onerror="this.parentElement.innerHTML='<div class=\'w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl border-4 border-white shadow-lg\'>{{ substr($pegawai->nama_lengkap, 0, 2) }}</div>'">
                             @else
                                 <div class="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl border-4 border-white shadow-lg">
                                     {{ substr($pegawai->nama_lengkap, 0, 2) }}

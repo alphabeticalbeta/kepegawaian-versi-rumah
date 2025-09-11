@@ -19,7 +19,7 @@ class PegawaiTemplate implements FromArray, WithHeadings, WithStyles, WithColumn
         return [
             // Contoh data untuk baris pertama
             [
-                "'199405242024061001", // NIP (dengan prefix ' untuk text format)
+                "'199405242024061001", // NIP (dengan prefix ' untuk mencegah Excel mengkonversi ke angka)
                 'Dr. John Doe, S.T., M.T.', // Nama Lengkap
                 'john.doe@unmul.ac.id', // Email
                 'Dosen', // Jenis Pegawai
@@ -29,28 +29,29 @@ class PegawaiTemplate implements FromArray, WithHeadings, WithStyles, WithColumn
                 'Samarinda', // Tempat Lahir
                 '1994-05-24', // Tanggal Lahir
                 'Laki-Laki', // Jenis Kelamin
-                "'081234567890", // Nomor Handphone (dengan prefix ' untuk text format)
-                'Lektor', // Pangkat Terakhir
-                'Dosen', // Jabatan Terakhir
-                'Fakultas Teknik', // Unit Kerja
-                'S3', // Pendidikan Terakhir
+                "'081234567890", // Nomor Handphone (dengan prefix ' untuk mencegah Excel mengkonversi ke angka)
+                '1', // Pangkat Terakhir ID (ID dari tabel pangkat)
+                '1', // Jabatan Terakhir ID (ID dari tabel jabatan)
+                '1', // Unit Kerja ID (ID dari tabel unit_kerja)
+                'Doktor (S3) / Sederajat', // Pendidikan Terakhir
                 'Universitas Mulawarman', // Nama Universitas/Sekolah
                 'Teknik Informatika', // Nama Program Studi/Jurusan
                 '2020-01-01', // TMT CPNS
                 '2021-01-01', // TMT PNS
                 '2022-01-01', // TMT Pangkat
                 '2023-01-01', // TMT Jabatan
-                "'1234567890123456", // Nomor Kartu Pegawai (dengan prefix ' untuk text format)
-                "'1234567890123456", // NUPTK (dengan prefix ' untuk text format)
+                "'1234567890123456", // Nomor Kartu Pegawai (dengan prefix ' untuk mencegah Excel mengkonversi ke angka)
+                "'1234567890123456", // NUPTK (dengan prefix ' untuk mencegah Excel mengkonversi ke angka)
                 'Pemrograman Web, Basis Data', // Mata Kuliah Diampu
                 'Teknik Informatika', // Ranting Ilmu Kepakaran
                 'https://sinta.kemdikbud.go.id/authors/profile/123456', // URL Profil SINTA
                 'Sangat Baik', // Predikat Kinerja Tahun Pertama
                 'Sangat Baik', // Predikat Kinerja Tahun Kedua
+                '90.5', // Nilai Konversi
             ],
             // Contoh data untuk baris kedua
             [
-                "'199405242024061002", // NIP (dengan prefix ' untuk text format)
+                '199405242024061002', // NIP
                 'Dra. Jane Smith, M.Pd.', // Nama Lengkap
                 'jane.smith@unmul.ac.id', // Email
                 'Tenaga Kependidikan', // Jenis Pegawai
@@ -60,24 +61,25 @@ class PegawaiTemplate implements FromArray, WithHeadings, WithStyles, WithColumn
                 'Balikpapan', // Tempat Lahir
                 '1995-03-15', // Tanggal Lahir
                 'Perempuan', // Jenis Kelamin
-                "'081234567891", // Nomor Handphone (dengan prefix ' untuk text format)
-                'Penata Muda Tingkat I', // Pangkat Terakhir
-                'Administrator', // Jabatan Terakhir
-                'Fakultas Ekonomi dan Bisnis', // Unit Kerja
-                'S2', // Pendidikan Terakhir
+                '081234567891', // Nomor Handphone
+                '2', // Pangkat Terakhir ID (ID dari tabel pangkat)
+                '2', // Jabatan Terakhir ID (ID dari tabel jabatan)
+                '2', // Unit Kerja ID (ID dari tabel unit_kerja)
+                'Magister (S2) / Sederajat', // Pendidikan Terakhir
                 'Universitas Mulawarman', // Nama Universitas/Sekolah
                 'Manajemen', // Nama Program Studi/Jurusan
                 '2019-01-01', // TMT CPNS
                 '2020-01-01', // TMT PNS
                 '2021-01-01', // TMT Pangkat
                 '2022-01-01', // TMT Jabatan
-                "'1234567890123457", // Nomor Kartu Pegawai (dengan prefix ' untuk text format)
+                '1234567890123457', // Nomor Kartu Pegawai
                 '', // NUPTK (kosong untuk tenaga kependidikan)
                 '', // Mata Kuliah Diampu (kosong untuk tenaga kependidikan)
                 '', // Ranting Ilmu Kepakaran (kosong untuk tenaga kependidikan)
                 '', // URL Profil SINTA (kosong untuk tenaga kependidikan)
                 'Baik', // Predikat Kinerja Tahun Pertama
                 'Baik', // Predikat Kinerja Tahun Kedua
+                '75.0', // Nilai Konversi
             ],
         ];
     }
@@ -89,8 +91,8 @@ class PegawaiTemplate implements FromArray, WithHeadings, WithStyles, WithColumn
     {
         return [
             'NIP*',
-            'Nama Lengkap',
-            'Email',
+            'Nama Lengkap*',
+            'Email*',
             'Jenis Pegawai*',
             'Status Kepegawaian*',
             'Gelar Depan',
@@ -99,9 +101,9 @@ class PegawaiTemplate implements FromArray, WithHeadings, WithStyles, WithColumn
             'Tanggal Lahir',
             'Jenis Kelamin',
             'Nomor Handphone',
-            'Pangkat Terakhir',
-            'Jabatan Terakhir',
-            'Unit Kerja',
+            'Pangkat Terakhir ID',
+            'Jabatan Terakhir ID',
+            'Unit Kerja ID',
             'Pendidikan Terakhir',
             'Nama Universitas/Sekolah',
             'Nama Program Studi/Jurusan',
@@ -116,6 +118,7 @@ class PegawaiTemplate implements FromArray, WithHeadings, WithStyles, WithColumn
             'URL Profil SINTA',
             'Predikat Kinerja Tahun Pertama',
             'Predikat Kinerja Tahun Kedua',
+            'Nilai Konversi',
         ];
     }
 
@@ -128,6 +131,9 @@ class PegawaiTemplate implements FromArray, WithHeadings, WithStyles, WithColumn
         // Set format untuk kolom numerik sebagai text
         $sheet->getStyle('A:A')->getNumberFormat()->setFormatCode('@'); // NIP
         $sheet->getStyle('K:K')->getNumberFormat()->setFormatCode('@'); // Nomor Handphone
+        $sheet->getStyle('L:L')->getNumberFormat()->setFormatCode('@'); // Pangkat Terakhir ID
+        $sheet->getStyle('M:M')->getNumberFormat()->setFormatCode('@'); // Jabatan Terakhir ID
+        $sheet->getStyle('N:N')->getNumberFormat()->setFormatCode('@'); // Unit Kerja ID
         $sheet->getStyle('V:V')->getNumberFormat()->setFormatCode('@'); // Nomor Kartu Pegawai
         $sheet->getStyle('W:W')->getNumberFormat()->setFormatCode('@'); // NUPTK
 
@@ -173,9 +179,9 @@ class PegawaiTemplate implements FromArray, WithHeadings, WithStyles, WithColumn
             'I' => 15, // Tanggal Lahir
             'J' => 15, // Jenis Kelamin
             'K' => 20, // Nomor Handphone
-            'L' => 30, // Pangkat Terakhir
-            'M' => 30, // Jabatan Terakhir
-            'N' => 30, // Unit Kerja
+            'L' => 15, // Pangkat Terakhir ID
+            'M' => 15, // Jabatan Terakhir ID
+            'N' => 15, // Unit Kerja ID
             'O' => 30, // Pendidikan Terakhir
             'P' => 30, // Nama Universitas/Sekolah
             'Q' => 30, // Nama Program Studi/Jurusan
@@ -190,6 +196,7 @@ class PegawaiTemplate implements FromArray, WithHeadings, WithStyles, WithColumn
             'Z' => 30, // URL Profil SINTA
             'AA' => 30, // Predikat Kinerja Tahun Pertama
             'AB' => 30, // Predikat Kinerja Tahun Kedua
+            'AC' => 15, // Nilai Konversi
         ];
     }
 

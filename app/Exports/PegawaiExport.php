@@ -88,7 +88,7 @@ class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithSt
     public function map($pegawai): array
     {
         return [
-            $pegawai->nip,
+            $this->addPrefixIfNumeric($pegawai->nip),
             $pegawai->nama_lengkap,
             $pegawai->email,
             $pegawai->jenis_pegawai,
@@ -98,7 +98,7 @@ class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithSt
             $pegawai->tempat_lahir,
             $pegawai->tanggal_lahir ? $pegawai->tanggal_lahir->format('Y-m-d') : '',
             $pegawai->jenis_kelamin,
-            $pegawai->nomor_handphone,
+            $this->addPrefixIfNumeric($pegawai->nomor_handphone),
             $pegawai->pangkat?->pangkat ?? '',
             $pegawai->jabatan?->jabatan ?? '',
             $pegawai->unitKerja?->subUnitKerja?->unitKerja?->nama ?? '',
@@ -109,8 +109,8 @@ class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithSt
             $pegawai->tmt_pns ? $pegawai->tmt_pns->format('Y-m-d') : '',
             $pegawai->tmt_pangkat ? $pegawai->tmt_pangkat->format('Y-m-d') : '',
             $pegawai->tmt_jabatan ? $pegawai->tmt_jabatan->format('Y-m-d') : '',
-            $pegawai->nomor_kartu_pegawai,
-            $pegawai->nuptk,
+            $this->addPrefixIfNumeric($pegawai->nomor_kartu_pegawai),
+            $this->addPrefixIfNumeric($pegawai->nuptk),
             $pegawai->mata_kuliah_diampu,
             $pegawai->ranting_ilmu_kepakaran,
             $pegawai->url_profil_sinta,
@@ -120,11 +120,39 @@ class PegawaiExport implements FromCollection, WithHeadings, WithMapping, WithSt
     }
 
     /**
+     * Add single quote prefix to numeric values to prevent Excel from converting to scientific notation
+     */
+    private function addPrefixIfNumeric($value)
+    {
+        if (empty($value)) {
+            return '';
+        }
+
+        $stringValue = (string) $value;
+        
+        // Remove any existing single quote prefix first
+        $stringValue = ltrim($stringValue, "'");
+        
+        // Add single quote prefix for all numeric values
+        if (is_numeric($stringValue)) {
+            return "'" . $stringValue;
+        }
+        
+        return $stringValue;
+    }
+
+    /**
      * @param Worksheet $sheet
      * @return array
      */
     public function styles(Worksheet $sheet)
     {
+        // Set number format to text for columns that need to preserve leading zeros
+        $sheet->getStyle('A:A')->getNumberFormat()->setFormatCode('@'); // NIP
+        $sheet->getStyle('K:K')->getNumberFormat()->setFormatCode('@'); // Nomor Handphone
+        $sheet->getStyle('V:V')->getNumberFormat()->setFormatCode('@'); // Nomor Kartu Pegawai
+        $sheet->getStyle('W:W')->getNumberFormat()->setFormatCode('@'); // NUPTK
+
         return [
             // Style the first row as bold text
             1 => ['font' => ['bold' => true]],

@@ -6,7 +6,7 @@
     .flash-message {
         animation: slideInRight 0.5s ease-out;
     }
-    
+
     @keyframes slideInRight {
         from {
             transform: translateX(100%);
@@ -17,23 +17,23 @@
             opacity: 1;
         }
     }
-    
+
     /* Notification toast styling */
     .notification-toast {
         animation: slideInRight 0.3s ease-out;
         z-index: 9999;
     }
-    
+
     /* Form feedback styling */
     .form-feedback {
         transition: all 0.3s ease;
     }
-    
+
     .form-feedback.success {
         border-color: #10b981;
         background-color: #f0fdf4;
     }
-    
+
     .form-feedback.error {
         border-color: #ef4444;
         background-color: #fef2f2;
@@ -101,10 +101,31 @@
                 </div>
                 <div>
                     <h3 class="text-lg font-semibold text-white">
-                        {{ isset($periode) ? 'Edit Periode ' . ($nama_usulan ?? 'Usulan Jabatan') : 'Tambah Periode ' . ($nama_usulan ?? 'Usulan Jabatan') }}
+                        @php
+                            $jenis = $jenis_usulan_otomatis ?? 'jabatan-dosen-regular';
+                            $nama = match($jenis) {
+                                'jabatan-dosen-regular' => 'Jabatan Dosen Reguler',
+                                'jabatan-dosen-pengangkatan' => 'Jabatan Dosen Pengangkatan Pertama',
+                                'usulan-nuptk' => 'NUPTK',
+                                'usulan-laporan-lkd' => 'Laporan LKD',
+                                'usulan-presensi' => 'Presensi',
+                                'usulan-id-sinta-sister' => 'ID SINTA ke SISTER',
+                                'usulan-satyalancana' => 'Satyalancana',
+                                'usulan-tugas-belajar' => 'Tugas Belajar',
+                                'usulan-pengaktifan-kembali' => 'Pengaktifan Kembali',
+                                'usulan-penyesuaian-masa-kerja' => 'Penyesuaian Masa Kerja',
+                                'usulan-ujian-dinas-ijazah' => 'Ujian Dinas Ijazah',
+                                'usulan-laporan-serdos' => 'Laporan SERDOS',
+                                'usulan-pensiun' => 'Pensiun',
+                                'usulan-kepangkatan' => 'Kepangkatan',
+                                'usulan-pencantuman-gelar' => 'Pencantuman Gelar',
+                                default => 'Jabatan Dosen Reguler'
+                            };
+                        @endphp
+                        {{ isset($periode) ? 'Edit Periode ' . $nama : 'Tambah Periode ' . $nama }}
                     </h3>
                     <p class="text-indigo-100 text-sm mt-1">
-                        Kelola periode untuk {{ $nama_usulan ?? 'usulan jabatan dosen dan tenaga kependidikan' }}
+                        Kelola periode untuk {{ $nama }}
                     </p>
                 </div>
             </div>
@@ -134,58 +155,32 @@
                         <label for="jenis_usulan" class="block text-sm font-semibold text-gray-800">
                             Jenis Usulan <span class="text-red-500">*</span>
                         </label>
-                                                <select name="jenis_usulan" id="jenis_usulan"
-                                class="block w-full px-4 py-3 text-gray-900 border-2 border-gray-200 bg-white rounded-xl shadow-sm appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                                required onchange="updateJenisUsulanInfo()">
-                            <option value="">Pilih Jenis Usulan</option>
-                            <optgroup label="Usulan Jabatan">
-                                                            <option value="jabatan-dosen-regular" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : (isset($jenis_usulan_otomatis) ? $jenis_usulan_otomatis : '')) == 'jabatan-dosen-regular' ? 'selected' : '' }}>
-                                Usulan Jabatan Dosen Reguler
-                            </option>
-                            <option value="jabatan-dosen-pengangkatan" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : (isset($jenis_usulan_otomatis) ? $jenis_usulan_otomatis : '')) == 'jabatan-dosen-pengangkatan' ? 'selected' : '' }}>
-                                Usulan Jabatan Dosen Pengangkatan Pertama
-                            </option>
-                            </optgroup>
-                            <option value="usulan-nuptk" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : (isset($jenis_usulan_otomatis) ? $jenis_usulan_otomatis : '')) == 'usulan-nuptk' ? 'selected' : '' }}>
-                                Usulan NUPTK
-                            </option>
-                            <option value="usulan-laporan-lkd" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : (isset($jenis_usulan_otomatis) ? $jenis_usulan_otomatis : '')) == 'usulan-laporan-lkd' ? 'selected' : '' }}>
-                                Usulan Laporan LKD
-                            </option>
-                            <option value="usulan-presensi" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : (isset($jenis_usulan_otomatis) ? $jenis_usulan_otomatis : '')) == 'usulan-presensi' ? 'selected' : '' }}>
-                                Usulan Presensi
-                            </option>
-                            <option value="usulan-id-sinta-sister" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : (isset($jenis_usulan_otomatis) ? $jenis_usulan_otomatis : '')) == 'usulan-id-sinta-sister' ? 'selected' : '' }}>
-                                Usulan ID SINTA ke SISTER
-                            </option>
-                            <option value="usulan-satyalancana" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : (isset($jenis_usulan_otomatis) ? $jenis_usulan_otomatis : '')) == 'usulan-satyalancana' ? 'selected' : '' }}>
-                                Usulan Satyalancana
-                            </option>
-                            <option value="usulan-tugas-belajar" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : (isset($jenis_usulan_otomatis) ? $jenis_usulan_otomatis : '')) == 'usulan-tugas-belajar' ? 'selected' : '' }}>
-                                Usulan Tugas Belajar
-                            </option>
-                            <option value="usulan-pengaktifan-kembali" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : (isset($jenis_usulan_otomatis) ? $jenis_usulan_otomatis : '')) == 'usulan-pengaktifan-kembali' ? 'selected' : '' }}>
-                                Usulan Pengaktifan Kembali
-                            </option>
-                            <option value="usulan-penyesuaian-masa-kerja" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : (isset($jenis_usulan_otomatis) ? $jenis_usulan_otomatis : '')) == 'usulan-penyesuaian-masa-kerja' ? 'selected' : '' }}>
-                                Usulan Penyesuaian Masa Kerja
-                            </option>
-                            <option value="usulan-ujian-dinas-ijazah" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : (isset($jenis_usulan_otomatis) ? $jenis_usulan_otomatis : '')) == 'usulan-ujian-dinas-ijazah' ? 'selected' : '' }}>
-                                Usulan Ujian Dinas Ijazah
-                            </option>
-                            <option value="usulan-laporan-serdos" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : (isset($jenis_usulan_otomatis) ? $jenis_usulan_otomatis : '')) == 'usulan-laporan-serdos' ? 'selected' : '' }}>
-                                Usulan Laporan SERDOS
-                            </option>
-                            <option value="usulan-pensiun" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : (isset($jenis_usulan_otomatis) ? $jenis_usulan_otomatis : '')) == 'usulan-pensiun' ? 'selected' : '' }}>
-                                Usulan Pensiun
-                            </option>
-                            <option value="usulan-kepangkatan" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : (isset($jenis_usulan_otomatis) ? $jenis_usulan_otomatis : '')) == 'usulan-kepangkatan' ? 'selected' : '' }}>
-                                Usulan Kepangkatan
-                            </option>
-                            <option value="usulan-pencantuman-gelar" {{ old('jenis_usulan', isset($periode) ? $periode->jenis_usulan : (isset($jenis_usulan_otomatis) ? $jenis_usulan_otomatis : '')) == 'usulan-pencantuman-gelar' ? 'selected' : '' }}>
-                                Usulan Pencantuman Gelar
-                            </option>
-                        </select>
+                        <input type="text"
+                               value="@php
+                                   $jenis = $jenis_usulan_otomatis ?? 'jabatan-dosen-regular';
+                                   $nama = match($jenis) {
+                                       'jabatan-dosen-regular' => 'Jabatan Dosen Reguler',
+                                       'jabatan-dosen-pengangkatan' => 'Jabatan Dosen Pengangkatan Pertama',
+                                       'usulan-nuptk' => 'NUPTK',
+                                       'usulan-laporan-lkd' => 'Laporan LKD',
+                                       'usulan-presensi' => 'Presensi',
+                                       'usulan-id-sinta-sister' => 'ID SINTA ke SISTER',
+                                       'usulan-satyalancana' => 'Satyalancana',
+                                       'usulan-tugas-belajar' => 'Tugas Belajar',
+                                       'usulan-pengaktifan-kembali' => 'Pengaktifan Kembali',
+                                       'usulan-penyesuaian-masa-kerja' => 'Penyesuaian Masa Kerja',
+                                       'usulan-ujian-dinas-ijazah' => 'Ujian Dinas Ijazah',
+                                       'usulan-laporan-serdos' => 'Laporan SERDOS',
+                                       'usulan-pensiun' => 'Pensiun',
+                                       'usulan-kepangkatan' => 'Kepangkatan',
+                                       'usulan-pencantuman-gelar' => 'Pencantuman Gelar',
+                                       default => 'Jabatan Dosen Reguler'
+                                   };
+                                   echo $nama;
+                               @endphp"
+                               class="block w-full px-4 py-3 text-gray-900 border-2 border-gray-300 bg-white rounded-xl shadow-sm cursor-not-allowed font-medium"
+                               readonly>
+                        <input type="hidden" name="jenis_usulan" value="{{ isset($jenis_usulan_otomatis) ? $jenis_usulan_otomatis : 'jabatan-dosen-regular' }}">
                         @error('jenis_usulan')
                             <p class="text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -239,68 +234,6 @@
                     @error('status_kepegawaian.*')
                         <p class="text-xs text-red-600">{{ $message }}</p>
                     @enderror
-                </div>
-
-                <!-- Info Box untuk Dosen -->
-                <div id="info-dosen" class="info-box hidden p-4 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
-                    <div class="flex">
-                        <div class="ml-3">
-                            <p class="text-sm text-blue-700">
-                                <strong>Kriteria Eligibilitas:</strong> Hanya pegawai dengan status kepegawaian "Dosen PNS" yang dapat mengajukan usulan jabatan dosen.
-                            </p>
-                            <p class="text-sm text-blue-600 mt-1">
-                                <strong>Usulan Jabatan Dosen Reguler:</strong> Untuk dosen yang sudah memiliki jabatan fungsional dan ingin naik jenjang
-                            </p>
-                            <p class="text-sm text-blue-600 mt-1">
-                                <strong>Usulan Jabatan Dosen Pengangkatan Pertama:</strong> Untuk dosen yang baru pertama kali diangkat dalam jabatan fungsional
-                            </p>
-                            <p class="text-sm text-blue-600 mt-1">
-                                Jenjang usulan: Tenaga Pengajar → Asisten Ahli → Lektor → Lektor Kepala → Guru Besar
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-
-
-                <!-- Jenjang Jabatan Dosen -->
-                <div id="jenjang-dosen" class="info-box hidden p-6 border-2 border-blue-200 rounded-xl bg-blue-50 space-y-4">
-                    <h4 class="text-md font-semibold text-blue-800 flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        Jenjang Jabatan Dosen yang Tersedia
-                    </h4>
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div class="text-center p-3 bg-white rounded-lg border border-blue-200">
-                            <div class="text-sm font-semibold text-blue-700">Dari</div>
-                            <div class="text-xs text-blue-600 mt-1">Tenaga Pengajar</div>
-                            <div class="text-blue-500 my-1">↓</div>
-                            <div class="text-sm font-semibold text-green-700">Ke</div>
-                            <div class="text-xs text-green-600 mt-1">Asisten Ahli</div>
-                        </div>
-                        <div class="text-center p-3 bg-white rounded-lg border border-blue-200">
-                            <div class="text-sm font-semibold text-blue-700">Dari</div>
-                            <div class="text-xs text-blue-600 mt-1">Asisten Ahli</div>
-                            <div class="text-blue-500 my-1">↓</div>
-                            <div class="text-sm font-semibold text-green-700">Ke</div>
-                            <div class="text-xs text-green-600 mt-1">Lektor</div>
-                        </div>
-                        <div class="text-center p-3 bg-white rounded-lg border border-blue-200">
-                            <div class="text-sm font-semibold text-blue-700">Dari</div>
-                            <div class="text-xs text-blue-600 mt-1">Lektor</div>
-                            <div class="text-blue-500 my-1">↓</div>
-                            <div class="text-sm font-semibold text-green-700">Ke</div>
-                            <div class="text-xs text-green-600 mt-1">Lektor Kepala</div>
-                        </div>
-                        <div class="text-center p-3 bg-white rounded-lg border border-blue-200">
-                            <div class="text-sm font-semibold text-blue-700">Dari</div>
-                            <div class="text-xs text-blue-600 mt-1">Lektor Kepala</div>
-                            <div class="text-blue-500 my-1">↓</div>
-                            <div class="text-sm font-semibold text-green-700">Ke</div>
-                            <div class="text-xs text-green-600 mt-1">Guru Besar</div>
-                        </div>
-                    </div>
                 </div>
 
 
@@ -366,7 +299,7 @@
                 </div>
 
                 <!-- Minimal Anggota Senat - Hanya muncul jika Dosen PNS dipilih -->
-                <div id="senat-section" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
+                <div id="senat-section" class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6" style="display: none;">
                     <div class="space-y-2">
                         <label for="senat_min_setuju" class="block text-sm font-semibold text-gray-800">
                             Minimal Anggota Senat "Direkomendasikan" <span class="text-blue-500">(Direkomendasikan)</span>
@@ -422,7 +355,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Fungsi untuk update info box berdasarkan jenis usulan
     function updateJenisUsulanInfo() {
-        const jenisUsulan = document.getElementById('jenis_usulan').value;
+        const jenisUsulanInput = document.querySelector('input[name="jenis_usulan"]');
+        const jenisUsulan = jenisUsulanInput ? jenisUsulanInput.value : '';
         const infoDosen = document.getElementById('info-dosen');
         const jenjangDosen = document.getElementById('jenjang-dosen');
 
@@ -451,18 +385,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Panggil fungsi saat halaman dimuat
     updateJenisUsulanInfo();
 
-    // Event listener untuk perubahan jenis usulan
-    document.getElementById('jenis_usulan').addEventListener('change', function() {
-        updateJenisUsulanInfo();
-        handleStatusKepegawaianChange();
-    });
+    // Event listener untuk perubahan jenis usulan - tidak diperlukan karena field readonly
 
     // Fungsi untuk menangani checkbox status kepegawaian
     function handleStatusKepegawaianChange() {
         const checkboxes = document.querySelectorAll('input[name="status_kepegawaian[]"]');
         const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
         const senatSection = document.getElementById('senat-section');
-        const jenisUsulan = document.getElementById('jenis_usulan').value;
+        const jenisUsulanInput = document.querySelector('input[name="jenis_usulan"]');
+        const jenisUsulan = jenisUsulanInput ? jenisUsulanInput.value : '';
 
         // Cek apakah "Dosen PNS" dipilih
         const dosenPNSChecked = Array.from(checkboxes).some(cb => cb.checked && cb.value === 'Dosen PNS');
@@ -548,7 +479,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Validasi tanggal
             const tanggalMulai = document.getElementById('tanggal_mulai').value;
             const tanggalSelesai = document.getElementById('tanggal_selesai').value;
-            
+
             if (new Date(tanggalSelesai) < new Date(tanggalMulai)) {
                 e.preventDefault();
                 showNotification('⚠️ Peringatan: Tanggal selesai tidak boleh lebih awal dari tanggal mulai!', 'error');
@@ -584,7 +515,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showNotification('Sedang menyimpan periode usulan...', 'info');
         });
     }
-    
+
     // Auto-hide flash messages after 5 seconds
     document.addEventListener('DOMContentLoaded', function() {
         const flashMessages = document.querySelectorAll('.bg-green-100, .bg-red-100, .bg-yellow-100, .bg-blue-100');
@@ -597,7 +528,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 500);
             }, 5000);
         });
-        
+
         // Handle form submission with better feedback
         const form = document.getElementById('periodeForm');
         if (form) {
@@ -607,7 +538,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     submitButton.disabled = true;
                     submitButton.innerHTML = '<div class="flex items-center"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>Menyimpan...</div>';
                 }
-                
+
                 // Show immediate feedback
                 showNotification('Sedang menyimpan periode usulan...', 'info');
             });

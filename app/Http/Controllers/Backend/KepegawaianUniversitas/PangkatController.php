@@ -23,7 +23,7 @@ class PangkatController extends Controller
     public function index()
     {
         // Mengurutkan pangkat berdasarkan hierarchy_level menggunakan scope
-        $pangkats = Pangkat::orderByHierarchy('asc')->paginate(10);
+        $pangkats = Pangkat::orderByHierarchy('asc')->paginate(10)->withQueryString();
 
         return view('backend.layouts.views.kepegawaian-universitas.pangkat.master-data-pangkat', compact('pangkats'));
     }

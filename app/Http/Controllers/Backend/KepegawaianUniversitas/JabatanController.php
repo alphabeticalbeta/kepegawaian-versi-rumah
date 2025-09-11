@@ -65,7 +65,7 @@ class JabatanController extends Controller
                           ->orderBy('jenis_jabatan', 'asc')
                           ->orderByRaw('ISNULL(hierarchy_level), hierarchy_level ASC') // NULL di akhir, angka dari kecil ke besar
                           ->orderBy('jabatan', 'asc')
-                          ->paginate(20)
+                          ->paginate(10)
                           ->appends($request->query()); // Maintain filter params di pagination
 
         // Data untuk dropdown filter

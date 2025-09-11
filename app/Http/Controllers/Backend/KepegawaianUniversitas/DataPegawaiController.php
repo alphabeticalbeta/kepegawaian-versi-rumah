@@ -158,27 +158,45 @@ class DataPegawaiController extends Controller
      */
    public function destroy(Pegawai $pegawai)
     {
+        try {
+            // Check for foreign key constraints
+            $hasUsulanDokumens = \DB::table('usulan_dokumens')
+                ->where('diupload_oleh_id', $pegawai->id)
+                ->exists();
 
-        // Existing delete logic
-        $fileColumns = [
-            'sk_pangkat_terakhir', 'sk_jabatan_terakhir',
-            'ijazah_terakhir', 'transkrip_nilai_terakhir',
-            'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir',
-            'pak_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua',
-            'sk_cpns', 'sk_pns', 'foto'
-        ];
-
-        foreach ($fileColumns as $column) {
-            if ($pegawai->$column) {
-                $disk = $this->getFileDisk($column);
-                Storage::disk($disk)->delete($pegawai->$column);
+            if ($hasUsulanDokumens) {
+                return redirect()->back()->with('error', "Pegawai {$pegawai->nama_lengkap} tidak dapat dihapus karena memiliki data terkait (usulan dokumen).");
             }
+
+            // Existing delete logic
+            $fileColumns = [
+                'sk_pangkat_terakhir', 'sk_jabatan_terakhir',
+                'ijazah_terakhir', 'transkrip_nilai_terakhir',
+                'sk_penyetaraan_ijazah', 'disertasi_thesis_terakhir',
+                'pak_konversi', 'skp_tahun_pertama', 'skp_tahun_kedua',
+                'sk_cpns', 'sk_pns', 'foto'
+            ];
+
+            foreach ($fileColumns as $column) {
+                if ($pegawai->$column) {
+                    $disk = $this->getFileDisk($column);
+                    Storage::disk($disk)->delete($pegawai->$column);
+                }
+            }
+
+            $pegawai->delete();
+
+            return redirect()->route('backend.kepegawaian-universitas.data-pegawai.index')
+                             ->with('success', 'Data Pegawai berhasil dihapus.');
+
+        } catch (\Exception $e) {
+            \Log::error('Error deleting pegawai: ' . $e->getMessage(), [
+                'pegawai_id' => $pegawai->id,
+                'error' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage());
         }
-
-        $pegawai->delete();
-
-        return redirect()->route('backend.kepegawaian-universitas.data-pegawai.index')
-                         ->with('success', 'Data Pegawai berhasil dihapus.');
     }
 
     // Method show dihapus karena menggunakan shared profile page
@@ -278,11 +296,7 @@ class DataPegawaiController extends Controller
                 $path = $this->fileStorage->uploadFile($file, $uploadPath, $column);
                 $validatedData[$column] = $path;
 
-                \Log::info("File uploaded using FileStorageService", [
-                    'column' => $column,
-                    'file_path' => $path,
-                    'pegawai_id' => $pegawai ? $pegawai->id : 'new'
-                ]);
+                // File uploaded using FileStorageService
             }
         }
     }
@@ -293,12 +307,7 @@ class DataPegawaiController extends Controller
         public function showDocument(Pegawai $pegawai, $field)
     {
         try {
-            // Debug info
-            \Log::info('showDocument called', [
-                'pegawai_id' => $pegawai->id,
-                'field' => $field,
-                'url' => request()->url()
-            ]);
+            // Document access
         } catch (\Exception $e) {
             // Handle database connection error
             \Log::error('Database connection error in showDocument', [
@@ -325,7 +334,7 @@ class DataPegawaiController extends Controller
         ];
 
         if (!in_array($field, $allowedFields)) {
-            \Log::warning('Invalid field requested', ['field' => $field]);
+            // Invalid field requested
             return response()->json([
                 'error' => 'Jenis dokumen tidak valid',
                 'field' => $field,
@@ -336,8 +345,15 @@ class DataPegawaiController extends Controller
         // 2. Cek apakah file ada
         $filePath = $pegawai->$field;
 
-        if (!$filePath) {
-            \Log::warning('File path is empty', ['field' => $field, 'pegawai_id' => $pegawai->id]);
+        if (!$filePath || empty($filePath)) {
+            // Untuk foto, return default avatar jika tidak ada
+            if ($field === 'foto') {
+                // Generate default avatar URL
+                $defaultAvatarUrl = 'https://ui-avatars.com/api/?name=' . urlencode($pegawai->nama_lengkap) . '&background=6366f1&color=fff&size=96';
+                return redirect($defaultAvatarUrl);
+            }
+
+            // File path is empty
             return response()->json([
                 'error' => 'File tidak ditemukan',
                 'message' => 'Pegawai tidak memiliki file ' . $field,
@@ -350,11 +366,7 @@ class DataPegawaiController extends Controller
         $disk = $this->getFileDisk($field);
 
         if (!Storage::disk($disk)->exists($filePath)) {
-            \Log::warning('File not found in storage', [
-                'field' => $field,
-                'filePath' => $filePath,
-                'disk' => $disk
-            ]);
+            // File not found in storage
             return response()->json([
                 'error' => 'File tidak ditemukan di storage',
                 'message' => 'File ada di database tapi tidak ditemukan di storage',
@@ -434,10 +446,7 @@ class DataPegawaiController extends Controller
         if ($currentUser->hasRole('Admin Fakultas')) {
             // Double check: pastikan ada unit_kerja_id
             if (!$currentUser->unit_kerja_id) {
-                \Log::warning('Admin Fakultas tanpa unit_kerja_id mencoba akses dokumen', [
-                    'admin_id' => $currentUser->id,
-                    'target_pegawai_id' => $targetPegawai->id
-                ]);
+                // Admin Fakultas tanpa unit_kerja_id mencoba akses dokumen
                 return false;
             }
 
@@ -445,21 +454,11 @@ class DataPegawaiController extends Controller
             $targetFakultasId = $targetPegawai->unitKerja?->subUnitKerja?->unit_kerja_id;
 
             if ($currentUser->unit_kerja_id === $targetFakultasId) {
-                \Log::info('Admin Fakultas akses dokumen pegawai di fakultasnya', [
-                    'admin_id' => $currentUser->id,
-                    'admin_fakultas_id' => $currentUser->unit_kerja_id,
-                    'target_pegawai_id' => $targetPegawai->id,
-                    'target_fakultas_id' => $targetFakultasId
-                ]);
+                // Admin Fakultas akses dokumen pegawai di fakultasnya
                 return true;
             }
 
-            \Log::warning('Admin Fakultas mencoba akses dokumen pegawai dari fakultas lain', [
-                'admin_id' => $currentUser->id,
-                'admin_fakultas_id' => $currentUser->unit_kerja_id,
-                'target_pegawai_id' => $targetPegawai->id,
-                'target_fakultas_id' => $targetFakultasId
-            ]);
+            // Admin Fakultas mencoba akses dokumen pegawai dari fakultas lain
             return false;
         }
 
@@ -476,12 +475,7 @@ class DataPegawaiController extends Controller
         }
 
         // 5. DEFAULT DENY: Tidak ada akses
-        \Log::warning('Unauthorized document access attempt', [
-            'user_id' => $currentUser->id,
-            'user_roles' => $currentUser->getRoleNames()->toArray(),
-            'target_pegawai_id' => $targetPegawai->id,
-            'field' => request()->route('field')
-        ]);
+        // Unauthorized document access attempt
 
         return false;
     }
@@ -539,12 +533,7 @@ class DataPegawaiController extends Controller
             // Log role info separately untuk debugging
             $accessor = Auth::guard('pegawai')->user() ?? Auth::guard('web')->user() ?? Auth::user();
             if ($accessor) {
-                \Log::info('Document accessed', [
-                    'pegawai_id' => $pegawaiId,
-                    'accessor_id' => $accessorId,
-                    'document_field' => $documentField,
-                    'accessor_has_roles' => $accessor->roles ? $accessor->roles->count() : 0,
-                ]);
+                // Document accessed
             }
 
         } catch (\Exception $e) {
@@ -619,6 +608,7 @@ class DataPegawaiController extends Controller
 
             $file = $request->file('file');
             $importMode = $request->get('import_mode', 'create_update');
+            $fileName = $file->getClientOriginalName();
 
             // Create import instance
             $import = new PegawaiImport($importMode);
@@ -629,29 +619,76 @@ class DataPegawaiController extends Controller
             // Get statistics
             $stats = $import->getStatistics();
             $failures = $import->failures();
+            $errors = $import->getErrors();
 
-            // Prepare success message
-            $message = "Import berhasil! ";
-            $message .= "Data baru: {$stats['created']}, ";
-            $message .= "Data diupdate: {$stats['updated']}";
+            // Prepare detailed success message
+            $message = $this->buildImportMessage($stats, $importMode, $fileName);
 
-            if ($stats['failures'] > 0) {
-                $message .= ", Gagal: {$stats['failures']}";
-            }
+            // Prepare session data for detailed feedback
+            $sessionData = [
+                'import_success' => true,
+                'import_stats' => $stats,
+                'import_mode' => $importMode,
+                'file_name' => $fileName,
+                'import_errors' => $errors,
+                'import_failures' => $failures,
+                'import_timestamp' => now()->format('d/m/Y H:i:s')
+            ];
 
             return redirect()->back()
                            ->with('success', $message)
-                           ->with('import_failures', $failures);
+                           ->with('import_details', $sessionData);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                           ->with('error', 'Validasi file gagal: ' . implode(', ', $e->validator->errors()->all()))
+                           ->withInput();
         } catch (\Exception $e) {
             \Log::error('Error importing pegawai data: ' . $e->getMessage(), [
                 'error' => $e->getTraceAsString(),
-                'file' => $request->file('file')?->getClientOriginalName()
+                'file' => $request->file('file')?->getClientOriginalName(),
+                'import_mode' => $request->get('import_mode')
             ]);
 
             return redirect()->back()
-                           ->with('error', 'Terjadi kesalahan saat mengimport data: ' . $e->getMessage());
+                           ->with('error', 'Terjadi kesalahan saat mengimport data: ' . $e->getMessage())
+                           ->withInput();
         }
+    }
+
+    /**
+     * Build detailed import message
+     */
+    private function buildImportMessage($stats, $importMode, $fileName)
+    {
+        $modeText = match($importMode) {
+            'create_only' => 'Tambah Data Baru',
+            'update_only' => 'Update Data Existing',
+            'create_update' => 'Tambah & Update Data',
+            default => 'Import Data'
+        };
+
+        $message = "✅ Import {$modeText} berhasil!";
+        $message .= "\n📁 File: {$fileName}";
+        $message .= "\n📊 Statistik:";
+
+        if ($stats['created'] > 0) {
+            $message .= "\n  • Data baru: {$stats['created']}";
+        }
+
+        if ($stats['updated'] > 0) {
+            $message .= "\n  • Data diupdate: {$stats['updated']}";
+        }
+
+        if ($stats['errors'] > 0) {
+            $message .= "\n  • Error: {$stats['errors']}";
+        }
+
+        if ($stats['failures'] > 0) {
+            $message .= "\n  • Gagal: {$stats['failures']}";
+        }
+
+        return $message;
     }
 
     /**
@@ -687,35 +724,225 @@ class DataPegawaiController extends Controller
         try {
             // Validate file
             $request->validate([
-                'file' => 'required|file|mimes:xlsx,xls|max:10240'
+                'file' => 'required|file|mimes:xlsx,xls|max:10240',
+                'import_mode' => 'required|in:create_only,update_only,create_update'
             ]);
 
             $file = $request->file('file');
             $importMode = $request->get('import_mode', 'create_update');
 
-            // Create import instance
-            $import = new PegawaiImport($importMode);
+            // Read Excel data
+            $data = Excel::toArray(new \App\Imports\PegawaiImport($importMode), $file);
 
-            // Read first 10 rows for preview
-            $data = Excel::toArray($import, $file);
-            $previewData = array_slice($data[0], 0, 10); // First 10 rows
+            if (empty($data) || empty($data[0])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File Excel kosong atau tidak dapat dibaca'
+                ], 400);
+            }
+
+            $allData = $data[0];
+            $previewData = array_slice($allData, 0, 10); // First 10 rows
+            $headers = array_keys($previewData[0] ?? []);
+
+            // Validate headers
+            $expectedHeaders = [
+                'nip', 'nama_lengkap', 'email', 'jenis_pegawai', 'status_kepegawaian',
+                'gelar_depan', 'gelar_belakang', 'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin',
+                'nomor_handphone', 'pangkat_terakhir_id', 'jabatan_terakhir_id', 'unit_kerja_id',
+                'pendidikan_terakhir', 'nama_universitas_sekolah', 'nama_prodi_jurusan',
+                'tmt_cpns', 'tmt_pns', 'tmt_pangkat', 'tmt_jabatan', 'nomor_kartu_pegawai',
+                'nuptk', 'mata_kuliah_diampu', 'ranting_ilmu_kepakaran', 'url_profil_sinta',
+                'predikat_kinerja_tahun_pertama', 'predikat_kinerja_tahun_kedua', 'nilai_konversi'
+            ];
+
+            $missingHeaders = array_diff($expectedHeaders, $headers);
+            $extraHeaders = array_diff($headers, $expectedHeaders);
+
+            // Validate data quality
+            $validationErrors = $this->validatePreviewData($previewData, $importMode);
 
             return response()->json([
                 'success' => true,
                 'preview_data' => $previewData,
-                'total_rows' => count($data[0]),
-                'headers' => array_keys($previewData[0] ?? [])
+                'total_rows' => count($allData),
+                'headers' => $headers,
+                'validation' => [
+                    'missing_headers' => $missingHeaders,
+                    'extra_headers' => $extraHeaders,
+                    'errors' => $validationErrors,
+                    'has_errors' => !empty($validationErrors) || !empty($missingHeaders)
+                ]
             ]);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi file gagal: ' . implode(', ', $e->validator->errors()->all())
+            ], 422);
         } catch (\Exception $e) {
             \Log::error('Error previewing import: ' . $e->getMessage(), [
-                'error' => $e->getTraceAsString()
+                'error' => $e->getTraceAsString(),
+                'file' => $request->file('file')?->getClientOriginalName()
             ]);
 
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat preview data: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Validate NIP for preview (handle prefix and check exactly 18 characters)
+     */
+    private function validateNipForPreview($nip)
+    {
+        if (empty($nip)) {
+            return false;
+        }
+
+        // Remove prefix if present (single quote)
+        $cleanNip = ltrim($nip, "'");
+
+        // Check if exactly 18 characters
+        if (strlen($cleanNip) !== 18) {
+            return false;
+        }
+
+        // Check if only numeric
+        if (!is_numeric($cleanNip)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Validate preview data for import
+     */
+    private function validatePreviewData($previewData, $importMode)
+    {
+        $errors = [];
+        $rowNumber = 1; // Start from 1 (header is row 0)
+
+        foreach ($previewData as $row) {
+            $rowNumber++;
+            $rowErrors = [];
+
+            // Required field validation
+            if (empty($row['nip'])) {
+                $rowErrors[] = 'NIP tidak boleh kosong';
+            } elseif (!$this->validateNipForPreview($row['nip'])) {
+                $rowErrors[] = 'NIP harus tepat 18 karakter dan berupa angka';
+            }
+
+            if (empty($row['nama_lengkap'])) {
+                $rowErrors[] = 'Nama Lengkap tidak boleh kosong';
+            }
+
+            if (empty($row['email'])) {
+                $rowErrors[] = 'Email tidak boleh kosong';
+            } elseif (!filter_var($row['email'], FILTER_VALIDATE_EMAIL)) {
+                $rowErrors[] = 'Format email tidak valid';
+            }
+
+            if (empty($row['jenis_pegawai'])) {
+                $rowErrors[] = 'Jenis Pegawai tidak boleh kosong';
+            } elseif (!in_array($row['jenis_pegawai'], ['Dosen', 'Tenaga Kependidikan'])) {
+                $rowErrors[] = 'Jenis Pegawai harus "Dosen" atau "Tenaga Kependidikan"';
+            }
+
+            if (empty($row['status_kepegawaian'])) {
+                $rowErrors[] = 'Status Kepegawaian tidak boleh kosong';
+            } else {
+                $validStatuses = [
+                    'Dosen PNS', 'Dosen PPPK', 'Dosen Non ASN',
+                    'Tenaga Kependidikan PNS', 'Tenaga Kependidikan PPPK', 'Tenaga Kependidikan Non ASN'
+                ];
+                if (!in_array($row['status_kepegawaian'], $validStatuses)) {
+                    $rowErrors[] = 'Status Kepegawaian tidak valid';
+                }
+            }
+
+            // ID field validation
+            if (!empty($row['pangkat_terakhir_id']) && !is_numeric($row['pangkat_terakhir_id'])) {
+                $rowErrors[] = 'Pangkat Terakhir ID harus berupa angka';
+            }
+
+            if (!empty($row['jabatan_terakhir_id']) && !is_numeric($row['jabatan_terakhir_id'])) {
+                $rowErrors[] = 'Jabatan Terakhir ID harus berupa angka';
+            }
+
+            if (!empty($row['unit_kerja_id']) && !is_numeric($row['unit_kerja_id'])) {
+                $rowErrors[] = 'Unit Kerja ID harus berupa angka';
+            }
+
+            // Date validation
+            $dateFields = ['tanggal_lahir', 'tmt_cpns', 'tmt_pns', 'tmt_pangkat', 'tmt_jabatan'];
+            foreach ($dateFields as $field) {
+                if (!empty($row[$field]) && !$this->isValidDate($row[$field])) {
+                    $rowErrors[] = "Format tanggal {$field} tidak valid";
+                }
+            }
+
+            // Pendidikan terakhir validation
+            if (!empty($row['pendidikan_terakhir'])) {
+                $validPendidikan = [
+                    'Sekolah Dasar (SD)',
+                    'Sekolah Lanjutan Tingkat Pertama (SLTP) / Sederajat',
+                    'Sekolah Lanjutan Tingkat Menengah (SLTA)',
+                    'Diploma I',
+                    'Diploma II',
+                    'Diploma III',
+                    'Sarjana (S1) / Diploma IV / Sederajat',
+                    'Magister (S2) / Sederajat',
+                    'Doktor (S3) / Sederajat'
+                ];
+                // Trim and normalize the value
+                $pendidikanValue = trim($row['pendidikan_terakhir']);
+                if (!in_array($pendidikanValue, $validPendidikan)) {
+                    $rowErrors[] = "Pendidikan Terakhir tidak valid: '{$pendidikanValue}'";
+                }
+            }
+
+            // Numeric validation
+            if (!empty($row['nilai_konversi']) && (!is_numeric($row['nilai_konversi']) || $row['nilai_konversi'] < 0 || $row['nilai_konversi'] > 100)) {
+                $rowErrors[] = 'Nilai Konversi harus berupa angka antara 0-100';
+            }
+
+            // Predikat validation
+            $validPredikat = ['Sangat Baik', 'Baik', 'Perlu Perbaikan'];
+            if (!empty($row['predikat_kinerja_tahun_pertama']) && !in_array($row['predikat_kinerja_tahun_pertama'], $validPredikat)) {
+                $rowErrors[] = 'Predikat Kinerja Tahun Pertama tidak valid';
+            }
+            if (!empty($row['predikat_kinerja_tahun_kedua']) && !in_array($row['predikat_kinerja_tahun_kedua'], $validPredikat)) {
+                $rowErrors[] = 'Predikat Kinerja Tahun Kedua tidak valid';
+            }
+
+            // URL validation
+            if (!empty($row['url_profil_sinta']) && !filter_var($row['url_profil_sinta'], FILTER_VALIDATE_URL)) {
+                $rowErrors[] = 'URL Profil SINTA tidak valid';
+            }
+
+            if (!empty($rowErrors)) {
+                $errors["Baris {$rowNumber}"] = $rowErrors;
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Check if date string is valid
+     */
+    private function isValidDate($dateString)
+    {
+        try {
+            $date = \Carbon\Carbon::parse($dateString);
+            return $date !== false;
+        } catch (\Exception $e) {
+            return false;
         }
     }
 
@@ -732,25 +959,51 @@ class DataPegawaiController extends Controller
 
             $selectedIds = $request->selected_ids;
             $deletedCount = 0;
+            $skippedCount = 0;
+            $skippedPegawai = [];
 
-            foreach ($selectedIds as $id) {
-                $pegawai = Pegawai::find($id);
-                if ($pegawai) {
+            // OPTIMASI: Gunakan bulk delete untuk performa yang lebih baik
+            $pegawais = Pegawai::whereIn('id', $selectedIds)->get();
+
+            foreach ($pegawais as $pegawai) {
+                try {
+                    // Check for foreign key constraints
+                    $hasUsulanDokumens = \DB::table('usulan_dokumens')
+                        ->where('diupload_oleh_id', $pegawai->id)
+                        ->exists();
+
+                    if ($hasUsulanDokumens) {
+                        // Skip deletion and record the pegawai
+                        $skippedCount++;
+                        $skippedPegawai[] = $pegawai->nama_lengkap;
+                        continue;
+                    }
+
                     // Delete associated files
                     $this->deletePegawaiFiles($pegawai);
 
                     // Delete pegawai
                     $pegawai->delete();
                     $deletedCount++;
+
+                } catch (\Exception $e) {
+                    // If individual deletion fails, skip and continue
+                    $skippedCount++;
+                    $skippedPegawai[] = $pegawai->nama_lengkap;
+                    \Log::warning('Failed to delete pegawai: ' . $pegawai->id . ' - ' . $e->getMessage());
                 }
             }
 
-            \Log::info('Bulk delete pegawai completed', [
-                'deleted_count' => $deletedCount,
-                'selected_ids' => $selectedIds
-            ]);
+            // Prepare response message
+            $message = "Berhasil menghapus {$deletedCount} pegawai.";
+            if ($skippedCount > 0) {
+                $message .= " {$skippedCount} pegawai tidak dapat dihapus karena memiliki data terkait (usulan dokumen).";
+                if (count($skippedPegawai) <= 5) {
+                    $message .= " Pegawai yang tidak dapat dihapus: " . implode(', ', $skippedPegawai);
+                }
+            }
 
-            return redirect()->back()->with('success', "Berhasil menghapus {$deletedCount} pegawai.");
+            return redirect()->back()->with('success', $message);
 
         } catch (\Exception $e) {
             \Log::error('Error in bulk delete: ' . $e->getMessage(), [
@@ -809,11 +1062,7 @@ class DataPegawaiController extends Controller
                 }
             }
 
-            \Log::info('Bulk update pegawai completed', [
-                'updated_count' => $updatedCount,
-                'selected_ids' => $selectedIds,
-                'update_data' => $updateData
-            ]);
+            // Bulk update pegawai completed
 
             return redirect()->back()->with('success', "Berhasil mengupdate {$updatedCount} pegawai.");
 
@@ -847,7 +1096,7 @@ class DataPegawaiController extends Controller
                     // Use Storage facade directly
                     \Storage::delete($pegawai->$field);
                 } catch (\Exception $e) {
-                    \Log::warning("Failed to delete file for field {$field}: " . $e->getMessage());
+                    // Failed to delete file for field
                 }
             }
         }

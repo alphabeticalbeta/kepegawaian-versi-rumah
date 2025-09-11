@@ -24,6 +24,13 @@
         pointer-events: none;
     }
 
+    /* Ensure import and export buttons are clickable */
+    #importBtn, #exportBtn {
+        pointer-events: auto !important;
+        cursor: pointer !important;
+        z-index: 10 !important;
+    }
+
     .table-loaded {
         opacity: 1;
     }
@@ -142,7 +149,7 @@
                     <h3 class="text-base sm:text-lg font-semibold text-gray-900">Daftar Data Pegawai</h3>
                     <div class="flex flex-wrap items-center gap-2 sm:gap-3">
                         <!-- Export Button -->
-                        <button id="exportBtn"
+                        <button id="exportBtn" onclick="exportData()"
                                 class="inline-flex items-center px-3 sm:px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 border border-transparent rounded-lg font-semibold text-xs sm:text-sm text-white hover:from-green-700 hover:to-emerald-700 focus:from-green-700 focus:to-emerald-700 active:from-green-900 active:to-emerald-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-md hover:shadow-lg">
                             <i data-lucide="download" class="h-4 w-4 mr-1 sm:mr-2"></i>
                             <span class="hidden sm:inline">Export Excel</span>
@@ -150,8 +157,9 @@
                         </button>
 
                         <!-- Import Button -->
-                        <button id="importBtn"
-                                class="inline-flex items-center px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 border border-transparent rounded-lg font-semibold text-xs sm:text-sm text-white hover:from-blue-700 hover:to-cyan-700 focus:from-blue-700 focus:to-cyan-700 active:from-blue-900 active:to-cyan-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-md hover:shadow-lg">
+                        <button id="importBtn" type="button" onclick="openImportModal()"
+                                class="inline-flex items-center px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 border border-transparent rounded-lg font-semibold text-xs sm:text-sm text-white hover:from-blue-700 hover:to-cyan-700 focus:from-blue-700 focus:to-cyan-700 active:from-blue-900 active:to-cyan-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-md hover:shadow-lg"
+                                style="pointer-events: auto; cursor: pointer; z-index: 10;">
                             <i data-lucide="upload" class="h-4 w-4 mr-1 sm:mr-2"></i>
                             <span class="hidden sm:inline">Import Excel</span>
                             <span class="sm:hidden">Import</span>
@@ -217,10 +225,18 @@
                                     </td>
                                     <td class="px-2 sm:px-4 py-3">
                                         <div class="flex items-center">
-                                            <img class="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-cover mr-2 sm:mr-4 border border-gray-200"
-                                                 src="{{ $pegawai->foto ? route('backend.kepegawaian-universitas.data-pegawai.show-document', ['pegawai' => $pegawai->id, 'field' => 'foto']) : 'https://ui-avatars.com/api/?name=' . urlencode($pegawai->nama_lengkap) . '&background=random' }}"
-                                                 alt="Foto"
-                                                 onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($pegawai->nama_lengkap) }}&background=random'">
+                                            @if($pegawai->foto && file_exists(public_path('storage/' . $pegawai->foto)))
+                                                <img class="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-cover mr-2 sm:mr-4 border border-gray-200"
+                                                     src="{{ route('backend.kepegawaian-universitas.data-pegawai.show-document', ['pegawai' => $pegawai->id, 'field' => 'foto']) }}"
+                                                     alt="Foto {{ $pegawai->nama_lengkap }}"
+                                                     onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($pegawai->nama_lengkap) }}&background=random'"
+                                                     loading="lazy">
+                                            @else
+                                                <img class="h-8 w-8 sm:h-10 sm:w-10 rounded-full object-cover mr-2 sm:mr-4 border border-gray-200"
+                                                     src="https://ui-avatars.com/api/?name={{ urlencode($pegawai->nama_lengkap) }}&background=random"
+                                                     alt="Avatar {{ $pegawai->nama_lengkap }}"
+                                                     loading="lazy">
+                                            @endif
                                             <div class="flex flex-col">
                                                 <div class="text-xs sm:text-sm font-medium text-gray-900">{{ $pegawai->nama_lengkap }}</div>
                                                 <div class="text-xs sm:text-sm font-medium text-gray-900">{{ $pegawai->nip }}</div>
@@ -289,18 +305,44 @@
             </div>
 
             <!-- Pagination -->
-            @if($pegawais->hasPages())
                 <div class="bg-white rounded-2xl shadow-xl overflow-hidden mt-6">
-                    <div class="px-4 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div class="flex items-center text-xs sm:text-sm text-gray-700">
+                <div class="px-4 py-4 flex items-center justify-between">
+                    <div class="flex items-center text-sm text-gray-700">
                             <span>Menampilkan {{ $pegawais->firstItem() ?? 0 }} - {{ $pegawais->lastItem() ?? 0 }} dari {{ $pegawais->total() }} data</span>
                         </div>
-                        <div class="flex items-center space-x-2 overflow-x-auto">
-                            {{ $pegawais->appends(request()->query())->links() }}
+                    <div class="flex items-center space-x-2">
+                        @if($pegawais->onFirstPage())
+                            <span class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md cursor-not-allowed">
+                                <i data-lucide="chevron-left" class="h-4 w-4"></i>
+                            </span>
+                        @else
+                            <a href="{{ $pegawais->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200">
+                                <i data-lucide="chevron-left" class="h-4 w-4"></i>
+                            </a>
+                        @endif
+                        
+                        <div class="flex space-x-1">
+                            @foreach($pegawais->getUrlRange(1, $pegawais->lastPage()) as $page => $url)
+                                @if($page == $pegawais->currentPage())
+                                    <span class="px-3 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg shadow-md">{{ $page }}</span>
+                                @else
+                                    <a href="{{ $url }}" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all duration-200">{{ $page }}</a>
+                                @endif
+                            @endforeach
                         </div>
+                        
+                        @if($pegawais->hasMorePages())
+                            <a href="{{ $pegawais->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200">
+                                <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                            </a>
+                        @else
+                            <span class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md cursor-not-allowed">
+                                <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                            </span>
+                        @endif
                     </div>
                 </div>
-            @endif
+            </div>
         </div>
     </div>
 </div>
@@ -325,28 +367,67 @@ function debounce(func, wait) {
     };
 }
 
+// Global export function
+function exportData() {
+    // Export data function
+    // Get current filters
+    const jenisPegawai = document.getElementById('filterJenisPegawai').value;
+    const statusKepegawaian = document.getElementById('filterStatusKepegawaian').value;
+    const unitKerja = document.getElementById('filterUnitKerja').value;
+
+    // Build export URL with filters
+    let exportUrl = '{{ route("backend.kepegawaian-universitas.data-pegawai.export") }}';
+    const params = new URLSearchParams();
+
+    if (jenisPegawai) params.append('jenis_pegawai', jenisPegawai);
+    if (statusKepegawaian) params.append('status_kepegawaian', statusKepegawaian);
+    if (unitKerja) params.append('unit_kerja', unitKerja);
+
+    if (params.toString()) {
+        exportUrl += '?' + params.toString();
+    }
+
+    // Show loading
+    const exportBtn = document.getElementById('exportBtn');
+    const originalText = exportBtn.innerHTML;
+    exportBtn.innerHTML = '<i data-lucide="loader-2" class="h-4 w-4 mr-1 sm:mr-2 animate-spin"></i><span class="hidden sm:inline">Exporting...</span><span class="sm:hidden">Export...</span>';
+    exportBtn.disabled = true;
+
+    // Download file
+    window.location.href = exportUrl;
+
+    // Reset button after delay
+    setTimeout(() => {
+        exportBtn.innerHTML = originalText;
+        exportBtn.disabled = false;
+    }, 2000);
+}
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Page loaded, initializing...');
-    console.log('Export button:', document.getElementById('exportBtn'));
-    console.log('Import button:', document.getElementById('importBtn'));
+        // Page initialization
 
     // Add event listeners for buttons
     const exportBtn = document.getElementById('exportBtn');
     const importBtn = document.getElementById('importBtn');
 
     if (exportBtn) {
-        exportBtn.addEventListener('click', function() {
-            console.log('Export button clicked');
+        exportBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             exportData();
         });
     }
 
     if (importBtn) {
-        importBtn.addEventListener('click', function() {
-            console.log('Import button clicked');
+        importBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             // Inline function to avoid scope issues
-            document.getElementById('importModal').classList.remove('hidden');
+            const modal = document.getElementById('importModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            }
         });
     }
 
@@ -357,7 +438,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', function() {
-            console.log('Close modal button clicked');
             document.getElementById('importModal').classList.add('hidden');
             document.getElementById('importForm').reset();
             document.getElementById('previewContainer').innerHTML = '';
@@ -366,7 +446,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (cancelBtn) {
         cancelBtn.addEventListener('click', function() {
-            console.log('Cancel button clicked');
             document.getElementById('importModal').classList.add('hidden');
             document.getElementById('importForm').reset();
             document.getElementById('previewContainer').innerHTML = '';
@@ -375,7 +454,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (previewBtn) {
         previewBtn.addEventListener('click', function() {
-            console.log('Preview button clicked');
 
             // Inline previewImport function to avoid scope issues
             const fileInput = document.getElementById('importFile');
@@ -410,12 +488,72 @@ document.addEventListener('DOMContentLoaded', function() {
                     const previewData = data.preview_data || data.data;
                     const totalRows = data.total_rows || previewData.length;
                     const headers = data.headers || Object.keys(previewData[0] || {});
+                    const validation = data.validation || {};
 
                     let html = `
                         <div class="mb-4 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
                             <h4 class="font-semibold text-blue-900 mb-2 text-sm sm:text-base">Preview Data Import</h4>
                             <p class="text-xs sm:text-sm text-blue-700">Total baris: ${totalRows} | Menampilkan 10 baris pertama</p>
                         </div>
+                    `;
+
+                    // Show validation warnings/errors
+                    if (validation.has_errors) {
+                        html += `
+                            <div class="mb-4 p-3 sm:p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <h4 class="font-semibold text-yellow-900 mb-2 text-sm sm:text-base flex items-center">
+                                    <i data-lucide="alert-triangle" class="w-4 h-4 mr-2"></i>
+                                    Peringatan Validasi
+                                </h4>
+                        `;
+
+                        if (validation.missing_headers && validation.missing_headers.length > 0) {
+                            html += `
+                                <div class="mb-2">
+                                    <p class="text-yellow-800 text-xs sm:text-sm font-medium">Header yang hilang:</p>
+                                    <p class="text-yellow-700 text-xs">${validation.missing_headers.join(', ')}</p>
+                                </div>
+                            `;
+                        }
+
+                        if (validation.extra_headers && validation.extra_headers.length > 0) {
+                            html += `
+                                <div class="mb-2">
+                                    <p class="text-yellow-800 text-xs sm:text-sm font-medium">Header tambahan:</p>
+                                    <p class="text-yellow-700 text-xs">${validation.extra_headers.join(', ')}</p>
+                                </div>
+                            `;
+                        }
+
+                        if (validation.errors && Object.keys(validation.errors).length > 0) {
+                            html += `
+                                <div class="mb-2">
+                                    <p class="text-yellow-800 text-xs sm:text-sm font-medium">Error pada data:</p>
+                                    <div class="text-yellow-700 text-xs max-h-32 overflow-y-auto">
+                            `;
+                            Object.entries(validation.errors).forEach(([row, errors]) => {
+                                html += `<div class="mb-1"><strong>${row}:</strong> ${errors.join(', ')}</div>`;
+                            });
+                            html += `</div></div>`;
+                        }
+
+                        html += `</div>`;
+                    }
+
+                    // Show success message if no errors
+                    if (!validation.has_errors) {
+                        html += `
+                            <div class="mb-4 p-3 sm:p-4 bg-green-50 border border-green-200 rounded-lg">
+                                <h4 class="font-semibold text-green-900 mb-2 text-sm sm:text-base flex items-center">
+                                    <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
+                                    Data Valid
+                                </h4>
+                                <p class="text-green-700 text-xs sm:text-sm">Data siap untuk diimport</p>
+                            </div>
+                        `;
+                    }
+
+                    html += `
                         <div class="force-scrollbar" style="min-width: 100%; max-width: 100%; max-height: 400px;">
                             <table class="text-xs sm:text-sm border border-gray-200" style="min-width: 800px; width: max-content; table-layout: auto;">
                                 <thead class="bg-gray-50">
@@ -424,11 +562,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${previewData.slice(0, 10).map(row => `
-                                        <tr class="hover:bg-gray-50">
+                                    ${previewData.slice(0, 10).map((row, index) => {
+                                        const rowNumber = index + 2; // +2 because header is row 1, and we start from row 2
+                                        const hasError = validation.errors && validation.errors['Baris ' + rowNumber];
+                                        const rowClass = hasError ? 'bg-red-50' : 'hover:bg-gray-50';
+                                        return `
+                                            <tr class="${rowClass}">
                                             ${headers.map(header => `<td class="px-2 sm:px-3 py-2 border border-gray-200">${row[header] || ''}</td>`).join('')}
                                         </tr>
-                                    `).join('')}
+                                        `;
+                                    }).join('')}
                                 </tbody>
                             </table>
                         </div>
@@ -436,11 +579,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     container.innerHTML = html;
                 } else {
-                    alert('Error: ' + data.message);
+                    const container = document.getElementById('previewContainer');
+                    container.innerHTML = `
+                        <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <h4 class="font-semibold text-red-900 mb-2 flex items-center">
+                                <i data-lucide="x-circle" class="w-4 h-4 mr-2"></i>
+                                Error Preview
+                            </h4>
+                            <p class="text-red-700 text-sm">${data.message}</p>
+                        </div>
+                    `;
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                // Error occurred during preview
                 alert('Terjadi kesalahan saat memproses file');
             })
             .finally(() => {
@@ -451,7 +603,133 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     initializeSearchAndFilter();
+    
+    // Handle import success modal
+    initializeImportSuccessModal();
 });
+
+// Initialize import success modal
+function initializeImportSuccessModal() {
+    // Check if there are import details in session
+    @if(session('import_details'))
+        const importDetails = @json(session('import_details'));
+        showImportSuccessModal(importDetails);
+    @endif
+
+    // Close success modal handlers
+    document.getElementById('closeSuccessModalBtn')?.addEventListener('click', closeImportSuccessModal);
+    document.getElementById('closeSuccessModalBtn2')?.addEventListener('click', closeImportSuccessModal);
+    
+    // Download error log handler
+    document.getElementById('downloadErrorLogBtn')?.addEventListener('click', downloadErrorLog);
+}
+
+// Show import success modal
+function showImportSuccessModal(details) {
+    const modal = document.getElementById('importSuccessModal');
+    const content = document.getElementById('importSuccessContent');
+    const downloadBtn = document.getElementById('downloadErrorLogBtn');
+    
+    // Build content
+    let html = `
+        <div class="space-y-4">
+            <!-- Summary Card -->
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div class="flex items-center mb-3">
+                    <i data-lucide="file-check" class="w-5 h-5 text-green-600 mr-2"></i>
+                    <h4 class="font-semibold text-green-900">File: ${details.file_name}</h4>
+                </div>
+                <p class="text-sm text-green-700">Mode: ${getImportModeText(details.import_mode)}</p>
+                <p class="text-sm text-green-700">Waktu: ${details.import_timestamp}</p>
+            </div>
+
+            <!-- Statistics -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                    <div class="text-2xl font-bold text-blue-600">${details.import_stats.created}</div>
+                    <div class="text-sm text-blue-700">Data Baru</div>
+                </div>
+                <div class="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
+                    <div class="text-2xl font-bold text-purple-600">${details.import_stats.updated}</div>
+                    <div class="text-sm text-purple-700">Data Diupdate</div>
+                </div>
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center">
+                    <div class="text-2xl font-bold text-yellow-600">${details.import_stats.errors}</div>
+                    <div class="text-sm text-yellow-700">Error</div>
+                </div>
+                <div class="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                    <div class="text-2xl font-bold text-red-600">${details.import_stats.failures}</div>
+                    <div class="text-sm text-red-700">Gagal</div>
+                </div>
+            </div>
+    `;
+
+    // Show errors if any
+    if (details.import_errors && details.import_errors.length > 0) {
+        html += `
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h4 class="font-semibold text-yellow-900 mb-3 flex items-center">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 mr-2"></i>
+                    Error Details
+                </h4>
+                <div class="max-h-40 overflow-y-auto">
+                    <ul class="text-sm text-yellow-800 space-y-1">
+        `;
+        
+        details.import_errors.forEach(error => {
+            html += `<li>• ${error}</li>`;
+        });
+        
+        html += `
+                    </ul>
+                </div>
+            </div>
+        `;
+        
+        // Show download button
+        downloadBtn.classList.remove('hidden');
+    }
+
+    html += `</div>`;
+    
+    content.innerHTML = html;
+    modal.classList.remove('hidden');
+}
+
+// Close import success modal
+function closeImportSuccessModal() {
+    document.getElementById('importSuccessModal').classList.add('hidden');
+}
+
+// Get import mode text
+function getImportModeText(mode) {
+    const modes = {
+        'create_only': 'Tambah Data Baru',
+        'update_only': 'Update Data Existing',
+        'create_update': 'Tambah & Update Data'
+    };
+    return modes[mode] || mode;
+}
+
+// Download error log
+function downloadErrorLog() {
+    @if(session('import_details'))
+        const importDetails = @json(session('import_details'));
+        
+        if (importDetails.import_errors && importDetails.import_errors.length > 0) {
+            const errorLog = importDetails.import_errors.join('\n');
+            const blob = new Blob([errorLog], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `import_error_log_${new Date().toISOString().slice(0, 10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+    @endif
+}
 
 // Initialize search and filter functionality
 function initializeSearchAndFilter() {
@@ -576,46 +854,14 @@ function updatePaginationInfo(visibleCount) {
         }
     }
 
-    // Export function
-    function exportData() {
-        console.log('exportData function called');
-        // Get current filters
-        const jenisPegawai = document.getElementById('filterJenisPegawai').value;
-        const statusKepegawaian = document.getElementById('filterStatusKepegawaian').value;
-        const unitKerja = document.getElementById('filterUnitKerja').value;
-
-        // Build export URL with filters
-        let exportUrl = '{{ route("backend.kepegawaian-universitas.data-pegawai.export") }}';
-        const params = new URLSearchParams();
-
-        if (jenisPegawai) params.append('jenis_pegawai', jenisPegawai);
-        if (statusKepegawaian) params.append('status_kepegawaian', statusKepegawaian);
-        if (unitKerja) params.append('unit_kerja', unitKerja);
-
-        if (params.toString()) {
-            exportUrl += '?' + params.toString();
-        }
-
-        // Show loading
-        const exportBtn = document.querySelector('button[onclick="exportData()"]');
-        const originalText = exportBtn.innerHTML;
-        exportBtn.innerHTML = '<i data-lucide="loader-2" class="h-4 w-4 mr-1 sm:mr-2 animate-spin"></i><span class="hidden sm:inline">Exporting...</span><span class="sm:hidden">Export...</span>';
-        exportBtn.disabled = true;
-
-        // Download file
-        window.location.href = exportUrl;
-
-        // Reset button after delay
-        setTimeout(() => {
-            exportBtn.innerHTML = originalText;
-            exportBtn.disabled = false;
-        }, 2000);
-    }
 
     // Import modal functions
     function openImportModal() {
-        console.log('openImportModal function called');
-        document.getElementById('importModal').classList.remove('hidden');
+        // Open import modal
+        const modal = document.getElementById('importModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
     }
 
     function closeImportModal() {
@@ -660,7 +906,7 @@ function updatePaginationInfo(visibleCount) {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            // Error occurred during import
             alert('Terjadi kesalahan saat preview data');
         })
         .finally(() => {
@@ -700,6 +946,40 @@ function updatePaginationInfo(visibleCount) {
     }
 }
 </script>
+
+<!-- Import Success Modal -->
+<div id="importSuccessModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-10 sm:top-20 mx-auto p-4 sm:p-5 border w-11/12 md:w-2/3 lg:w-1/2 shadow-lg rounded-md bg-white max-h-[90vh] force-scrollbar">
+        <div class="mt-3">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base sm:text-lg font-semibold text-green-900 flex items-center">
+                    <i data-lucide="check-circle" class="w-5 h-5 mr-2 text-green-600"></i>
+                    Import Berhasil
+                </h3>
+                <button id="closeSuccessModalBtn" class="text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="h-5 w-5 sm:h-6 sm:w-6"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div id="importSuccessContent">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 mt-6">
+                <button id="downloadErrorLogBtn" class="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition duration-200 text-sm sm:text-base hidden">
+                    <i data-lucide="download" class="h-4 w-4 mr-2 inline"></i>
+                    Download Error Log
+                </button>
+                <button id="closeSuccessModalBtn2" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-200 text-sm sm:text-base">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Import Modal -->
 <div id="importModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
@@ -994,6 +1274,7 @@ function updatePaginationInfo(visibleCount) {
         const checkedBoxes = document.querySelectorAll('.pegawai-checkbox:checked');
         return Array.from(checkedBoxes).map(checkbox => checkbox.value);
     }
+
 </script>
 
 @endpush

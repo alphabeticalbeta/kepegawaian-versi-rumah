@@ -21,12 +21,67 @@ class UnitKerjaController extends Controller
         $this->validationService = $validationService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        // Fetch all hierarchical data
-        $unitKerjas = UnitKerja::with(['subUnitKerjas.subSubUnitKerjas'])
-            ->orderBy('nama')
-            ->get();
+        // Query builder dengan search dan filter
+        $query = UnitKerja::with(['subUnitKerjas.subSubUnitKerjas'])
+            ->when($request->search, function ($q, $search) {
+                return $q->where(function($query) use ($search) {
+                    $query->where('nama', 'like', "%{$search}%")
+                          ->orWhereHas('subUnitKerjas', function($subQuery) use ($search) {
+                              $subQuery->where('nama', 'like', "%{$search}%")
+                                       ->orWhereHas('subSubUnitKerjas', function($subSubQuery) use ($search) {
+                                           $subSubQuery->where('nama', 'like', "%{$search}%");
+                                       });
+                          });
+                });
+            })
+            ->when($request->level, function ($q, $level) {
+                switch ($level) {
+                    case 'unit_kerja':
+                        return $q->whereDoesntHave('subUnitKerjas');
+                    case 'sub_unit_kerja':
+                        return $q->whereHas('subUnitKerjas', function($query) {
+                            $query->whereDoesntHave('subSubUnitKerjas');
+                        });
+                    case 'sub_sub_unit_kerja':
+                        return $q->whereHas('subUnitKerjas.subSubUnitKerjas');
+                }
+            })
+            ->orderBy('nama');
+
+        $unitKerjas = $query->get();
+
+        // Handle AJAX request
+        if ($request->ajax()) {
+            $data = $unitKerjas->map(function($unitKerja) {
+                return [
+                    'id' => $unitKerja->id,
+                    'nama' => $unitKerja->nama,
+                    'level' => 'unit_kerja',
+                    'sub_unit_kerjas' => $unitKerja->subUnitKerjas->map(function($subUnitKerja) {
+                        return [
+                            'id' => $subUnitKerja->id,
+                            'nama' => $subUnitKerja->nama,
+                            'level' => 'sub_unit_kerja',
+                            'sub_sub_unit_kerjas' => $subUnitKerja->subSubUnitKerjas->map(function($subSubUnitKerja) {
+                                return [
+                                    'id' => $subSubUnitKerja->id,
+                                    'nama' => $subSubUnitKerja->nama,
+                                    'level' => 'sub_sub_unit_kerja'
+                                ];
+                            })
+                        ];
+                    })
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'total' => $unitKerjas->count()
+            ]);
+        }
 
         return view('backend.layouts.views.kepegawaian-universitas.unitkerja.master-data-unitkerja', compact('unitKerjas'));
     }
