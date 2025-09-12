@@ -178,10 +178,92 @@
     .fade-in {
         animation: fadeIn 0.3s ease-in-out;
     }
+
+    /* Modern Notification Styles */
+    #notificationContainer {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        max-width: 400px;
+    }
+
+    .notification {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        margin-bottom: 12px;
+        transform: translateX(100%);
+        opacity: 0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-left: 4px solid;
+        overflow: hidden;
+    }
+
+    .notification.show {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    .notification.success {
+        border-left-color: #10b981;
+    }
+
+    .notification.error {
+        border-left-color: #ef4444;
+    }
+
+    .notification-content {
+        display: flex;
+        align-items: center;
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .notification-icon {
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+    }
+
+    .notification.success .notification-icon {
+        color: #10b981;
+    }
+
+    .notification.error .notification-icon {
+        color: #ef4444;
+    }
+
+    .notification-text {
+        flex: 1;
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+        line-height: 1.4;
+    }
+
+    .notification-close {
+        flex-shrink: 0;
+        background: none;
+        border: none;
+        color: #9ca3af;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .notification-close:hover {
+        color: #6b7280;
+        background: #f3f4f6;
+    }
 </style>
 @endpush
 
 @section('content')
+<!-- Notification Container -->
+<div id="notificationContainer"></div>
+
 <div class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
     <!-- Header Section -->
     <div class="relative overflow-hidden shadow-2xl">
@@ -267,36 +349,146 @@
                                 <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold text-center tracking-wider w-32">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="informasiTableBody" class="bg-white divide-y divide-gray-200">
-                            <!-- Data will be loaded here -->
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @forelse($informasi as $index => $item)
+                            <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-center text-sm text-gray-900">
+                                    {{ $informasi->firstItem() + $index }}
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-center">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $item->jenis === 'berita' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' }}">
+                                        {{ $item->jenis === 'berita' ? 'Berita' : 'Pengumuman' }}
+                                    </span>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 text-sm text-gray-900 max-w-xs">
+                                    <div class="font-medium text-gray-900 truncate" title="{{ $item->judul }}">
+                                        {{ $item->judul }}
+                                    </div>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-center text-sm text-gray-900">
+                                    {{ $item->nomor_surat ?? '-' }}
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-center">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $item->status === 'published' ? 'bg-green-100 text-green-800' : ($item->status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                        {{ $item->status === 'published' ? 'Published' : ($item->status === 'draft' ? 'Draft' : 'Archived') }}
+                                    </span>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-center">
+                                    <div class="flex flex-col space-y-1">
+                                        @if($item->is_featured)
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Featured</span>
+                                        @endif
+                                        @if($item->is_pinned)
+                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Pinned</span>
+                                        @endif
+                                        @if(!$item->is_featured && !$item->is_pinned)
+                                            <span class="text-gray-400 text-xs">-</span>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                    {{ \Carbon\Carbon::parse($item->created_at)->format('d/m/Y') }}
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-center">
+                                    @if($item->lampiran && count($item->lampiran) > 0)
+                                        @php
+                                            $firstFile = is_array($item->lampiran[0]) ? $item->lampiran[0]['path'] : $item->lampiran[0];
+                                        @endphp
+                                        <a href="{{ route('admin-universitas.informasi.download', ['id' => $item->id, 'filename' => $firstFile]) }}" target="_blank"
+                                           class="inline-flex items-center px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                                           title="Lihat Lampiran">
+                                            <i data-lucide="eye" class="h-3 w-3 sm:h-4 sm:w-4 mr-1"></i>
+                                            <span class="hidden sm:inline">Lihat</span>
+                                        </a>
+                                    @else
+                                        <span class="text-gray-400 text-xs">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
+                                    <div class="flex items-center justify-center space-x-2">
+                                        <button onclick="editInformasi({{ $item->id }})" class="edit-btn inline-flex items-center px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg" data-id="{{ $item->id }}" style="position: relative; z-index: 10;"
+                                                title="Edit"
+                                                data-judul="{{ htmlspecialchars($item->judul, ENT_QUOTES, 'UTF-8') }}"
+                                                data-konten="{{ htmlspecialchars($item->konten, ENT_QUOTES, 'UTF-8') }}"
+                                                data-jenis="{{ htmlspecialchars($item->jenis, ENT_QUOTES, 'UTF-8') }}"
+                                                data-nomor-surat="{{ htmlspecialchars($item->nomor_surat, ENT_QUOTES, 'UTF-8') }}"
+                                                data-tanggal-surat="{{ $item->tanggal_surat }}"
+                                                data-penulis="{{ htmlspecialchars($item->penulis, ENT_QUOTES, 'UTF-8') }}"
+                                                data-status="{{ htmlspecialchars($item->status, ENT_QUOTES, 'UTF-8') }}"
+                                                data-tanggal-publish="{{ $item->tanggal_publish }}"
+                                                data-tanggal-berakhir="{{ $item->tanggal_berakhir }}"
+                                                data-is-featured="{{ $item->is_featured ? 'true' : 'false' }}"
+                                                data-is-pinned="{{ $item->is_pinned ? 'true' : 'false' }}"
+                                                data-thumbnail="{{ htmlspecialchars($item->thumbnail, ENT_QUOTES, 'UTF-8') }}"
+                                                data-lampiran="{{ base64_encode(json_encode($item->lampiran)) }}">
+                                            <i data-lucide="edit" class="h-3 w-3 sm:h-4 sm:w-4 mr-1"></i>
+                                            <span class="hidden sm:inline">Edit</span>
+                                        </button>
+                                        <button onclick="deleteInformasi({{ $item->id }})" class="delete-btn inline-flex items-center px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-red-600 to-pink-600 rounded-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg" data-id="{{ $item->id }}" style="position: relative; z-index: 10;"
+                                                title="Hapus">
+                                            <i data-lucide="trash-2" class="h-3 w-3 sm:h-4 sm:w-4 mr-1"></i>
+                                            <span class="hidden sm:inline">Hapus</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                                    <div class="flex flex-col items-center">
+                                        <i data-lucide="file-text" class="h-10 w-10 text-gray-300 mb-3"></i>
+                                        <p class="text-base font-medium">Belum ada data</p>
+                                        <p class="text-sm">Data berita dan pengumuman akan ditampilkan di sini</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
             </div>
 
             <!-- Pagination -->
-            <div id="paginationContainer" class="bg-white rounded-2xl shadow-xl overflow-hidden mt-6">
+            @if($informasi->hasPages())
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden mt-6">
                 <div class="px-4 py-4 flex items-center justify-between">
                     <div class="flex items-center text-sm text-gray-700">
-                        <span id="paginationInfo">Menampilkan 0 dari 0 data</span>
+                        <span>Menampilkan {{ $informasi->firstItem() ?? 0 }} - {{ $informasi->lastItem() ?? 0 }} dari {{ $informasi->total() }} data</span>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <button id="prevPageBtn" onclick="changePage(currentPage - 1)"
-                                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                                disabled>
+                        @if($informasi->onFirstPage())
+                            <span class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 border border-gray-300 rounded-md cursor-not-allowed">
                             <i data-lucide="chevron-left" class="h-4 w-4"></i>
-                        </button>
-                        <div id="pageNumbers" class="flex space-x-1">
-                            <!-- Page numbers will be generated here -->
+                            </span>
+                        @else
+                            <a href="{{ $informasi->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200">
+                                <i data-lucide="chevron-left" class="h-4 w-4"></i>
+                            </a>
+                        @endif
+
+                        <div class="flex space-x-1">
+                            @foreach($informasi->getUrlRange(1, $informasi->lastPage()) as $page => $url)
+                                @if($page == $informasi->currentPage())
+                                    <span class="px-3 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg shadow-md">{{ $page }}</span>
+                                @else
+                                    <a href="{{ $url }}" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all duration-200">{{ $page }}</a>
+                                @endif
+                            @endforeach
                         </div>
-                        <button id="nextPageBtn" onclick="changePage(currentPage + 1)"
-                                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                                disabled>
+
+                        @if($informasi->hasMorePages())
+                            <a href="{{ $informasi->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200">
                             <i data-lucide="chevron-right" class="h-4 w-4"></i>
-                        </button>
+                            </a>
+                        @else
+                            <span class="px-3 py-2 text-sm font-medium text-gray-400 bg-gray-100 border border-gray-300 rounded-md cursor-not-allowed">
+                                <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                            </span>
+                        @endif
                     </div>
                 </div>
             </div>
+            @endif
         </div>
     </div>
 </div>
@@ -316,6 +508,7 @@
             <!-- Modal Body -->
             <form id="informasiForm" class="mt-6" enctype="multipart/form-data">
                 <input type="hidden" id="editId" name="id">
+                <input type="hidden" id="formMethod" name="_method" value="POST">
 
                 <div class="space-y-6">
                     <!-- Jenis -->
@@ -564,11 +757,6 @@
 // Global variables
 let currentEditId = null;
 let editor = null;
-let informasiData = [];
-let currentPage = 1;
-let totalPages = 1;
-let totalData = 0;
-let currentSearch = '';
 
 // Escape HTML function for security
 function escapeHtml(text) {
@@ -585,11 +773,25 @@ function escapeHtml(text) {
     return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
+// Debounce function
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     initializeForm();
     initializeRichTextEditor();
-    loadInformasiData();
+    initializeSearchAndFilter();
+    lucide.createIcons();
 });
 
 // Initialize form
@@ -599,42 +801,37 @@ function initializeForm() {
         form.addEventListener('submit', handleFormSubmit);
     }
 
-    // Initialize search input with real-time filtering
+    // Event listeners are now handled via onclick attributes
+}
+
+// Initialize search and filter with auto-submit
+function initializeSearchAndFilter() {
     const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', debounce(function(e) {
-            currentSearch = e.target.value.trim();
-
-            // If search is empty, load all data immediately
-            if (currentSearch === '') {
-                loadInformasiData(1);
-            } else {
-                // Only search if there's actual content
-                loadInformasiData(1);
-            }
-        }, 300));
-    }
-
-    // Initialize filter dropdowns with real-time filtering
     const filterJenis = document.getElementById('filterJenis');
     const filterStatus = document.getElementById('filterStatus');
     const filterSpecial = document.getElementById('filterSpecial');
 
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(function() {
+            document.getElementById('filterForm').submit();
+        }, 500));
+    }
+
     if (filterJenis) {
         filterJenis.addEventListener('change', function() {
-            loadInformasiData(1); // Reset to page 1 when filtering
+            document.getElementById('filterForm').submit();
         });
     }
 
     if (filterStatus) {
         filterStatus.addEventListener('change', function() {
-            loadInformasiData(1); // Reset to page 1 when filtering
+            document.getElementById('filterForm').submit();
         });
     }
 
     if (filterSpecial) {
         filterSpecial.addEventListener('change', function() {
-            loadInformasiData(1); // Reset to page 1 when filtering
+            document.getElementById('filterForm').submit();
         });
     }
 }
@@ -743,182 +940,43 @@ function togglePengumumanFields() {
     }
 }
 
-// Generate nomor surat
-async function generateNomorSurat() {
-    try {
-        const response = await fetch('/informasi-simple/generate-nomor-surat', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({
-                unit: 'KEU',
-                tahun: new Date().getFullYear()
-            })
-        });
+// Generate nomor surat - now uses form submission
+function generateNomorSurat() {
+    // This will be handled by the form submission to the controller
+    // The controller will generate the nomor surat and redirect back with the value
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ route("admin-universitas.informasi.generate-nomor-surat") }}';
 
-        const result = await response.json();
-        if (result.success) {
-            document.getElementById('nomor_surat').value = result.nomor_surat;
-        } else {
-            showInformasiError('Gagal generate nomor surat');
-        }
-    } catch (error) {
-        showInformasiError('Terjadi kesalahan saat generate nomor surat');
-    }
+    const csrfToken = document.createElement('input');
+    csrfToken.type = 'hidden';
+    csrfToken.name = '_token';
+    csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    const unitInput = document.createElement('input');
+    unitInput.type = 'hidden';
+    unitInput.name = 'unit';
+    unitInput.value = 'KEU';
+
+    const tahunInput = document.createElement('input');
+    tahunInput.type = 'hidden';
+    tahunInput.name = 'tahun';
+    tahunInput.value = new Date().getFullYear();
+
+    form.appendChild(csrfToken);
+    form.appendChild(unitInput);
+    form.appendChild(tahunInput);
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
 }
 
-// Load informasi data (legacy function - now uses pagination)
-async function loadInformasiData(page = 1) {
-    try {
-        // Show loading animation
-        showTableLoading();
+// Data loading is now handled by server-side rendering
+// No need for AJAX data loading functions
 
-        const params = new URLSearchParams({
-            page: page,
-            per_page: 10,
-            search: currentSearch,
-            jenis: document.getElementById('filterJenis')?.value || '',
-            status: document.getElementById('filterStatus')?.value || '',
-            special: document.getElementById('filterSpecial')?.value || ''
-        });
-
-        const response = await fetch(`/informasi-simple/data?${params}`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        });
-
-        if (response.ok) {
-            const result = await response.json();
-
-            if (result.success) {
-                // Store data globally for edit functionality
-                informasiData = result.data;
-                window.currentInformasiData = result.data;
-
-                // Add delay for smooth animation
-                setTimeout(() => {
-                    displayInformasiData();
-                    updatePagination(result);
-                    hideTableLoading();
-                }, 200);
-            } else {
-                hideTableLoading();
-                showInformasiError('Gagal memuat data');
-            }
-        } else {
-            hideTableLoading();
-            showInformasiError('Gagal memuat data informasi');
-        }
-    } catch (error) {
-        hideTableLoading();
-        showInformasiError('Terjadi kesalahan saat memuat data');
-    }
-}
-
-// Display informasi data
-function displayInformasiData() {
-    const tbody = document.getElementById('informasiTableBody');
-
-    if (!tbody) {
-        return;
-    }
-
-    // Add fade-in animation class
-    tbody.classList.add('fade-in');
-
-    if (informasiData.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" class="px-4 py-8 text-center text-gray-500">
-                    <div class="flex flex-col items-center">
-                        <i data-lucide="file-text" class="h-10 w-10 text-gray-300 mb-3"></i>
-                        <p class="text-base font-medium">Belum ada data</p>
-                        <p class="text-sm">Data berita dan pengumuman akan ditampilkan di sini</p>
-                    </div>
-                </td>
-            </tr>
-        `;
-        return;
-    }
-
-    tbody.innerHTML = informasiData.map((item, index) => `
-        <tr class="hover:bg-gray-50 transition-all duration-200 animate-fade-in" style="animation-delay: ${index * 50}ms">
-            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
-                ${index + 1}
-            </td>
-            <td class="px-4 py-3 whitespace-nowrap text-center">
-                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    item.jenis === 'berita' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                }">
-                    ${item.jenis === 'berita' ? 'Berita' : 'Pengumuman'}
-                </span>
-            </td>
-            <td class="px-4 py-3">
-                <div class="text-sm font-medium text-gray-900" title="${escapeHtml(item.judul)}">
-                    ${escapeHtml(item.judul)}
-                </div>
-            </td>
-            <td class="px-4 py-3 whitespace-nowrap text-center">
-                <div class="text-sm text-gray-900">
-                    ${escapeHtml(item.nomor_surat) || '-'}
-                </div>
-            </td>
-            <td class="px-4 py-3 whitespace-nowrap">
-                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    item.status === 'published' ? 'bg-green-100 text-green-800' :
-                    item.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                }">
-                    ${item.status === 'published' ? 'Published' :
-                      item.status === 'draft' ? 'Draft' : 'Archived'}
-                </span>
-            </td>
-            <td class="px-4 py-3 whitespace-nowrap text-center">
-                <div class="flex space-x-1">
-                    ${item.is_featured ? '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Featured</span>' : ''}
-                    ${item.is_pinned ? '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Pinned</span>' : ''}
-                    ${!item.is_featured && !item.is_pinned ? '<span class="text-gray-400 text-xs">-</span>' : ''}
-                </div>
-            </td>
-            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                ${formatDate(item.created_at)}
-            </td>
-            <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
-                ${item.lampiran && item.lampiran.length > 0 ?
-                    item.lampiran.map((file, index) =>
-                        `<a href="/lampiran/${escapeHtml(file.path)}" target="_blank" class="inline-flex items-center px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 mr-1" title="Buka ${escapeHtml(file.name)}"><i data-lucide="paperclip" class="h-3 w-3 mr-1"></i>Lihat Dokumen${item.lampiran.length > 1 ? ' ' + (index + 1) : ''}</a>`
-                    ).join('')
-                    : '<span class="text-gray-400 text-xs">-</span>'}
-            </td>
-            <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
-                <button onclick="editInformasi(${escapeHtml(item.id)})"
-                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg mr-2"
-                        title="Edit">
-                    <i data-lucide="edit" class="h-4 w-4 mr-2"></i>
-                    Edit
-                </button>
-                <button onclick="deleteInformasi(${escapeHtml(item.id)})"
-                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-pink-600 rounded-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg"
-                        title="Hapus">
-                    <i data-lucide="trash-2" class="h-4 w-4 mr-2"></i>
-                    Hapus
-                </button>
-            </td>
-        </tr>
-    `).join('');
-
-    // Reinitialize Lucide icons
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-}
+// Data display is now handled by server-side rendering
+// No need for client-side data display functions
 
 
 // Format date
@@ -931,37 +989,7 @@ function formatDate(dateString) {
     });
 }
 
-// Open modal
-function openModal() {
-    currentEditId = null;
-    document.getElementById('modalTitle').textContent = 'Tambah Informasi';
-    document.getElementById('informasiForm').reset();
-    document.getElementById('editId').value = '';
-    document.getElementById('editor').innerHTML = '';
-    document.getElementById('konten').value = '';
-    document.getElementById('pengumumanFields').classList.add('hidden');
-
-    // Reset pengumuman fields
-    const nomorSuratField = document.getElementById('nomor_surat');
-    const tanggalSuratField = document.getElementById('tanggal_surat');
-    if (nomorSuratField) nomorSuratField.value = '';
-    if (tanggalSuratField) tanggalSuratField.value = '';
-
-    // Hide current file displays
-    document.getElementById('currentThumbnail').classList.add('hidden');
-    document.getElementById('currentAttachments').classList.add('hidden');
-
-    const modal = document.getElementById('informasiModal');
-    const modalContent = document.getElementById('modalContent');
-
-    modal.classList.remove('hidden');
-
-    // Trigger animation
-    setTimeout(() => {
-        modalContent.classList.remove('scale-95', 'opacity-0');
-        modalContent.classList.add('scale-100', 'opacity-100');
-    }, 10);
-}
+// Old openModal function removed - using new one below
 
 // Close modal
 function closeModal() {
@@ -1004,77 +1032,7 @@ function resetForm() {
     togglePengumumanFields();
 }
 
-// Display current files in edit mode
-function displayCurrentFiles(item) {
-    // Display thumbnail
-    if (item.thumbnail) {
-        const thumbnailDiv = document.getElementById('currentThumbnail');
-        const thumbnailPreview = document.getElementById('thumbnailPreview');
-        const thumbnailName = document.getElementById('thumbnailName');
-        const thumbnailDownload = document.getElementById('thumbnailDownload');
-
-        // Extract filename from path
-        const filename = item.thumbnail.split('/').pop();
-
-        // Use the same route as lampiran for thumbnail access
-        const thumbnailUrl = `/lampiran/${escapeHtml(filename)}`;
-
-        thumbnailPreview.src = thumbnailUrl;
-        thumbnailName.textContent = escapeHtml(filename);
-        thumbnailDownload.href = thumbnailUrl;
-
-        thumbnailDiv.classList.remove('hidden');
-    } else {
-        document.getElementById('currentThumbnail').classList.add('hidden');
-    }
-
-    // Display attachments
-    if (item.lampiran && item.lampiran.length > 0) {
-        const attachmentsDiv = document.getElementById('currentAttachments');
-        const attachmentsList = document.getElementById('attachmentsList');
-
-        attachmentsList.innerHTML = '';
-
-        item.lampiran.forEach((file, index) => {
-            const attachmentItem = document.createElement('div');
-            attachmentItem.className = 'flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border';
-
-            // Get file extension for icon
-            const fileExt = file.name.split('.').pop().toLowerCase();
-            let iconClass = 'file';
-            if (fileExt === 'pdf') iconClass = 'file-text';
-            else if (['doc', 'docx'].includes(fileExt)) iconClass = 'file-text';
-
-            attachmentItem.innerHTML = `
-                <div class="flex-shrink-0">
-                    <div class="h-10 w-10 bg-gray-200 rounded-lg flex items-center justify-center">
-                        <i data-lucide="${iconClass}" class="h-5 w-5 text-gray-600"></i>
-                    </div>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-900 truncate">${escapeHtml(file.name)}</p>
-                    <p class="text-xs text-gray-500">${formatFileSize(file.size)}</p>
-                </div>
-                <a href="/lampiran/${escapeHtml(file.path)}" target="_blank"
-                   class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    <i data-lucide="download" class="h-3 w-3 mr-1"></i>
-                    Download
-                </a>
-            `;
-
-            attachmentsList.appendChild(attachmentItem);
-        });
-
-        attachmentsDiv.classList.remove('hidden');
-
-        // Re-initialize Lucide icons for new elements
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
-    } else {
-        document.getElementById('currentAttachments').classList.add('hidden');
-    }
-}
+// Old displayCurrentFiles function removed - using new one below
 
 // Format file size
 function formatFileSize(bytes) {
@@ -1085,199 +1043,127 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-// Edit informasi
-function editInformasi(id) {
-    const item = informasiData.find(item => item.id === id);
-    if (!item) return;
+// Old editInformasi function removed - using new one below
 
-    // Edit item data
+// Delete informasi with modern confirmation modal
+function deleteInformasi(id) {
+    // Create confirmation modal
+    const modal = document.createElement('div');
+    modal.id = 'confirmationModal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 transform transition-all duration-300 scale-95 opacity-0" id="confirmationModalContent">
+            <div class="p-6">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 text-center mb-2">Konfirmasi Hapus</h3>
+                <p class="text-sm text-gray-500 text-center mb-6">Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.</p>
+                <div class="flex space-x-3">
+                    <button type="button" id="cancelDelete" class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200">
+                        Batal
+                    </button>
+                    <button type="button" id="confirmDelete" class="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200">
+                        Ya, Hapus
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
 
-    currentEditId = id;
-    document.getElementById('modalTitle').textContent = 'Edit Informasi';
-    document.getElementById('editId').value = item.id;
-    document.getElementById('jenis').value = item.jenis;
-    document.getElementById('judul').value = item.judul;
-    document.getElementById('editor').innerHTML = escapeHtml(item.konten);
-    document.getElementById('konten').value = item.konten;
-    document.getElementById('status').value = item.status;
+    document.body.appendChild(modal);
 
-    // Apply toggle first to show/hide pengumuman fields
-    togglePengumumanFields();
-
-    // Add small delay to ensure modal is fully rendered
+    // Animate modal in
     setTimeout(() => {
-    // Check if elements exist before setting values
-    const penulisField = document.getElementById('penulis');
-    const tagsField = document.getElementById('tags');
-    const tanggalField = document.getElementById('tanggal_publish');
-    const tanggalBerakhirField = document.getElementById('tanggal_berakhir');
-
-    // Field validation
-
-    if (penulisField) {
-        penulisField.value = item.penulis || '';
-    }
-
-    if (tagsField) {
-        tagsField.value = item.tags ? item.tags.join(', ') : '';
-    }
-
-    // Handle tanggal_publish format
-    if (tanggalField && item.tanggal_publish) {
-        // Convert from "2025-09-07T17:41:00.000000Z" to "2025-09-07T17:41"
-        const dateStr = item.tanggal_publish.replace('T', 'T').substring(0, 16);
-        tanggalField.value = dateStr;
-    } else if (tanggalField) {
-        tanggalField.value = '';
-    }
-
-    // Handle tanggal_berakhir format
-    if (tanggalBerakhirField && item.tanggal_berakhir) {
-        // Convert from "2025-09-07T17:41:00.000000Z" to "2025-09-07T17:41"
-        const dateStr = item.tanggal_berakhir.replace('T', 'T').substring(0, 16);
-        tanggalBerakhirField.value = dateStr;
-    } else if (tanggalBerakhirField) {
-        tanggalBerakhirField.value = '';
-    }
-
-    document.getElementById('is_featured').checked = item.is_featured;
-    document.getElementById('is_pinned').checked = item.is_pinned;
-
-    // Handle pengumuman fields
-    if (item.jenis === 'pengumuman') {
-        const nomorSuratField = document.getElementById('nomor_surat');
-        const tanggalSuratField = document.getElementById('tanggal_surat');
-
-        if (nomorSuratField) {
-            nomorSuratField.value = item.nomor_surat || '';
-        }
-
-        if (tanggalSuratField) {
-            // Handle tanggal_surat format
-            if (item.tanggal_surat) {
-                // Convert from "2025-09-07T00:00:00.000000Z" to "2025-09-07" (date format)
-                const dateStr = item.tanggal_surat.substring(0, 10);
-                tanggalSuratField.value = dateStr;
-            } else {
-                tanggalSuratField.value = '';
-            }
-        }
-    }
-
-    // Display current files
-    displayCurrentFiles(item);
-    }, 100); // End setTimeout
-
-    const modal = document.getElementById('informasiModal');
-    const modalContent = document.getElementById('modalContent');
-
-    modal.classList.remove('hidden');
-
-    // Trigger animation
-    setTimeout(() => {
+        const modalContent = document.getElementById('confirmationModalContent');
         modalContent.classList.remove('scale-95', 'opacity-0');
         modalContent.classList.add('scale-100', 'opacity-100');
     }, 10);
-}
 
-// Delete informasi
-function deleteInformasi(id) {
-    Swal.fire({
-        title: 'Apakah Anda yakin?',
-        text: 'Data yang dihapus tidak dapat dikembalikan!',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Ya, hapus!',
-        cancelButtonText: 'Batal',
-        customClass: {
-            popup: 'bg-gray-800 text-white',
-            title: 'text-white',
-            content: 'text-gray-300',
-            confirmButton: 'bg-red-600 hover:bg-red-700 text-white',
-            cancelButton: 'bg-gray-600 hover:bg-gray-700 text-white'
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            fetch(`/informasi-simple/${escapeHtml(id)}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({ _method: 'DELETE' })
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    loadInformasiData();
-                    showInformasiSuccess('Data berhasil dihapus');
-                } else {
-                    showInformasiError('Terjadi kesalahan saat menghapus data');
-                }
-            })
-            .catch(error => {
-                showInformasiError('Terjadi kesalahan saat menghapus data');
-            });
+    // Handle cancel
+    document.getElementById('cancelDelete').addEventListener('click', () => {
+        closeConfirmationModal();
+    });
+
+    // Handle confirm
+    document.getElementById('confirmDelete').addEventListener('click', (e) => {
+        // Add loading animation to button
+        const confirmButton = e.target;
+        const originalText = confirmButton.textContent;
+        confirmButton.disabled = true;
+        confirmButton.classList.add('opacity-75', 'cursor-not-allowed', 'animate-pulse');
+        confirmButton.innerHTML = '<i class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></i>Menghapus...';
+
+        // Create form for DELETE request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `{{ route('admin-universitas.informasi.destroy', ':id') }}`.replace(':id', id);
+
+        const csrfToken = document.createElement('input');
+        csrfToken.type = 'hidden';
+        csrfToken.name = '_token';
+        csrfToken.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.value = 'DELETE';
+
+        form.appendChild(csrfToken);
+        form.appendChild(methodInput);
+
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+
+        closeConfirmationModal();
+    });
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeConfirmationModal();
         }
     });
 }
 
-// Handle form submission
-function handleFormSubmit(event) {
-    event.preventDefault();
+function closeConfirmationModal() {
+    const modal = document.getElementById('confirmationModal');
+    if (modal) {
+        const modalContent = document.getElementById('confirmationModalContent');
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        modalContent.classList.add('scale-95', 'opacity-0');
 
+        setTimeout(() => {
+            document.body.removeChild(modal);
+        }, 300);
+    }
+}
+
+// Handle form submission - now uses server-side rendering
+function handleFormSubmit(event) {
     // Update hidden content before submit
     updateHiddenContent();
 
-    const formData = new FormData(event.target);
-    const isEdit = currentEditId !== null;
-    const url = isEdit ? `/informasi-simple/${escapeHtml(currentEditId)}` : '/informasi-simple';
+    // Show loading state with animation
+    const submitButton = event.target.querySelector('button[type="submit"]');
+    const submitText = submitButton.querySelector('#submitText');
+    const submitLoader = submitButton.querySelector('#submitLoader');
 
-    if (isEdit) {
-        formData.append('_method', 'PUT');
+    if (submitButton && submitText && submitLoader) {
+        submitButton.disabled = true;
+        submitButton.classList.add('opacity-75', 'cursor-not-allowed');
+        submitText.textContent = 'Menyimpan...';
+        submitLoader.classList.remove('hidden');
+
+        // Add pulse animation
+        submitButton.classList.add('animate-pulse');
     }
 
-    showSubmitLoading(true);
-
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: formData
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(result => {
-        if (result.success) {
-            closeModal();
-            loadInformasiData();
-            showInformasiSuccess('Data berhasil disimpan');
-        } else {
-            // Handle validation errors
-            if (result.errors) {
-                showInformasiError('Validasi gagal. Silakan periksa kembali data yang dimasukkan.');
-            } else {
-                showInformasiError('Terjadi kesalahan saat menyimpan data');
-            }
-        }
-    })
-    .catch(error => {
-        showInformasiError('Terjadi kesalahan saat menyimpan data');
-    })
-    .finally(() => {
-        showSubmitLoading(false);
-    });
+    // Let the form submit naturally (server-side)
+    // The form will redirect back with success/error messages
 }
 
 // Show submit loading
@@ -1343,97 +1229,8 @@ function hideTableLoading() {
     }
 }
 
-// Pagination functions
-function updatePagination(data) {
-    currentPage = data.current_page;
-    totalPages = data.last_page;
-    totalData = data.total;
-
-    // Update pagination
-
-    const container = document.getElementById('paginationContainer');
-    const pageNumbers = document.getElementById('pageNumbers');
-    const prevBtn = document.getElementById('prevPageBtn');
-    const nextBtn = document.getElementById('nextPageBtn');
-
-    // Pagination elements validation
-
-    // Show/hide pagination
-    if (totalPages > 1) {
-        container.classList.add('show');
-    } else {
-        container.classList.remove('show');
-    }
-
-    // Update pagination info
-    const startItem = (currentPage - 1) * 10 + 1;
-    const endItem = Math.min(currentPage * 10, totalData);
-    document.getElementById('paginationInfo').textContent =
-        `Menampilkan ${escapeHtml(startItem)}-${escapeHtml(endItem)} dari ${escapeHtml(totalData)} data`;
-
-    // Update page numbers
-    pageNumbers.innerHTML = '';
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, currentPage + 2);
-
-    for (let i = startPage; i <= endPage; i++) {
-        const pageBtn = document.createElement('button');
-        pageBtn.textContent = i;
-        pageBtn.className = `px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-            i === currentPage
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 hover:shadow-sm'
-        }`;
-        pageBtn.onclick = (e) => {
-            e.target.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                e.target.style.transform = '';
-            }, 150);
-            changePage(i);
-        };
-        pageNumbers.appendChild(pageBtn);
-    }
-
-    // Update prev/next buttons
-    prevBtn.disabled = currentPage === 1;
-    nextBtn.disabled = currentPage === totalPages;
-    prevBtn.onclick = (e) => {
-        if (currentPage > 1) {
-            e.target.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                e.target.style.transform = '';
-            }, 150);
-            changePage(currentPage - 1);
-        }
-    };
-    nextBtn.onclick = (e) => {
-        if (currentPage < totalPages) {
-            e.target.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                e.target.style.transform = '';
-            }, 150);
-            changePage(currentPage + 1);
-        }
-    };
-}
-
-function changePage(page) {
-    if (page < 1 || page > totalPages || page === currentPage) {
-        return;
-    }
-
-    // Add click animation to the clicked button
-    const clickedButton = event.target.closest('button');
-    if (clickedButton) {
-        clickedButton.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            clickedButton.style.transform = '';
-        }, 150);
-    }
-
-    currentPage = page;
-    loadInformasiData(page);
-}
+// Pagination is now handled by server-side rendering
+// No need for client-side pagination functions
 
 // Debounce function
 function debounce(func, wait) {
@@ -1447,6 +1244,350 @@ function debounce(func, wait) {
         timeout = setTimeout(later, wait);
     };
 }
+
+// Open modal function
+function openModal(isEdit = false) {
+    console.log('openModal called with isEdit:', isEdit);
+
+    const modal = document.getElementById('informasiModal');
+    const modalContent = document.getElementById('modalContent');
+    const modalTitle = document.getElementById('modalTitle');
+    const form = document.getElementById('informasiForm');
+    const formMethod = document.getElementById('formMethod');
+
+    console.log('Modal elements found:', {
+        modal: !!modal,
+        modalContent: !!modalContent,
+        modalTitle: !!modalTitle,
+        form: !!form,
+        formMethod: !!formMethod
+    });
+
+    if (modal && modalContent && modalTitle && form && formMethod) {
+        if (isEdit) {
+            modalTitle.textContent = 'Edit Informasi';
+            formMethod.value = 'PUT';
+    } else {
+            modalTitle.textContent = 'Tambah Informasi';
+            formMethod.value = 'POST';
+            form.reset();
+
+            // Reset editor content
+            const editorElement = document.getElementById('editor');
+            const kontenInput = document.getElementById('konten');
+            if (editorElement) editorElement.innerHTML = '';
+            if (kontenInput) kontenInput.value = '';
+
+            // Hide current files for new entry
+            hideCurrentFiles();
+        }
+
+        modal.classList.remove('hidden');
+        console.log('Modal hidden class removed');
+        setTimeout(() => {
+            modalContent.classList.add('scale-100', 'opacity-100');
+            console.log('Modal animation classes added');
+        }, 10);
+    } else {
+        console.error('Modal elements not found!');
+    }
+}
+
+// Close modal function
+function closeModal() {
+    const modal = document.getElementById('informasiModal');
+    const modalContent = document.getElementById('modalContent');
+
+    if (modal && modalContent) {
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        modalContent.classList.add('scale-95', 'opacity-0');
+
+            setTimeout(() => {
+            modal.classList.add('hidden');
+            currentEditId = null;
+        }, 300);
+    }
+}
+
+// Edit informasi function
+function editInformasi(id) {
+    console.log('editInformasi called with id:', id);
+
+    // Get the button that was clicked
+    const button = document.querySelector(`.edit-btn[data-id="${id}"]`);
+    console.log('Button found:', button);
+
+    if (!button) {
+        console.error('Edit button not found for id:', id);
+        return;
+    }
+
+    // Get data from data attributes with proper null handling
+    const judul = button.getAttribute('data-judul') || '';
+    const konten = button.getAttribute('data-konten') || '';
+    const jenis = button.getAttribute('data-jenis') || '';
+    const nomorSurat = button.getAttribute('data-nomor-surat') || '';
+    const tanggalSurat = button.getAttribute('data-tanggal-surat') || '';
+    const penulis = button.getAttribute('data-penulis') || '';
+    const status = button.getAttribute('data-status') || '';
+    const tanggalPublish = button.getAttribute('data-tanggal-publish') || '';
+    const tanggalBerakhir = button.getAttribute('data-tanggal-berakhir') || '';
+    const isFeatured = button.getAttribute('data-is-featured') === 'true';
+    const isPinned = button.getAttribute('data-is-pinned') === 'true';
+    const thumbnail = button.getAttribute('data-thumbnail') || '';
+
+    // Parse lampiran data safely
+    let lampiran = [];
+    try {
+        const lampiranData = button.getAttribute('data-lampiran');
+        if (lampiranData && lampiranData.trim() !== '' && lampiranData !== 'bnVsbA==') {
+            // Decode base64 and parse JSON
+            const decodedData = atob(lampiranData);
+            if (decodedData !== 'null') {
+                lampiran = JSON.parse(decodedData);
+            }
+        }
+    } catch (e) {
+        console.error('Error parsing lampiran data:', e);
+        lampiran = [];
+    }
+
+    // Show modal first (don't reset form)
+    openModal(true);
+
+    // Set form data
+    const modalTitle = document.getElementById('modalTitle');
+    if (modalTitle) modalTitle.textContent = 'Edit Informasi';
+
+    // Check if formMethod element exists before setting it
+    const formMethodElement = document.getElementById('formMethod');
+    if (formMethodElement) {
+        formMethodElement.value = 'PUT';
+    }
+
+    const form = document.getElementById('informasiForm');
+    if (form) form.action = `{{ route('admin-universitas.informasi.update', ':id') }}`.replace(':id', id);
+
+    // Fill form fields with null checks
+    const judulElement = document.getElementById('judul');
+    if (judulElement) judulElement.value = judul;
+
+    const kontenElement = document.getElementById('konten');
+    if (kontenElement) kontenElement.value = konten;
+
+    // Also update the rich text editor
+    const editorElement = document.getElementById('editor');
+    if (editorElement) editorElement.innerHTML = konten;
+
+    const jenisElement = document.getElementById('jenis');
+    if (jenisElement) jenisElement.value = jenis;
+
+    // Call togglePengumumanFields to show/hide pengumuman fields based on jenis
+    togglePengumumanFields();
+
+    const nomorSuratElement = document.getElementById('nomor_surat');
+    if (nomorSuratElement) nomorSuratElement.value = nomorSurat || '';
+
+    const tanggalSuratElement = document.getElementById('tanggal_surat');
+    if (tanggalSuratElement) {
+        // Convert ISO date to YYYY-MM-DD format for input field
+        let formattedTanggalSurat = '';
+        if (tanggalSurat) {
+            const date = new Date(tanggalSurat);
+            if (!isNaN(date.getTime())) {
+                formattedTanggalSurat = date.toISOString().split('T')[0]; // Get YYYY-MM-DD part
+            }
+        }
+        tanggalSuratElement.value = formattedTanggalSurat;
+    }
+
+    const penulisElement = document.getElementById('penulis');
+    if (penulisElement) penulisElement.value = penulis || '';
+
+    const statusElement = document.getElementById('status');
+    if (statusElement) statusElement.value = status;
+
+    const tanggalPublishElement = document.getElementById('tanggal_publish');
+    if (tanggalPublishElement) {
+        // Convert ISO datetime to YYYY-MM-DDTHH:MM format for datetime-local input field
+        let formattedTanggalPublish = '';
+        if (tanggalPublish) {
+            const date = new Date(tanggalPublish);
+            if (!isNaN(date.getTime())) {
+                // Format as YYYY-MM-DDTHH:MM for datetime-local input
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                formattedTanggalPublish = `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
+        }
+        tanggalPublishElement.value = formattedTanggalPublish;
+    }
+
+    const tanggalBerakhirElement = document.getElementById('tanggal_berakhir');
+    if (tanggalBerakhirElement) {
+        // Convert ISO datetime to YYYY-MM-DDTHH:MM format for datetime-local input field
+        let formattedTanggalBerakhir = '';
+        if (tanggalBerakhir) {
+            const date = new Date(tanggalBerakhir);
+            if (!isNaN(date.getTime())) {
+                // Format as YYYY-MM-DDTHH:MM for datetime-local input
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                formattedTanggalBerakhir = `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
+        }
+        tanggalBerakhirElement.value = formattedTanggalBerakhir;
+    }
+
+    const isFeaturedElement = document.getElementById('is_featured');
+    if (isFeaturedElement) {
+        isFeaturedElement.checked = isFeatured;
+    }
+
+    const isPinnedElement = document.getElementById('is_pinned');
+    if (isPinnedElement) {
+        isPinnedElement.checked = isPinned;
+    }
+
+    currentEditId = id;
+
+    // Display current files
+    displayCurrentFiles(thumbnail, lampiran, id);
+}
+
+// Function to display current files
+function displayCurrentFiles(thumbnail, lampiran, id) {
+    console.log('displayCurrentFiles called with:', { thumbnail, lampiran, id });
+
+    // Display current thumbnail
+    const currentThumbnailDiv = document.getElementById('currentThumbnail');
+    const thumbnailPreview = document.getElementById('thumbnailPreview');
+    const thumbnailName = document.getElementById('thumbnailName');
+    const thumbnailDownload = document.getElementById('thumbnailDownload');
+
+    if (thumbnail && thumbnail.trim() !== '') {
+        console.log('Displaying thumbnail:', thumbnail);
+        if (currentThumbnailDiv) currentThumbnailDiv.classList.remove('hidden');
+        if (thumbnailPreview) thumbnailPreview.src = thumbnail;
+        if (thumbnailName) thumbnailName.textContent = 'Thumbnail saat ini';
+        if (thumbnailDownload) {
+            // For thumbnail, use direct path since it's stored in /storage/
+            thumbnailDownload.href = thumbnail;
+            thumbnailDownload.download = 'thumbnail.jpg'; // Set download filename
+        }
+    } else {
+        console.log('No thumbnail to display');
+        if (currentThumbnailDiv) currentThumbnailDiv.classList.add('hidden');
+    }
+
+    // Display current attachments
+    const currentAttachmentsDiv = document.getElementById('currentAttachments');
+    const attachmentsList = document.getElementById('attachmentsList');
+
+    console.log('Lampiran data:', lampiran);
+    if (lampiran && Array.isArray(lampiran) && lampiran.length > 0) {
+        console.log('Displaying attachments:', lampiran.length, 'files');
+        if (currentAttachmentsDiv) currentAttachmentsDiv.classList.remove('hidden');
+        if (attachmentsList) {
+            attachmentsList.innerHTML = '';
+            lampiran.forEach((file, index) => {
+                const fileInfo = typeof file === 'string' ? { name: file, path: file } : file;
+                const fileName = fileInfo.name || fileInfo.path.split('/').pop();
+                const filePath = fileInfo.path || fileInfo.name;
+
+                const attachmentItem = document.createElement('div');
+                attachmentItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg border mb-2';
+                attachmentItem.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="h-10 w-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                                <i data-lucide="file-text" class="h-5 w-5 text-red-500"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0 ml-3">
+                            <p class="text-sm font-medium text-gray-900 truncate">${fileName}</p>
+                            <p class="text-xs text-gray-500">Klik untuk download</p>
+                        </div>
+                    </div>
+                    <a href="{{ route('admin-universitas.informasi.download', ['id' => ':id', 'filename' => ':filename']) }}".replace(':id', id).replace(':filename', filePath)"
+                       target="_blank"
+                       class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <i data-lucide="download" class="h-3 w-3 mr-1"></i>
+                        Download
+                    </a>
+                `;
+                attachmentsList.appendChild(attachmentItem);
+            });
+            // Re-initialize Lucide icons for new elements
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+    } else {
+        console.log('No attachments to display');
+        if (currentAttachmentsDiv) currentAttachmentsDiv.classList.add('hidden');
+    }
+}
+
+// Function to hide current files
+function hideCurrentFiles() {
+    const currentThumbnailDiv = document.getElementById('currentThumbnail');
+    const currentAttachmentsDiv = document.getElementById('currentAttachments');
+
+    if (currentThumbnailDiv) currentThumbnailDiv.classList.add('hidden');
+    if (currentAttachmentsDiv) currentAttachmentsDiv.classList.add('hidden');
+}
+
+// Modern notification function
+function showNotification(message, type = 'success') {
+    const container = document.getElementById('notificationContainer');
+    const notification = document.createElement('div');
+
+    const icon = type === 'success'
+        ? '<svg class="notification-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>'
+        : '<svg class="notification-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>';
+
+    notification.className = `notification ${type} show`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <div class="notification-icon">
+                ${icon}
+            </div>
+            <div class="notification-text">
+                ${message}
+            </div>
+            <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+            </button>
+        </div>
+    `;
+
+    container.appendChild(notification);
+
+    // Auto remove after 5 seconds
+        setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Check for flash messages and show notifications
+@if(session('success'))
+    showNotification('{{ session('success') }}', 'success');
+@endif
+
+@if(session('error'))
+    showNotification('{{ session('error') }}', 'error');
+@endif
 
 </script>
 @endpush

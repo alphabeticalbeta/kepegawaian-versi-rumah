@@ -75,11 +75,8 @@ Route::prefix('admin-universitas')->middleware(['auth', 'web'])->group(function 
     Route::delete('/visi-misi/{id}', [App\Http\Controllers\Backend\AdminUniversitas\VisiMisiController::class, 'destroy'])
         ->name('admin-universitas.visi-misi.destroy');
 
-    Route::get('/aplikasi-kepegawaian', function () {
-        return view('backend.layouts.views.admin-universitas.aplikasi-kepegawaian');
-    })->name('admin-universitas.aplikasi-kepegawaian.index');
-    Route::get('/aplikasi-kepegawaian/data', [App\Http\Controllers\Backend\AdminUniversitas\AplikasiKepegawaianController::class, 'getData'])
-        ->name('admin-universitas.aplikasi-kepegawaian.data');
+    Route::get('/aplikasi-kepegawaian', [App\Http\Controllers\Backend\AdminUniversitas\AplikasiKepegawaianController::class, 'index'])
+        ->name('admin-universitas.aplikasi-kepegawaian.index');
 
     Route::post('/aplikasi-kepegawaian', [App\Http\Controllers\Backend\AdminUniversitas\AplikasiKepegawaianController::class, 'store'])
         ->name('admin-universitas.aplikasi-kepegawaian.store');
@@ -93,11 +90,10 @@ Route::prefix('admin-universitas')->middleware(['auth', 'web'])->group(function 
         ->name('admin-universitas.dasar-hukum.index');
     Route::post('/dasar-hukum', [DasarHukumController::class, 'store'])
         ->name('admin-universitas.dasar-hukum.store');
-    // Route khusus untuk data API - HARUS DI ATAS route {id}
-    Route::get('/dasar-hukum/data', [DasarHukumController::class, 'getData'])
-        ->name('admin-universitas.dasar-hukum.get-data');
     Route::get('/dasar-hukum/{id}', [DasarHukumController::class, 'show'])
         ->name('admin-universitas.dasar-hukum.show');
+    Route::get('/dasar-hukum/{id}/download/{filename}', [DasarHukumController::class, 'download'])
+        ->name('admin-universitas.dasar-hukum.download');
     Route::put('/dasar-hukum/{id}', [DasarHukumController::class, 'update'])
         ->name('admin-universitas.dasar-hukum.update');
     Route::delete('/dasar-hukum/{id}', [DasarHukumController::class, 'destroy'])
@@ -105,8 +101,10 @@ Route::prefix('admin-universitas')->middleware(['auth', 'web'])->group(function 
 
     Route::get('/informasi', [App\Http\Controllers\Backend\AdminUniversitas\InformasiController::class, 'index'])
         ->name('admin-universitas.informasi.index');
-    Route::get('/informasi/data', [App\Http\Controllers\Backend\AdminUniversitas\InformasiController::class, 'getData'])
-        ->name('admin-universitas.informasi.data');
+    Route::get('/informasi/{id}', [App\Http\Controllers\Backend\AdminUniversitas\InformasiController::class, 'show'])
+        ->name('admin-universitas.informasi.show');
+    Route::get('/informasi/{id}/edit', [App\Http\Controllers\Backend\AdminUniversitas\InformasiController::class, 'edit'])
+        ->name('admin-universitas.informasi.edit');
     Route::post('/informasi', [App\Http\Controllers\Backend\AdminUniversitas\InformasiController::class, 'store'])
         ->name('admin-universitas.informasi.store');
     Route::put('/informasi/{id}', [App\Http\Controllers\Backend\AdminUniversitas\InformasiController::class, 'update'])
@@ -115,16 +113,13 @@ Route::prefix('admin-universitas')->middleware(['auth', 'web'])->group(function 
         ->name('admin-universitas.informasi.destroy');
     Route::post('/informasi/generate-nomor-surat', [App\Http\Controllers\Backend\AdminUniversitas\InformasiController::class, 'generateNomorSurat'])
         ->name('admin-universitas.informasi.generate-nomor-surat');
+    Route::get('/informasi/{id}/download/{filename}', [App\Http\Controllers\Backend\AdminUniversitas\InformasiController::class, 'download'])
+        ->name('admin-universitas.informasi.download');
 });
 
 // Simple endpoints for informasi (alternative to admin-universitas routes)
-Route::get('/informasi/data', [App\Http\Controllers\Backend\AdminUniversitas\InformasiController::class, 'getData'])
-    ->name('informasi.data');
 Route::get('/informasi/{id}', [App\Http\Controllers\Backend\AdminUniversitas\InformasiController::class, 'show'])
     ->name('informasi.show');
-
-Route::get('/informasi-simple/data', [App\Http\Controllers\Backend\AdminUniversitas\InformasiController::class, 'getData'])
-    ->name('informasi.simple.data');
 Route::post('/informasi-simple', [App\Http\Controllers\Backend\AdminUniversitas\InformasiController::class, 'store'])
     ->name('informasi.simple.store');
 Route::put('/informasi-simple/{id}', [App\Http\Controllers\Backend\AdminUniversitas\InformasiController::class, 'update'])
@@ -160,13 +155,6 @@ Route::options('/api/struktur-organisasi', function () {
         ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
 });
 
-Route::get('/api/aplikasi-kepegawaian', [App\Http\Controllers\Api\AplikasiKepegawaianController::class, 'index']);
-Route::options('/api/aplikasi-kepegawaian', function () {
-    return response('', 200)
-        ->header('Access-Control-Allow-Origin', '*')
-        ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        ->header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-});
 
 Route::get('/api/informasi', [App\Http\Controllers\Api\InformasiController::class, 'index']);
 Route::get('/api/informasi/featured', [App\Http\Controllers\Api\InformasiController::class, 'featured']);
@@ -174,9 +162,6 @@ Route::get('/api/informasi/pinned', [App\Http\Controllers\Api\InformasiControlle
 Route::get('/api/informasi/latest', [App\Http\Controllers\Api\InformasiController::class, 'latest']);
 Route::get('/api/informasi/{id}', [App\Http\Controllers\Api\InformasiController::class, 'show']);
 
-// Simple endpoints for Dasar Hukum (alternative to API routes)
-Route::get('/dasar-hukum-simple/data', [App\Http\Controllers\Backend\AdminUniversitas\DasarHukumController::class, 'getData']);
-Route::get('/dasar-hukum-simple/{id}', [App\Http\Controllers\Backend\AdminUniversitas\DasarHukumController::class, 'show']);
 
 // Simple endpoints for Struktur Organisasi
 Route::get('/struktur-organisasi/data', [App\Http\Controllers\Api\StrukturOrganisasiController::class, 'index'])

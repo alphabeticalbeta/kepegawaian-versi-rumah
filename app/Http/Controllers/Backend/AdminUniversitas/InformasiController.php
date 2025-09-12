@@ -63,82 +63,38 @@ class InformasiController extends Controller
         ]);
     }
 
-    /**
-     * Get data for AJAX requests
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function getData(Request $request)
-    {
-        $query = Informasi::query();
-
-        // Filter by jenis
-        if ($request->filled('jenis')) {
-            $query->where('jenis', $request->jenis);
-        }
-
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter by Featured/Pinned
-        if ($request->filled('special')) {
-            $special = $request->special;
-            if ($special === 'featured') {
-                $query->where('is_featured', true);
-            } elseif ($special === 'pinned') {
-                $query->where('is_pinned', true);
-            } elseif ($special === 'both') {
-                $query->where('is_featured', true)->where('is_pinned', true);
-            }
-        }
-
-        // Search
-        if ($request->filled('search')) {
-            $query->search($request->search);
-        }
-
-        // Sort
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-        $query->orderBy($sortBy, $sortOrder);
-
-        // Pagination
-        $perPage = $request->get('per_page', 10);
-        $informasi = $query->paginate($perPage);
-
-        return response()->json([
-            'success' => true,
-            'data' => $informasi->items(),
-            'current_page' => $informasi->currentPage(),
-            'last_page' => $informasi->lastPage(),
-            'per_page' => $informasi->perPage(),
-            'total' => $informasi->total()
-        ]);
-    }
 
     /**
      * Display the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function show($id)
     {
         try {
             $informasi = Informasi::findOrFail($id);
-
-            return response()->json([
-                'success' => true,
-                'data' => $informasi
-            ]);
+            return view('backend.layouts.views.admin-universitas.informasi-show', compact('informasi'));
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data tidak ditemukan'
-            ], 404);
+            return redirect()->route('admin-universitas.informasi.index')
+                           ->with('error', 'Data tidak ditemukan');
+        }
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
+     */
+    public function edit($id)
+    {
+        try {
+            $informasi = Informasi::findOrFail($id);
+            return view('backend.layouts.views.admin-universitas.informasi', compact('informasi'));
+        } catch (\Exception $e) {
+            return redirect()->route('admin-universitas.informasi.index')
+                           ->with('error', 'Data tidak ditemukan');
         }
     }
 
@@ -177,11 +133,9 @@ class InformasiController extends Controller
             $validator = Validator::make($request->all(), $rules);
 
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
+                return redirect()->back()
+                               ->withErrors($validator)
+                               ->withInput();
             }
 
             // Handle file uploads
@@ -266,21 +220,17 @@ class InformasiController extends Controller
                 'judul' => $request->judul
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Data berhasil disimpan!',
-                'data' => $informasi
-            ]);
+            return redirect()->route('admin-universitas.informasi.index')
+                           ->with('success', 'Data berhasil disimpan!');
 
         } catch (\Exception $e) {
             Log::error('Error saving informasi data to database', [
                 'error' => $e->getMessage()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()
+                           ->with('error', 'Terjadi kesalahan: ' . $e->getMessage())
+                           ->withInput();
         }
     }
 
@@ -322,11 +272,9 @@ class InformasiController extends Controller
             $validator = Validator::make($request->all(), $rules);
 
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
+                return redirect()->back()
+                               ->withErrors($validator)
+                               ->withInput();
             }
 
             // Handle file uploads
@@ -417,11 +365,8 @@ class InformasiController extends Controller
                 'judul' => $request->judul
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Data berhasil diperbarui!',
-                'data' => $informasi
-            ]);
+            return redirect()->route('admin-universitas.informasi.index')
+                           ->with('success', 'Data berhasil diperbarui!');
 
         } catch (\Exception $e) {
             Log::error('Error updating informasi data in database', [
@@ -429,10 +374,9 @@ class InformasiController extends Controller
                 'error' => $e->getMessage()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()
+                           ->with('error', 'Terjadi kesalahan: ' . $e->getMessage())
+                           ->withInput();
         }
     }
 
@@ -467,10 +411,8 @@ class InformasiController extends Controller
                 'id' => $id
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Data berhasil dihapus!'
-            ]);
+            return redirect()->route('admin-universitas.informasi.index')
+                           ->with('success', 'Data berhasil dihapus!');
 
         } catch (\Exception $e) {
             Log::error('Error deleting informasi data from database', [
@@ -478,10 +420,8 @@ class InformasiController extends Controller
                 'error' => $e->getMessage()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()
+                           ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 
@@ -553,5 +493,57 @@ class InformasiController extends Controller
 
         // Return file for viewing
         return Storage::disk('local')->response($filePath);
+    }
+
+    /**
+     * Download document for informasi lampiran
+     */
+    public function download($id, $filename)
+    {
+        try {
+            // Authentication check - user must be logged in
+            if (!Auth::check()) {
+                abort(403, 'Unauthorized. Anda harus login untuk mengakses dokumen ini.');
+            }
+
+            // Find the informasi record
+            $informasi = Informasi::findOrFail($id);
+
+            // Get file path from storage - check both lampiran and thumbnails
+            $filePath = 'public/informasi/lampiran/' . $filename;
+
+            // Check if file exists in lampiran folder
+            if (!Storage::disk('local')->exists($filePath)) {
+                // Check in thumbnails folder
+                $thumbnailPath = 'public/informasi/thumbnails/' . $filename;
+                if (Storage::disk('local')->exists($thumbnailPath)) {
+                    $filePath = $thumbnailPath;
+                } else {
+                    abort(404, 'File tidak ditemukan: ' . $filename);
+                }
+            }
+
+            // Log document access for security
+            Log::info('Informasi document downloaded', [
+                'id' => $id,
+                'filename' => $filename,
+                'user_id' => Auth::id(),
+                'user_name' => Auth::user()->name ?? 'Unknown',
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
+
+            // Return file for download
+            return Storage::disk('local')->download($filePath, $filename);
+
+        } catch (\Exception $e) {
+            Log::error('Error downloading informasi document', [
+                'id' => $id,
+                'filename' => $filename,
+                'error' => $e->getMessage()
+            ]);
+
+            abort(404, 'File tidak ditemukan atau tidak dapat diakses.');
+        }
     }
 }

@@ -740,18 +740,7 @@
 
             {{-- Main Content Area --}}
             <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100" style="padding-top: 1rem;">
-                {{-- Flash Messages --}}
-                @if(session('success'))
-                    <div class="mb-4 mx-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded">
-                        {{ session('success') }}
-                    </div>
-                @endif
-
-                @if(session('error'))
-                    <div class="mb-4 mx-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
-                        {{ session('error') }}
-                    </div>
-                @endif
+                {{-- Flash Messages - Removed, using modern notifications instead --}}
 
                 @if(session('warning'))
                     <div class="mb-4 mx-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded">

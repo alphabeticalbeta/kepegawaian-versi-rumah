@@ -16,9 +16,28 @@ class DasarHukumController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return view('backend.layouts.views.admin-universitas.dasar-hukum');
+        // Build query with filters - mengikuti pola aplikasi kepegawaian
+        $query = DasarHukum::query()
+            ->when($request->search, function ($q, $search) {
+                return $q->search($search);
+            })
+            ->when($request->jenis, function ($q, $jenis) {
+                return $q->byJenis($jenis);
+            })
+            ->when($request->status, function ($q, $status) {
+                return $q->where('status', $status);
+            })
+            ->when($request->sub_jenis, function ($q, $sub_jenis) {
+                return $q->where('sub_jenis', $sub_jenis);
+            })
+            ->latest();
+
+        // Apply pagination dengan query string preservation
+        $dasarHukum = $query->paginate(10)->withQueryString();
+
+        return view('backend.layouts.views.admin-universitas.dasar-hukum', compact('dasarHukum'));
     }
 
     /**
@@ -57,11 +76,9 @@ class DasarHukumController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
+                return redirect()->back()
+                               ->withErrors($validator)
+                               ->withInput();
             }
 
             // Handle thumbnail upload
@@ -147,21 +164,17 @@ class DasarHukumController extends Controller
                 'judul' => $request->judul
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Data berhasil disimpan!',
-                'data' => $dasarHukum
-            ]);
+            return redirect()->route('admin-universitas.dasar-hukum.index')
+                           ->with('success', 'Data dasar hukum berhasil disimpan.');
 
         } catch (\Exception $e) {
             Log::error('Error saving dasar hukum data to database', [
                 'error' => $e->getMessage()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()
+                           ->with('error', 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage())
+                           ->withInput();
         }
     }
 
@@ -172,16 +185,10 @@ class DasarHukumController extends Controller
     {
         try {
             $dasarHukum = DasarHukum::findOrFail($id);
-
-            return response()->json([
-                'success' => true,
-                'data' => $dasarHukum
-            ]);
+            return view('backend.layouts.views.admin-universitas.dasar-hukum-show', compact('dasarHukum'));
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data tidak ditemukan'
-            ], 404);
+            return redirect()->route('admin-universitas.dasar-hukum.index')
+                           ->with('error', 'Data tidak ditemukan');
         }
     }
 
@@ -191,6 +198,46 @@ class DasarHukumController extends Controller
     public function edit(string $id)
     {
         //
+    }
+
+    /**
+     * Download a file from dasar hukum.
+     */
+    public function download(string $id, string $filename)
+    {
+        try {
+            $dasarHukum = DasarHukum::findOrFail($id);
+
+            // Check if file exists in lampiran
+            $fileFound = false;
+            $filePath = null;
+
+            if ($dasarHukum->lampiran) {
+                foreach ($dasarHukum->lampiran as $file) {
+                    $filePathToCheck = is_array($file) ? $file['path'] : $file;
+                    if ($filePathToCheck === $filename) {
+                        $fileFound = true;
+                        $filePath = 'public/dasar-hukum/lampiran/' . $filename;
+                        break;
+                    }
+                }
+            }
+
+            if (!$fileFound || !Storage::exists($filePath)) {
+                return redirect()->back()->with('error', 'File tidak ditemukan');
+            }
+
+            return Storage::download($filePath);
+
+        } catch (\Exception $e) {
+            Log::error('Error downloading dasar hukum file', [
+                'id' => $id,
+                'filename' => $filename,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()->with('error', 'Gagal mengunduh file');
+        }
     }
 
     /**
@@ -223,11 +270,9 @@ class DasarHukumController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validasi gagal',
-                    'errors' => $validator->errors()
-                ], 422);
+                return redirect()->back()
+                               ->withErrors($validator)
+                               ->withInput();
             }
 
             // Handle file uploads
@@ -235,20 +280,65 @@ class DasarHukumController extends Controller
 
             // Upload thumbnail
             if ($request->hasFile('thumbnail')) {
+                Log::info('Thumbnail file detected for update', [
+                    'id' => $id,
+                    'filename' => $request->file('thumbnail')->getClientOriginalName(),
+                    'size' => $request->file('thumbnail')->getSize(),
+                    'mime' => $request->file('thumbnail')->getMimeType()
+                ]);
+
                 // Delete old thumbnail
                 if ($dasarHukum->thumbnail) {
                     $oldThumbnail = str_replace('/storage/', 'public/', $dasarHukum->thumbnail);
                     Storage::delete($oldThumbnail);
+                    Log::info('Old thumbnail deleted', ['path' => $oldThumbnail]);
                 }
 
                 $thumbnail = $request->file('thumbnail');
                 $thumbnailName = time() . '_' . $thumbnail->getClientOriginalName();
-                $thumbnailPath = $thumbnail->storeAs('public/dasar-hukum/thumbnails', $thumbnailName);
-                $data['thumbnail'] = '/storage/' . str_replace('public/', '', $thumbnailPath);
+
+                Log::info('Attempting to store thumbnail', [
+                    'id' => $id,
+                    'filename' => $thumbnailName,
+                    'target_path' => 'public/dasar-hukum/thumbnails/' . $thumbnailName
+                ]);
+
+                // Use move() method instead of storeAs() for more reliable upload
+                $targetDir = storage_path('app/public/dasar-hukum/thumbnails');
+                $targetPath = $targetDir . '/' . $thumbnailName;
+                $moveResult = $thumbnail->move($targetDir, $thumbnailName);
+
+                if ($moveResult) {
+                    $data['thumbnail'] = '/storage/dasar-hukum/thumbnails/' . $thumbnailName;
+
+                    // Verify file exists immediately after move
+                    $fileExists = file_exists($targetPath);
+
+                    Log::info('Thumbnail move result', [
+                        'id' => $id,
+                        'target_path' => $targetPath,
+                        'public_path' => $data['thumbnail'],
+                        'file_exists_immediately' => $fileExists,
+                        'file_size_on_disk' => $fileExists ? filesize($targetPath) : 'N/A'
+                    ]);
+                } else {
+                    Log::error('Thumbnail move failed', [
+                        'id' => $id,
+                        'filename' => $thumbnailName,
+                        'target_path' => $targetPath
+                    ]);
+                }
+            } else {
+                Log::info('No thumbnail file uploaded for update', ['id' => $id]);
             }
 
             // Upload lampiran
             if ($request->hasFile('lampiran')) {
+                Log::info('Lampiran files detected for update', [
+                    'id' => $id,
+                    'count' => count($request->file('lampiran'))
+                ]);
+
                 $lampiranFiles = [];
                 foreach ($request->file('lampiran') as $file) {
                     $fileName = time() . '_' . $file->getClientOriginalName();
@@ -260,9 +350,18 @@ class DasarHukumController extends Controller
                     ];
                 }
                 $data['lampiran'] = $lampiranFiles;
+
+                Log::info('Lampiran files uploaded successfully', [
+                    'id' => $id,
+                    'files' => $lampiranFiles
+                ]);
             } else {
                 // Keep existing lampiran if no new files uploaded
                 $data['lampiran'] = $dasarHukum->lampiran;
+                Log::info('No lampiran files uploaded for update, keeping existing', [
+                    'id' => $id,
+                    'existing_lampiran' => $dasarHukum->lampiran
+                ]);
             }
 
             // Parse tags
@@ -314,11 +413,8 @@ class DasarHukumController extends Controller
                 'judul' => $request->judul
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Data berhasil diperbarui!',
-                'data' => $dasarHukum
-            ]);
+            return redirect()->route('admin-universitas.dasar-hukum.index')
+                           ->with('success', 'Data dasar hukum berhasil diperbarui.');
 
         } catch (\Exception $e) {
             Log::error('Error updating dasar hukum data in database', [
@@ -326,10 +422,9 @@ class DasarHukumController extends Controller
                 'error' => $e->getMessage()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()
+                           ->with('error', 'Terjadi kesalahan saat memperbarui data: ' . $e->getMessage())
+                           ->withInput();
         }
     }
 
@@ -349,7 +444,22 @@ class DasarHukumController extends Controller
 
             if ($dasarHukum->lampiran) {
                 foreach ($dasarHukum->lampiran as $file) {
-                    $filePath = str_replace('/storage/', 'public/', $file['path']);
+                    // Handle both array format and string format
+                    if (is_array($file) && isset($file['path'])) {
+                        // Array format: ['name' => '...', 'path' => '...', 'size' => ...]
+                        $filePath = 'public/dasar-hukum/lampiran/' . $file['path'];
+                    } elseif (is_string($file)) {
+                        // String format: direct filename or full path
+                        if (strpos($file, '/storage/') === 0) {
+                            $filePath = str_replace('/storage/', 'public/', $file);
+                        } else {
+                            $filePath = 'public/dasar-hukum/lampiran/' . $file;
+                        }
+                    } else {
+                        // Skip invalid format
+                        continue;
+                    }
+
                     Storage::delete($filePath);
                 }
             }
@@ -361,10 +471,8 @@ class DasarHukumController extends Controller
                 'id' => $id
             ]);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Data berhasil dihapus!'
-            ]);
+            return redirect()->route('admin-universitas.dasar-hukum.index')
+                           ->with('success', 'Data dasar hukum berhasil dihapus.');
 
         } catch (\Exception $e) {
             Log::error('Error deleting dasar hukum data from database', [
@@ -372,99 +480,11 @@ class DasarHukumController extends Controller
                 'error' => $e->getMessage()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()
+                           ->with('error', 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage());
         }
     }
 
-    /**
-     * Get dasar hukum data for API
-     */
-    public function getData(Request $request)
-    {
-        try {
-            $query = DasarHukum::query();
-
-            // Search
-            if ($request->has('search') && $request->search) {
-                $query->search($request->search);
-            }
-
-            // Filter by jenis
-            if ($request->has('jenis') && $request->jenis) {
-                $query->byJenis($request->jenis);
-            }
-
-            // Filter by status
-            if ($request->has('status') && $request->status) {
-                $query->where('status', $request->status);
-            }
-
-            // Filter by sub_jenis
-            if ($request->has('sub_jenis') && $request->sub_jenis) {
-                $query->where('sub_jenis', $request->sub_jenis);
-            }
-
-            // Sort
-            $sort = $request->get('sort', 'latest');
-            switch ($sort) {
-                case 'oldest':
-                    $query->orderBy('created_at', 'asc');
-                    break;
-                case 'title':
-                    $query->orderBy('judul', 'asc');
-                    break;
-                default:
-                    $query->orderBy('created_at', 'desc');
-            }
-
-            // Pagination
-            $perPage = $request->get('per_page', 10);
-            $page = $request->get('page', 1);
-
-            Log::info('Dasar Hukum API Request', [
-                'page' => $page,
-                'per_page' => $perPage,
-                'search' => $request->search,
-                'jenis' => $request->jenis,
-                'status' => $request->status
-            ]);
-
-            $dasarHukum = $query->paginate($perPage, ['*'], 'page', $page);
-
-            Log::info('Dasar Hukum API Response', [
-                'total' => $dasarHukum->total(),
-                'current_page' => $dasarHukum->currentPage(),
-                'last_page' => $dasarHukum->lastPage(),
-                'per_page' => $dasarHukum->perPage(),
-                'items_count' => count($dasarHukum->items())
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'data' => $dasarHukum->items(),
-                'current_page' => $dasarHukum->currentPage(),
-                'last_page' => $dasarHukum->lastPage(),
-                'per_page' => $dasarHukum->perPage(),
-                'total' => $dasarHukum->total(),
-                'from' => $dasarHukum->firstItem(),
-                'to' => $dasarHukum->lastItem()
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Dasar Hukum API Error', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 
     /**
      * Show document file

@@ -205,10 +205,77 @@
     .fade-in {
         animation: fadeIn 0.3s ease-in-out;
     }
+
+    /* Modern Notification Styles */
+    .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+        max-width: 400px;
+        padding: 16px 20px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        transform: translateX(100%);
+        transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        backdrop-filter: blur(10px);
+    }
+
+    .notification.show {
+        transform: translateX(0);
+    }
+
+    .notification.success {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border-left: 4px solid #047857;
+    }
+
+    .notification.error {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        border-left: 4px solid #b91c1c;
+    }
+
+    .notification-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .notification-icon {
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+    }
+
+    .notification-text {
+        flex: 1;
+        font-weight: 500;
+        line-height: 1.4;
+    }
+
+    .notification-close {
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .notification-close:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
 </style>
 @endpush
 
 @section('content')
+<!-- Notification Container -->
+<div id="notificationContainer"></div>
+
 <div class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
     <!-- Header Section -->
     <div class="relative overflow-hidden shadow-2xl">
@@ -232,37 +299,37 @@
     <div class="relative z-10 -mt-8 px-4 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-full pt-4 mt-4 animate-fade-in">
             <!-- Filter and Search -->
-            <div class="mb-4 bg-white rounded-2xl shadow-xl p-4 transition-all duration-300 hover:shadow-2xl">
+            <form method="GET" action="{{ route('admin-universitas.dasar-hukum.index') }}" class="mb-4 bg-white rounded-2xl shadow-xl p-4 transition-all duration-300 hover:shadow-2xl">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Jenis</label>
-                        <select id="filterJenis" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 hover:border-indigo-400">
+                        <select name="jenis" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 hover:border-indigo-400">
                             <option value="">Semua</option>
-                            <option value="keputusan">Keputusan</option>
-                            <option value="pedoman">Pedoman</option>
-                            <option value="peraturan">Peraturan</option>
-                            <option value="surat_edaran">Surat Edaran</option>
-                            <option value="surat_kementerian">Surat Kementerian</option>
-                            <option value="surat_rektor">Surat Rektor</option>
-                            <option value="undang_undang">Undang-Undang</option>
+                            <option value="keputusan" {{ request('jenis') == 'keputusan' ? 'selected' : '' }}>Keputusan</option>
+                            <option value="pedoman" {{ request('jenis') == 'pedoman' ? 'selected' : '' }}>Pedoman</option>
+                            <option value="peraturan" {{ request('jenis') == 'peraturan' ? 'selected' : '' }}>Peraturan</option>
+                            <option value="surat_edaran" {{ request('jenis') == 'surat_edaran' ? 'selected' : '' }}>Surat Edaran</option>
+                            <option value="surat_kementerian" {{ request('jenis') == 'surat_kementerian' ? 'selected' : '' }}>Surat Kementerian</option>
+                            <option value="surat_rektor" {{ request('jenis') == 'surat_rektor' ? 'selected' : '' }}>Surat Rektor</option>
+                            <option value="undang_undang" {{ request('jenis') == 'undang_undang' ? 'selected' : '' }}>Undang-Undang</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
-                        <select id="filterStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 hover:border-indigo-400">
+                        <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 hover:border-indigo-400">
                             <option value="">Semua</option>
-                            <option value="draft">Draft</option>
-                            <option value="published">Published</option>
-                            <option value="archived">Archived</option>
+                            <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
+                            <option value="published" {{ request('status') == 'published' ? 'selected' : '' }}>Published</option>
+                            <option value="archived" {{ request('status') == 'archived' ? 'selected' : '' }}>Archived</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Search</label>
-                        <input type="text" id="searchInput" placeholder="Cari judul/nomor dokumen..."
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari judul/nomor dokumen..."
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-200 hover:border-indigo-400">
                     </div>
                 </div>
-            </div>
+            </form>
 
             <!-- Data Table -->
             <div class="bg-white rounded-2xl shadow-xl overflow-hidden transition-all duration-300 hover:shadow-2xl">
@@ -270,9 +337,10 @@
                 <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
                     <h3 class="text-lg font-semibold text-gray-900">Daftar Dasar Hukum</h3>
                     <button onclick="openModal()"
-                            class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 border border-transparent rounded-lg font-semibold text-sm text-white hover:from-indigo-700 hover:to-purple-700 focus:from-indigo-700 focus:to-purple-700 active:from-indigo-900 active:to-purple-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-md hover:shadow-lg">
-                        <i data-lucide="plus" class="h-4 w-4 mr-2"></i>
-                        Tambah Dasar Hukum
+                            class="inline-flex items-center px-3 sm:px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 border border-transparent rounded-lg font-semibold text-xs sm:text-sm text-white hover:from-indigo-700 hover:to-purple-700 focus:from-indigo-700 focus:to-purple-700 active:from-indigo-900 active:to-purple-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 shadow-md hover:shadow-lg">
+                        <i data-lucide="plus" class="h-4 w-4 mr-1 sm:mr-2"></i>
+                        <span class="hidden sm:inline">Tambah Dasar Hukum</span>
+                        <span class="sm:hidden">Tambah</span>
                     </button>
                 </div>
                 <div class="overflow-x-auto">
@@ -290,38 +358,140 @@
                                 <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold uppercase tracking-wider w-28 text-center">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="dasarHukumTableBody" class="bg-white divide-y divide-gray-200">
-                            <!-- Data will be loaded here -->
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @forelse($dasarHukum as $index => $item)
+                            <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-center text-sm text-gray-900">
+                                    {{ $dasarHukum->firstItem() + $index }}
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-center">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        {{ $item->jenis_label }}
+                                    </span>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 text-sm text-gray-900 max-w-xs">
+                                    <div class="truncate" title="{{ $item->judul }}">
+                                        {{ $item->judul }}
+                </div>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-center text-sm text-gray-900">
+                                    {{ $item->nomor_dokumen }}
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-center text-sm text-gray-900">
+                                    <div class="truncate max-w-24" title="{{ $item->nama_instansi }}">
+                                        {{ $item->nama_instansi }}
+            </div>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-center">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{
+                                        $item->status === 'published' ? 'bg-green-100 text-green-800' :
+                                        ($item->status === 'draft' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800')
+                                    }}">
+                                        {{ $item->status_label }}
+                                    </span>
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-center text-sm text-gray-900">
+                                    {{ $item->formatted_tanggal_dokumen }}
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-center">
+                                    @if($item->lampiran && count($item->lampiran) > 0)
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            {{ count($item->lampiran) }} file
+                                        </span>
+                                    @else
+                                        <span class="text-gray-400 text-xs">-</span>
+                                    @endif
+                                </td>
+                                <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
+                                    <div class="flex justify-center items-center gap-1 sm:gap-2">
+                                        @if($item->lampiran && count($item->lampiran) > 0)
+                                            @php
+                                                $firstFile = is_array($item->lampiran[0]) ? $item->lampiran[0]['path'] : $item->lampiran[0];
+                                            @endphp
+                                            <a href="{{ route('admin-universitas.dasar-hukum.download', ['id' => $item->id, 'filename' => $firstFile]) }}" target="_blank"
+                                               class="inline-flex items-center px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                                               title="Lihat Lampiran">
+                                                <i data-lucide="eye" class="h-3 w-3 sm:h-4 sm:w-4 mr-1"></i>
+                                                <span class="hidden sm:inline">Lihat</span>
+                                            </a>
+                                        @endif
+                                        <button onclick="editDasarHukum({{ $item->id }}, {{ json_encode($item->judul) }}, {{ json_encode($item->konten) }}, {{ json_encode($item->jenis_dasar_hukum) }}, {{ json_encode($item->sub_jenis) }}, {{ json_encode($item->nomor_dokumen) }}, {{ json_encode($item->tanggal_dokumen) }}, {{ json_encode($item->nama_instansi) }}, {{ json_encode($item->masa_berlaku) }}, {{ json_encode($item->penulis) }}, {{ json_encode($item->tags ? implode(',', $item->tags) : '') }}, {{ json_encode($item->status) }}, {{ json_encode($item->tanggal_publish) }}, {{ json_encode($item->tanggal_berakhir) }}, {{ $item->is_featured ? 'true' : 'false' }}, {{ $item->is_pinned ? 'true' : 'false' }}, {{ json_encode($item->thumbnail) }}, {{ json_encode($item->lampiran) }})"
+                                                class="inline-flex items-center px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                                                title="Edit Data">
+                                            <i data-lucide="edit" class="h-3 w-3 sm:h-4 sm:w-4 mr-1"></i>
+                                            <span class="hidden sm:inline">Edit</span>
+                                        </button>
+                                        <form action="{{ route('admin-universitas.dasar-hukum.destroy', $item->id) }}" method="POST" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="delete-btn inline-flex items-center px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-white bg-gradient-to-r from-red-600 to-pink-600 rounded-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg"
+                                                    title="Hapus Data">
+                                                <i data-lucide="trash-2" class="h-3 w-3 sm:h-4 sm:w-4 mr-1"></i>
+                                                <span class="hidden sm:inline">Hapus</span>
+                                            </button>
+                                        </form>
+        </div>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                                    <div class="flex flex-col items-center">
+                                        <i data-lucide="file-x" class="h-12 w-12 text-gray-300 mb-2"></i>
+                                        <p class="text-sm">Tidak ada data dasar hukum ditemukan</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforelse
                         </tbody>
                     </table>
+    </div>
+
+    <!-- Pagination -->
+                @if($dasarHukum->hasPages())
+                <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+                    <div class="flex items-center justify-between">
+            <div class="flex items-center text-sm text-gray-700">
+                            <span>Menampilkan {{ $dasarHukum->firstItem() ?? 0 }} - {{ $dasarHukum->lastItem() ?? 0 }} dari {{ $dasarHukum->total() }} data</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                            @if($dasarHukum->onFirstPage())
+                                <span class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md cursor-not-allowed">
+                    <i data-lucide="chevron-left" class="h-4 w-4"></i>
+                                </span>
+                            @else
+                                <a href="{{ $dasarHukum->previousPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200">
+                                    <i data-lucide="chevron-left" class="h-4 w-4"></i>
+                                </a>
+                            @endif
+
+                            <div class="flex space-x-1">
+                                @foreach($dasarHukum->getUrlRange(1, $dasarHukum->lastPage()) as $page => $url)
+                                    @if($page == $dasarHukum->currentPage())
+                                        <span class="px-3 py-2 text-sm font-medium bg-indigo-600 text-white rounded-lg shadow-md">{{ $page }}</span>
+                                    @else
+                                        <a href="{{ $url }}" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:shadow-sm transition-all duration-200">{{ $page }}</a>
+                                    @endif
+                                @endforeach
                 </div>
+
+                            @if($dasarHukum->hasMorePages())
+                                <a href="{{ $dasarHukum->nextPageUrl() }}" class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors duration-200">
+                    <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                                </a>
+                            @else
+                                <span class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md cursor-not-allowed">
+                                    <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                                </span>
+                            @endif
+            </div>
+        </div>
+    </div>
+                @endif
             </div>
         </div>
     </div>
 
-    <!-- Pagination -->
-    <div id="paginationContainer" class="bg-white rounded-2xl shadow-xl overflow-hidden mt-6">
-        <div class="px-4 py-4 flex items-center justify-between">
-            <div class="flex items-center text-sm text-gray-700">
-                <span id="paginationInfo">Menampilkan 0 dari 0 data</span>
-            </div>
-            <div class="flex items-center space-x-2">
-                <button id="prevPageBtn" onclick="changePage(currentPage - 1)"
-                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                        disabled>
-                    <i data-lucide="chevron-left" class="h-4 w-4"></i>
-                </button>
-                <div id="pageNumbers" class="flex space-x-1">
-                    <!-- Page numbers will be generated here -->
-                </div>
-                <button id="nextPageBtn" onclick="changePage(currentPage + 1)"
-                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                        disabled>
-                    <i data-lucide="chevron-right" class="h-4 w-4"></i>
-                </button>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Modal -->
@@ -337,7 +507,9 @@
             </div>
 
             <!-- Modal Body -->
-            <form id="dasarHukumForm" class="mt-6" enctype="multipart/form-data">
+            <form id="dasarHukumForm" method="POST" class="mt-6" enctype="multipart/form-data">
+                @csrf
+                <input type="hidden" id="formMethod" name="_method" value="POST">
                 <input type="hidden" id="editId" name="id">
 
                 <div class="space-y-6">
@@ -620,264 +792,102 @@
 
 @push('scripts')
 <script>
-// Escape HTML function for security
-function escapeHtml(text) {
-    if (text === null || text === undefined) {
-        return '';
-    }
-    const map = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
+// Debounce function
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
     };
-    return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
 }
 
-// Global variables
-let currentPage = 1;
-let totalPages = 1;
-let currentSearch = '';
-let currentFilters = {
-    jenis: '',
-    status: ''
-};
-let currentEditId = null;
-let dasarHukumData = []; // Store loaded data for edit
-let totalData = 0;
-
-// Initialize page
+// Page initialization
 document.addEventListener('DOMContentLoaded', function() {
-    loadDasarHukum();
-    initializeEditor();
-    initializeFilters();
+    initializeSearchAndFilter();
 });
 
-// Load dasar hukum data
-async function loadDasarHukum(page = 1) {
-    try {
-        // Show loading animation
-        showTableLoading();
+// Initialize search and filter functionality
+function initializeSearchAndFilter() {
+    // Initialize search input with auto-submit
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce(function(e) {
+            // Auto-submit form when user stops typing
+            e.target.closest('form').submit();
+        }, 500));
+    }
 
-        const params = new URLSearchParams({
-            page: page,
-            per_page: 10,
-            search: currentSearch,
-            jenis: currentFilters.jenis,
-            status: currentFilters.status
+    // Initialize filter dropdowns with auto-submit
+    const filterJenis = document.querySelector('select[name="jenis"]');
+    const filterStatus = document.querySelector('select[name="status"]');
+
+    if (filterJenis) {
+        filterJenis.addEventListener('change', function() {
+            // Auto-submit form when jenis changes
+            this.closest('form').submit();
         });
+    }
 
-        const response = await fetch(`/admin-universitas/dasar-hukum/data?${params}`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            credentials: 'same-origin'
+    if (filterStatus) {
+        filterStatus.addEventListener('change', function() {
+            // Auto-submit form when status changes
+            this.closest('form').submit();
         });
-
-        if (response.ok) {
-            const data = await response.json();
-            // API Response received
-
-            if (data.success) {
-                // Store data globally for edit functionality
-                dasarHukumData = data.data;
-                window.currentDasarHukumData = data.data;
-                // Data loaded successfully
-
-                // Check if pagination should be shown
-
-                // Add delay for smooth animation
-                setTimeout(() => {
-                    renderTable(data.data);
-                    updatePagination(data);
-                    hideTableLoading();
-                }, 200);
-            } else {
-                hideTableLoading();
-                showAlert('Error!', 'Terjadi kesalahan saat memuat data', 'error');
-            }
-        } else {
-            hideTableLoading();
-            showAlert('Error!', 'Gagal memuat data dasar hukum', 'error');
-        }
-    } catch (error) {
-        hideTableLoading();
-        // Error loading data
-        showAlert('Error!', 'Terjadi kesalahan saat memuat data', 'error');
     }
 }
 
-// Render table
-function renderTable(dasarHukum) {
-    const tbody = document.getElementById('dasarHukumTableBody');
-
-    if (!tbody) {
-        // Table body not found
-        return;
-    }
-
-    // Add fade-in animation class
-    tbody.classList.add('fade-in');
-
-    if (dasarHukum.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="9" class="px-4 py-8 text-center text-gray-500">
-                    <div class="flex flex-col items-center">
-                        <i data-lucide="file-x" class="h-12 w-12 text-gray-300 mb-2"></i>
-                        <p class="text-lg font-medium">Tidak ada data dasar hukum</p>
-                        <p class="text-sm text-gray-400">Klik "Tambah Dasar Hukum" untuk menambah data baru</p>
-                    </div>
-                </td>
-            </tr>
-        `;
-        lucide.createIcons();
-        return;
-    }
-
-    tbody.innerHTML = dasarHukum.map((item, index) => `
-        <tr class="hover:bg-gray-50 transition-all duration-200 animate-fade-in" style="animation-delay: ${index * 50}ms">
-            <td class="px-4 py-3 text-sm text-gray-900 text-center">${(currentPage - 1) * 10 + index + 1}</td>
-            <td class="px-4 py-3 text-center">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    ${getJenisLabel(item.jenis_dasar_hukum)}
-                </span>
-                ${item.sub_jenis ? `<div class="text-xs text-gray-500 mt-1">${getSubJenisLabel(item.sub_jenis)}</div>` : ''}
-            </td>
-            <td class="px-4 py-3">
-                <div class="text-sm font-medium text-gray-900 line-clamp-2" title="${escapeHtml(item.judul)}">${escapeHtml(item.judul)}</div>
-                <div class="text-sm text-gray-500">${escapeHtml(item.penulis)}</div>
-            </td>
-            <td class="px-4 py-3 text-sm text-gray-900 text-center">${escapeHtml(item.nomor_dokumen)}</td>
-            <td class="px-4 py-3 text-sm text-gray-900 text-center">${escapeHtml(item.nama_instansi)}</td>
-            <td class="px-4 py-3 text-center">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusClass(item.status)}">
-                    ${getStatusLabel(item.status)}
-                </span>
-            </td>
-            <td class="px-4 py-3 text-sm text-gray-900 text-center">${formatDate(item.tanggal_dokumen)}</td>
-            <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
-                ${item.lampiran && item.lampiran.length > 0 ?
-                    item.lampiran.map((file, index) =>
-                        `<a href="/dasar-hukum-document/${escapeHtml(file.path)}" target="_blank" class="inline-flex items-center px-4 py-2 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded hover:from-purple-700 hover:to-indigo-700 transition-all duration-200 mr-1" title="Buka ${escapeHtml(file.name)}"><i data-lucide="paperclip" class="h-3 w-3 mr-1"></i>Lihat Dokumen${item.lampiran.length > 1 ? ' ' + (index + 1) : ''}</a>`
-                    ).join('')
-                    : '<span class="text-gray-400 text-xs">-</span>'}
-            </td>
-            <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-center">
-                <button onclick="editDasarHukum(${item.id})"
-                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg mr-2"
-                        title="Edit">
-                    <i data-lucide="edit" class="h-4 w-4 mr-2"></i>
-                    Edit
-                </button>
-                <button onclick="deleteDasarHukum(${item.id})"
-                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-pink-600 rounded-lg hover:from-red-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg"
-                        title="Hapus">
-                    <i data-lucide="trash-2" class="h-4 w-4 mr-2"></i>
-                    Hapus
-                </button>
-            </td>
-        </tr>
-    `).join('');
-
-    // Re-initialize Lucide icons
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-}
-
-// Helper functions
-function getJenisLabel(jenis) {
-    const labels = {
-        'keputusan': 'Keputusan',
-        'pedoman': 'Pedoman',
-        'peraturan': 'Peraturan',
-        'surat_edaran': 'Surat Edaran',
-        'surat_kementerian': 'Surat Kementerian',
-        'surat_rektor': 'Surat Rektor',
-        'undang_undang': 'Undang-Undang'
-    };
-    return labels[jenis] || jenis;
-}
-
-function getSubJenisLabel(subJenis) {
-    const labels = {
-        'peraturan': 'Peraturan',
-        'surat_keputusan': 'Surat Keputusan',
-        'sk_non_pns': 'SK Non PNS'
-    };
-    return labels[subJenis] || subJenis;
-}
-
-function getStatusLabel(status) {
-    const labels = {
-        'draft': 'Draft',
-        'published': 'Published',
-        'archived': 'Archived'
-    };
-    return labels[status] || status;
-}
-
-function getStatusClass(status) {
-    const classes = {
-        'draft': 'bg-yellow-100 text-yellow-800',
-        'published': 'bg-green-100 text-green-800',
-        'archived': 'bg-gray-100 text-gray-800'
-    };
-    return classes[status] || 'bg-gray-100 text-gray-800';
-}
-
-
-function formatDate(dateString) {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('id-ID', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
-}
+// Global variables for modal handling
+let currentEditId = null;
 
 // Modal functions
-function openModal() {
-    currentEditId = null;
-    document.getElementById('modalTitle').textContent = 'Tambah Dasar Hukum';
-    document.getElementById('dasarHukumForm').reset();
-    document.getElementById('editId').value = '';
-    document.getElementById('submitText').textContent = 'Simpan';
-    document.getElementById('editor').innerHTML = '';
-    document.getElementById('subJenisField').classList.add('hidden');
-
-    // Set lampiran as required for new entries
-    document.getElementById('lampiran').required = true;
-    document.getElementById('lampiranRequired').style.display = 'inline';
-
-    // Restore penulis value after reset (since it's read-only)
-    setTimeout(() => {
-        @if(auth()->guard('pegawai')->check())
-            document.getElementById('penulis').value = "{{ auth()->guard('pegawai')->user()->nama_lengkap ?? auth()->guard('pegawai')->user()->name ?? 'Pegawai' }}";
-        @else
-            document.getElementById('penulis').value = "{{ auth()->user()->name ?? 'Administrator' }}";
-        @endif
-    }, 10);
-
-    // Hide current files
-    document.getElementById('currentThumbnail').classList.add('hidden');
-    document.getElementById('currentAttachments').classList.add('hidden');
-
+function openModal(isEdit = false) {
     const modal = document.getElementById('dasarHukumModal');
     const modalContent = document.getElementById('modalContent');
 
-    modal.classList.remove('hidden');
+    // Only reset form if not editing
+    if (!isEdit) {
+        const form = document.getElementById('dasarHukumForm');
+        if (form) form.reset();
 
-    // Trigger animation
+        // Reset contenteditable editor
+        const editorElement = document.getElementById('editor');
+        if (editorElement) {
+            editorElement.innerHTML = '';
+        }
+
+        // Reset hidden konten input
+        const kontenInput = document.getElementById('konten');
+        if (kontenInput) {
+            kontenInput.value = '';
+        }
+
+        const modalTitle = document.getElementById('modalTitle');
+        if (modalTitle) modalTitle.textContent = 'Tambah Dasar Hukum';
+
+        // Check if formMethod element exists before setting it
+        const formMethodElement = document.getElementById('formMethod');
+        if (formMethodElement) {
+            formMethodElement.value = 'POST';
+        }
+
+        if (form) form.action = '{{ route("admin-universitas.dasar-hukum.store") }}';
+        currentEditId = null;
+
+        // Hide current files for new data
+        hideCurrentFiles();
+    }
+
+    // Show modal with animation
+    if (modal) modal.classList.remove('hidden');
     setTimeout(() => {
+        if (modalContent) {
         modalContent.classList.remove('scale-95', 'opacity-0');
         modalContent.classList.add('scale-100', 'opacity-100');
+        }
     }, 10);
 }
 
@@ -885,31 +895,219 @@ function closeModal() {
     const modal = document.getElementById('dasarHukumModal');
     const modalContent = document.getElementById('modalContent');
 
-    // Trigger animation
+    // Hide modal with animation
+    if (modalContent) {
     modalContent.classList.remove('scale-100', 'opacity-100');
     modalContent.classList.add('scale-95', 'opacity-0');
+    }
 
     setTimeout(() => {
-        modal.classList.add('hidden');
-        currentEditId = null;
-        resetForm();
+        if (modal) modal.classList.add('hidden');
     }, 300);
 }
 
-function resetForm() {
-    document.getElementById('dasarHukumForm').reset();
-    document.getElementById('editId').value = '';
-    document.getElementById('modalTitle').textContent = 'Tambah Dasar Hukum';
-    document.getElementById('submitText').textContent = 'Simpan';
+function editDasarHukum(id, judul, konten, jenis, subJenis, nomor, tanggal, instansi, masaBerlaku, penulis, tags, status, tanggalPublish, tanggalBerakhir, isFeatured, isPinned, thumbnail, lampiran) {
+    // Show modal first (don't reset form)
+    openModal(true);
 
-    // Clear rich text editor
-    if (document.getElementById('editor')) {
-        document.getElementById('editor').innerHTML = '';
+    // Set form data
+    const modalTitle = document.getElementById('modalTitle');
+    if (modalTitle) modalTitle.textContent = 'Edit Dasar Hukum';
+
+    // Check if formMethod element exists before setting it
+    const formMethodElement = document.getElementById('formMethod');
+    if (formMethodElement) {
+        formMethodElement.value = 'PUT';
     }
 
-    // Hide current file displays
-    document.getElementById('currentThumbnail').classList.add('hidden');
-    document.getElementById('currentAttachments').classList.add('hidden');
+    const form = document.getElementById('dasarHukumForm');
+    if (form) form.action = `{{ route('admin-universitas.dasar-hukum.update', ':id') }}`.replace(':id', id);
+
+    // Fill form fields with null checks
+    const judulElement = document.getElementById('judul');
+    if (judulElement) judulElement.value = judul;
+
+    const kontenElement = document.getElementById('konten');
+    if (kontenElement) kontenElement.value = konten;
+
+    // Also update the rich text editor
+    const editorElement = document.getElementById('editor');
+    if (editorElement) editorElement.innerHTML = konten;
+
+    const jenisElement = document.getElementById('jenis_dasar_hukum');
+    if (jenisElement) jenisElement.value = jenis;
+
+    // Call toggleSubJenis to show/hide sub jenis field based on jenis
+    toggleSubJenis();
+
+    const subJenisElement = document.getElementById('sub_jenis');
+    if (subJenisElement) subJenisElement.value = subJenis || '';
+
+    const nomorElement = document.getElementById('nomor_dokumen');
+    if (nomorElement) nomorElement.value = nomor;
+
+    const tanggalElement = document.getElementById('tanggal_dokumen');
+    if (tanggalElement) {
+        // Convert ISO date to YYYY-MM-DD format for input field
+        let formattedTanggal = '';
+        if (tanggal) {
+            const date = new Date(tanggal);
+            if (!isNaN(date.getTime())) {
+                formattedTanggal = date.toISOString().split('T')[0]; // Get YYYY-MM-DD part
+            }
+        }
+        tanggalElement.value = formattedTanggal;
+    }
+
+    const instansiElement = document.getElementById('nama_instansi');
+    if (instansiElement) instansiElement.value = instansi;
+
+    const masaBerlakuElement = document.getElementById('masa_berlaku');
+    if (masaBerlakuElement) {
+        // Convert ISO date to YYYY-MM-DD format for input field
+        let formattedMasaBerlaku = '';
+        if (masaBerlaku) {
+            const date = new Date(masaBerlaku);
+            if (!isNaN(date.getTime())) {
+                formattedMasaBerlaku = date.toISOString().split('T')[0]; // Get YYYY-MM-DD part
+            }
+        }
+        masaBerlakuElement.value = formattedMasaBerlaku;
+    }
+
+    const penulisElement = document.getElementById('penulis');
+    if (penulisElement) penulisElement.value = penulis;
+
+    const tagsElement = document.getElementById('tags');
+    if (tagsElement) tagsElement.value = tags || '';
+
+    const statusElement = document.getElementById('status');
+    if (statusElement) statusElement.value = status;
+
+    const tanggalPublishElement = document.getElementById('tanggal_publish');
+    if (tanggalPublishElement) {
+        // Convert ISO datetime to YYYY-MM-DDTHH:MM format for datetime-local input field
+        let formattedTanggalPublish = '';
+        if (tanggalPublish) {
+            const date = new Date(tanggalPublish);
+            if (!isNaN(date.getTime())) {
+                // Format as YYYY-MM-DDTHH:MM for datetime-local input
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                formattedTanggalPublish = `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
+        }
+        tanggalPublishElement.value = formattedTanggalPublish;
+    }
+
+    // Check if tanggal_berakhir element exists before setting it
+    const tanggalBerakhirElement = document.getElementById('tanggal_berakhir');
+    if (tanggalBerakhirElement) {
+        // Convert ISO datetime to YYYY-MM-DDTHH:MM format for datetime-local input field
+        let formattedTanggalBerakhir = '';
+        if (tanggalBerakhir) {
+            const date = new Date(tanggalBerakhir);
+            if (!isNaN(date.getTime())) {
+                // Format as YYYY-MM-DDTHH:MM for datetime-local input
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                formattedTanggalBerakhir = `${year}-${month}-${day}T${hours}:${minutes}`;
+            }
+        }
+        tanggalBerakhirElement.value = formattedTanggalBerakhir;
+    }
+
+    const isFeaturedElement = document.getElementById('is_featured');
+    if (isFeaturedElement) {
+        // Handle both boolean and string values
+        const isChecked = isFeatured === true || isFeatured === 'true' || isFeatured === 1 || isFeatured === '1';
+        isFeaturedElement.checked = isChecked;
+    }
+
+    const isPinnedElement = document.getElementById('is_pinned');
+    if (isPinnedElement) {
+        // Handle both boolean and string values
+        const isChecked = isPinned === true || isPinned === 'true' || isPinned === 1 || isPinned === '1';
+        isPinnedElement.checked = isChecked;
+    }
+
+    currentEditId = id;
+
+    // Display current files
+    displayCurrentFiles(thumbnail, lampiran, id);
+}
+
+// Function to display current files
+function displayCurrentFiles(thumbnail, lampiran, id) {
+    // Display current thumbnail
+    const currentThumbnailDiv = document.getElementById('currentThumbnail');
+    const thumbnailPreview = document.getElementById('thumbnailPreview');
+    const thumbnailName = document.getElementById('thumbnailName');
+    const thumbnailDownload = document.getElementById('thumbnailDownload');
+
+    if (thumbnail && thumbnail.trim() !== '') {
+        if (currentThumbnailDiv) currentThumbnailDiv.classList.remove('hidden');
+        if (thumbnailPreview) thumbnailPreview.src = thumbnail;
+        if (thumbnailName) thumbnailName.textContent = 'Thumbnail saat ini';
+        if (thumbnailDownload) {
+            // For thumbnail, use direct path since it's stored in /storage/
+            thumbnailDownload.href = thumbnail;
+            thumbnailDownload.download = 'thumbnail.jpg'; // Set download filename
+        }
+    } else {
+        if (currentThumbnailDiv) currentThumbnailDiv.classList.add('hidden');
+    }
+
+    // Display current attachments
+    const currentAttachmentsDiv = document.getElementById('currentAttachments');
+    const attachmentsList = document.getElementById('attachmentsList');
+
+    if (lampiran && lampiran.length > 0) {
+        if (currentAttachmentsDiv) currentAttachmentsDiv.classList.remove('hidden');
+        if (attachmentsList) {
+            attachmentsList.innerHTML = '';
+            lampiran.forEach((file, index) => {
+                const fileInfo = typeof file === 'string' ? { name: file, path: file } : file;
+                const attachmentItem = document.createElement('div');
+                attachmentItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg border';
+                attachmentItem.innerHTML = `
+                    <div class="flex items-center">
+                        <i data-lucide="file-text" class="h-6 w-6 text-red-500 mr-3"></i>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">${fileInfo.name || fileInfo.path}</p>
+                            ${fileInfo.size ? `<p class="text-xs text-gray-500">${(fileInfo.size / 1024).toFixed(2)} KB</p>` : ''}
+                        </div>
+                    </div>
+                    <a href="/admin-universitas/dasar-hukum/${id}/download/${fileInfo.path}"
+                       class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                       target="_blank">
+                        <i data-lucide="download" class="h-3 w-3 mr-1"></i>
+                        Download
+                    </a>
+                `;
+                attachmentsList.appendChild(attachmentItem);
+            });
+            // Re-initialize Lucide icons for new elements
+            lucide.createIcons();
+        }
+    } else {
+        if (currentAttachmentsDiv) currentAttachmentsDiv.classList.add('hidden');
+    }
+}
+
+// Function to hide current files
+function hideCurrentFiles() {
+    const currentThumbnailDiv = document.getElementById('currentThumbnail');
+    const currentAttachmentsDiv = document.getElementById('currentAttachments');
+
+    if (currentThumbnailDiv) currentThumbnailDiv.classList.add('hidden');
+    if (currentAttachmentsDiv) currentAttachmentsDiv.classList.add('hidden');
 }
 
 // Toggle sub jenis field
@@ -919,467 +1117,29 @@ function toggleSubJenis() {
     const subJenisSelect = document.getElementById('sub_jenis');
 
     if (jenis === 'surat_rektor') {
-        subJenisField.classList.remove('hidden');
-        subJenisSelect.required = true;
-    } else {
-        subJenisField.classList.add('hidden');
-        subJenisSelect.required = false;
-        subJenisSelect.value = '';
+        if (subJenisField) subJenisField.classList.remove('hidden');
+        if (subJenisSelect) subJenisSelect.required = true;
+            } else {
+        if (subJenisField) subJenisField.classList.add('hidden');
+        if (subJenisSelect) {
+            subJenisSelect.required = false;
+            subJenisSelect.value = '';
+        }
     }
 }
 
-// Display current files
-function displayCurrentFiles(item) {
-    // Display current thumbnail
-    const currentThumbnail = document.getElementById('currentThumbnail');
-    if (item.thumbnail) {
-        const thumbnailPreview = document.getElementById('thumbnailPreview');
-        const thumbnailName = document.getElementById('thumbnailName');
-        const thumbnailDownload = document.getElementById('thumbnailDownload');
-
-        // Extract filename from path
-        const filename = item.thumbnail.split('/').pop();
-
-        // Use the same route as lampiran for thumbnail access
-        const thumbnailUrl = `/dasar-hukum-document/${filename}`;
-
-        thumbnailPreview.src = thumbnailUrl;
-        thumbnailName.textContent = filename;
-        thumbnailDownload.href = thumbnailUrl;
-
-        currentThumbnail.classList.remove('hidden');
-    } else {
-        currentThumbnail.classList.add('hidden');
-    }
-
-    // Display current attachments
-    const currentAttachments = document.getElementById('currentAttachments');
-    const attachmentsList = document.getElementById('attachmentsList');
-
-    if (item.lampiran && item.lampiran.length > 0) {
-        attachmentsList.innerHTML = '';
-        item.lampiran.forEach(file => {
-            // Handle both old format (string) and new format (object)
-            const fileName = typeof file === 'string' ? file.split('/').pop() : file.name;
-            const filePath = typeof file === 'string' ? file.split('/').pop() : file.path;
-            const fileSize = typeof file === 'object' ? file.size : null;
-
-            const attachmentDiv = document.createElement('div');
-            attachmentDiv.className = 'flex items-center space-x-3 p-3 bg-gray-50 rounded-lg border';
-            attachmentDiv.innerHTML = `
-                <div class="flex-shrink-0">
-                    <i data-lucide="file" class="h-8 w-8 text-gray-400"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-900 truncate">${escapeHtml(fileName)}</p>
-                    <p class="text-xs text-gray-500">${fileSize ? `Size: ${(fileSize / 1024).toFixed(1)} KB` : 'Klik untuk download'}</p>
-                </div>
-                <a href="/dasar-hukum-document/${escapeHtml(filePath)}" target="_blank"
-                   class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    <i data-lucide="download" class="h-3 w-3 mr-1"></i>
-                    Download
-                </a>
-            `;
-            attachmentsList.appendChild(attachmentDiv);
-        });
-
-        currentAttachments.classList.remove('hidden');
-        lucide.createIcons();
-    } else {
-        currentAttachments.classList.add('hidden');
-    }
-}
-
-// Generate nomor dokumen
-function generateNomorDokumen() {
-    const jenis = document.getElementById('jenis_dasar_hukum').value;
-    const tahun = new Date().getFullYear();
-    const instansi = document.getElementById('nama_instansi').value || 'UNMUL';
-
-    let prefix = '';
-    switch(jenis) {
-        case 'keputusan': prefix = 'KEP'; break;
-        case 'peraturan': prefix = 'PER'; break;
-        case 'surat_edaran': prefix = 'SE'; break;
-        case 'surat_kementerian': prefix = 'SKM'; break;
-        case 'surat_rektor': prefix = 'SKR'; break;
-        case 'undang_undang': prefix = 'UU'; break;
-        default: prefix = 'DH'; // Dasar Hukum
-    }
-
-    const nomor = `001/${instansi}/${prefix}/${tahun}`;
-    document.getElementById('nomor_dokumen').value = nomor;
-}
-
-// Initialize rich text editor
+// Initialize editor
 function initializeEditor() {
+    // Simple rich text editor initialization
     const editor = document.getElementById('editor');
-    const kontenInput = document.getElementById('konten');
-
-    // Update hidden input when editor content changes
-    editor.addEventListener('input', function() {
-        kontenInput.value = editor.innerHTML;
-    });
-
-    // Handle toolbar buttons
-    document.querySelectorAll('.ql-bold').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.execCommand('bold');
-            editor.focus();
-        });
-    });
-
-    document.querySelectorAll('.ql-italic').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.execCommand('italic');
-            editor.focus();
-        });
-    });
-
-    document.querySelectorAll('.ql-underline').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.execCommand('underline');
-            editor.focus();
-        });
-    });
-
-    document.querySelectorAll('.ql-list').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const value = e.target.getAttribute('value');
-            if (value === 'ordered') {
-                document.execCommand('insertOrderedList');
-            } else if (value === 'bullet') {
-                document.execCommand('insertUnorderedList');
-            }
-            editor.focus();
-        });
-    });
-
-    document.querySelectorAll('.ql-align').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const value = e.target.getAttribute('value');
-            document.execCommand('justify' + (value || 'Left'));
-            editor.focus();
-        });
-    });
-
-    document.querySelectorAll('.ql-indent').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const value = e.target.getAttribute('value');
-            if (value === '+1') {
-                document.execCommand('indent');
-            } else if (value === '-1') {
-                document.execCommand('outdent');
-            }
-            editor.focus();
-        });
-    });
-}
-
-// Form submission
-document.getElementById('dasarHukumForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    const submitBtn = document.getElementById('submitBtn');
-    const submitText = document.getElementById('submitText');
-    const submitLoader = document.getElementById('submitLoader');
-
-    // Show loading
-    showSubmitLoading(true);
-
-    try {
-        const formData = new FormData(this);
-        const isEdit = currentEditId !== null;
-        const url = isEdit ? `/admin-universitas/dasar-hukum/${currentEditId}` : '/admin-universitas/dasar-hukum';
-
-        if (isEdit) {
-            formData.append('_method', 'PUT');
-        }
-
-        const response = await fetch(url, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            credentials: 'same-origin'
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-            showAlert('Berhasil!', 'Data berhasil disimpan', 'success');
-            closeModal();
-            loadDasarHukum(currentPage);
-        } else {
-            // Handle validation errors
-            if (data.errors) {
-                let errorMessage = 'Validasi gagal:\n';
-                for (const field in data.errors) {
-                    errorMessage += `• ${escapeHtml(data.errors[field][0])}\n`;
-                }
-                showAlert('Error!', errorMessage, 'error');
-            } else {
-                showAlert('Error!', 'Terjadi kesalahan saat menyimpan data', 'error');
-            }
-        }
-    } catch (error) {
-        // Error submitting form
-        showAlert('Error!', 'Terjadi kesalahan saat menyimpan data', 'error');
-    } finally {
-        // Hide loading
-        showSubmitLoading(false);
-    }
-});
-
-// Show submit loading
-function showSubmitLoading(show) {
-    const submitBtn = document.getElementById('submitBtn');
-    const text = document.getElementById('submitText');
-    const loader = document.getElementById('submitLoader');
-
-    if (show) {
-        submitBtn.disabled = true;
-        text.textContent = 'Menyimpan...';
-        loader.classList.remove('hidden');
-    } else {
-        submitBtn.disabled = false;
-        // Restore original text based on edit mode
-        text.textContent = currentEditId ? 'Update' : 'Simpan';
-        loader.classList.add('hidden');
+    if (editor) {
+        // Basic contenteditable functionality
+        editor.setAttribute('contenteditable', 'true');
     }
 }
 
-// Edit function
-function editDasarHukum(id) {
-    const item = dasarHukumData.find(item => item.id === id);
-    if (!item) return;
-
-    // Edit item data
-
-    currentEditId = id;
-    document.getElementById('modalTitle').textContent = 'Edit Dasar Hukum';
-    document.getElementById('editId').value = item.id;
-    document.getElementById('jenis_dasar_hukum').value = item.jenis_dasar_hukum;
-    document.getElementById('judul').value = item.judul;
-    document.getElementById('editor').innerHTML = escapeHtml(item.konten);
-    document.getElementById('konten').value = item.konten;
-    document.getElementById('status').value = item.status;
-
-    // Apply toggle first to show/hide sub jenis fields
-    toggleSubJenis();
-
-    // Add small delay to ensure modal is fully rendered
-    setTimeout(() => {
-        // Check if elements exist before setting values
-        const subJenisField = document.getElementById('sub_jenis');
-        const nomorDokumenField = document.getElementById('nomor_dokumen');
-        const tanggalDokumenField = document.getElementById('tanggal_dokumen');
-        const namaInstansiField = document.getElementById('nama_instansi');
-        const penulisField = document.getElementById('penulis');
-        const tagsField = document.getElementById('tags');
-        const tanggalField = document.getElementById('tanggal_publish');
-        const masaBerlakuField = document.getElementById('masa_berlaku');
-
-        // Form fields found
-
-        if (subJenisField) {
-            subJenisField.value = item.sub_jenis || '';
-            // Sub Jenis value set
-        }
-
-        if (nomorDokumenField) {
-            nomorDokumenField.value = item.nomor_dokumen || '';
-            // Nomor Dokumen value set
-        }
-
-        if (tanggalDokumenField) {
-            // Handle tanggal_dokumen format
-            // Handle tanggal_dokumen format
-            if (item.tanggal_dokumen) {
-                // Convert from "2025-09-07T00:00:00.000000Z" to "2025-09-07" (date format)
-                const dateStr = item.tanggal_dokumen.substring(0, 10);
-                tanggalDokumenField.value = dateStr;
-                // Tanggal Dokumen value set
-            } else {
-                tanggalDokumenField.value = '';
-                // Tanggal Dokumen is empty, field cleared
-            }
-        }
-
-        if (namaInstansiField) {
-            namaInstansiField.value = item.nama_instansi || '';
-            // Nama Instansi value set
-        }
-
-        // Ensure penulis field is always filled with current user (read-only)
-        if (penulisField) {
-            @if(auth()->guard('pegawai')->check())
-                penulisField.value = "{{ auth()->guard('pegawai')->user()->nama_lengkap ?? auth()->guard('pegawai')->user()->name ?? 'Pegawai' }}";
-            @else
-                penulisField.value = "{{ auth()->user()->name ?? 'Administrator' }}";
-            @endif
-        }
-
-        if (tagsField) {
-            tagsField.value = item.tags ? item.tags.join(', ') : '';
-            // Tags value set
-        }
-
-        // Handle tanggal_publish format
-        if (tanggalField && item.tanggal_publish) {
-            // Convert from "2025-09-07T17:41:00.000000Z" to "2025-09-07T17:41"
-            const dateStr = item.tanggal_publish.replace('T', 'T').substring(0, 16);
-            tanggalField.value = dateStr;
-            // Tanggal value set
-        } else if (tanggalField) {
-            tanggalField.value = '';
-        }
-
-        if (masaBerlakuField) {
-            masaBerlakuField.value = item.masa_berlaku || '';
-            // Masa Berlaku value set
-        }
-
-        document.getElementById('is_featured').checked = item.is_featured;
-        document.getElementById('is_pinned').checked = item.is_pinned;
-
-        // Display current files
-        displayCurrentFiles(item);
-
-        // Set lampiran as optional for edit (since existing files are preserved)
-        document.getElementById('lampiran').required = false;
-        document.getElementById('lampiranRequired').style.display = 'none';
-    }, 100); // End setTimeout
-
-    const modal = document.getElementById('dasarHukumModal');
-    const modalContent = document.getElementById('modalContent');
-
-    modal.classList.remove('hidden');
-
-    // Trigger animation
-    setTimeout(() => {
-        modalContent.classList.remove('scale-95', 'opacity-0');
-        modalContent.classList.add('scale-100', 'opacity-100');
-    }, 10);
-}
-
-// Delete function
-async function deleteDasarHukum(id) {
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: 'Apakah Anda yakin?',
-            text: 'Data yang dihapus tidak dapat dikembalikan!',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Ya, hapus!',
-            cancelButtonText: 'Batal',
-            customClass: {
-                popup: 'bg-gray-800 text-white',
-                title: 'text-white',
-                content: 'text-gray-300',
-                confirmButton: 'bg-red-600 hover:bg-red-700 text-white',
-                cancelButton: 'bg-gray-600 hover:bg-gray-700 text-white'
-            }
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                try {
-                    const response = await fetch(`/admin-universitas/dasar-hukum/${id}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                        },
-                        credentials: 'same-origin'
-                    });
-
-                    const data = await response.json();
-
-                    if (data.success) {
-                        showAlert('Berhasil!', 'Data berhasil dihapus', 'success');
-                        loadDasarHukum(currentPage);
-                    } else {
-                        showAlert('Error!', 'Terjadi kesalahan saat menghapus data', 'error');
-                    }
-                } catch (error) {
-                    // Error deleting data
-                    showAlert('Error!', 'Terjadi kesalahan saat menghapus data', 'error');
-                }
-            }
-        });
-    } else {
-        if (confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-            try {
-                const response = await fetch(`/admin-universitas/dasar-hukum/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    credentials: 'same-origin'
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    showAlert('Success', 'Data berhasil dihapus', 'success');
-                    loadDasarHukum(currentPage);
-                } else {
-                    showAlert('Error', 'Terjadi kesalahan saat menghapus data', 'error');
-                }
-            } catch (error) {
-                // Error deleting data
-                showAlert('Error', 'Gagal menghapus data', 'error');
-            }
-        }
-    }
-}
-
-// Filter functions
-function initializeFilters() {
-    // Search input with real-time filtering
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', debounce(function(e) {
-            currentSearch = e.target.value.trim();
-
-            // If search is empty, load all data immediately
-            if (currentSearch === '') {
-                loadDasarHukum(1);
-            } else {
-                // Only search if there's actual content
-                loadDasarHukum(1);
-            }
-        }, 300));
-    }
-
-    // Real-time filtering for jenis dropdown
-    const filterJenis = document.getElementById('filterJenis');
-    if (filterJenis) {
-        filterJenis.addEventListener('change', function() {
-            currentFilters.jenis = this.value;
-            loadDasarHukum(1);
-        });
-    }
-
-    // Real-time filtering for status dropdown
-    const filterStatus = document.getElementById('filterStatus');
-    if (filterStatus) {
-        filterStatus.addEventListener('change', function() {
-            currentFilters.status = this.value;
-            loadDasarHukum(1);
-        });
-    }
-}
-
-function applyFilters() {
-    // This function is kept for backward compatibility but is no longer used
-    currentFilters.jenis = document.getElementById('filterJenis').value;
-    currentFilters.status = document.getElementById('filterStatus').value;
-    currentSearch = document.getElementById('searchInput').value;
-
-    loadDasarHukum(1);
-}
+// Initialize Lucide icons
+lucide.createIcons();
 
 // Debounce function
 function debounce(func, wait) {
@@ -1394,144 +1154,91 @@ function debounce(func, wait) {
     };
 }
 
-// Alert function
-function showAlert(title, message, type) {
-    if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title: title,
-            text: message,
-            icon: type,
-            confirmButtonText: 'OK',
-            customClass: {
-                popup: 'bg-gray-800 text-white',
-                title: 'text-white',
-                content: 'text-gray-300',
-                confirmButton: type === 'success' ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white'
-            }
-        });
-    } else {
-        alert(`${escapeHtml(title)}: ${escapeHtml(message)}`);
+
+
+// Initialize editor
+function initializeEditor() {
+    // Simple rich text editor initialization
+    const editor = document.getElementById('editor');
+    if (editor) {
+        // Basic contenteditable functionality
+        editor.setAttribute('contenteditable', 'true');
     }
-}
-
-// Loading animation functions
-function showTableLoading() {
-    const tbody = document.getElementById('dasarHukumTableBody');
-    if (tbody) {
-        tbody.classList.add('table-loading');
-        tbody.classList.remove('table-loaded');
-    }
-}
-
-function hideTableLoading() {
-    const tbody = document.getElementById('dasarHukumTableBody');
-    if (tbody) {
-        tbody.classList.remove('table-loading');
-        tbody.classList.add('table-loaded');
-    }
-}
-
-// Pagination functions
-function updatePagination(data) {
-    currentPage = data.current_page;
-    totalPages = data.last_page;
-    totalData = data.total;
-
-    // Update pagination
-
-    const container = document.getElementById('paginationContainer');
-    const pageNumbers = document.getElementById('pageNumbers');
-    const prevBtn = document.getElementById('prevPageBtn');
-    const nextBtn = document.getElementById('nextPageBtn');
-
-    // Pagination elements found
-
-    // Show/hide pagination
-    if (totalPages > 1) {
-        container.classList.add('show');
-    } else {
-        container.classList.remove('show');
-    }
-
-    // Always show pagination container if there's data
-    if (totalData > 0) {
-        container.style.display = 'block';
-    } else {
-        container.style.display = 'none';
-    }
-
-    // Update pagination info
-    const startItem = (currentPage - 1) * 10 + 1;
-    const endItem = Math.min(currentPage * 10, totalData);
-    document.getElementById('paginationInfo').textContent =
-        `Menampilkan ${startItem}-${endItem} dari ${totalData} data`;
-
-    // Update page numbers
-    pageNumbers.innerHTML = '';
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, currentPage + 2);
-
-    for (let i = startPage; i <= endPage; i++) {
-        const pageBtn = document.createElement('button');
-        pageBtn.textContent = i;
-        pageBtn.className = `px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-            i === currentPage
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 hover:shadow-sm'
-        }`;
-        pageBtn.onclick = (e) => {
-            e.target.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                e.target.style.transform = '';
-            }, 150);
-            changePage(i);
-        };
-        pageNumbers.appendChild(pageBtn);
-    }
-
-    // Update prev/next buttons
-    prevBtn.disabled = currentPage === 1;
-    nextBtn.disabled = currentPage === totalPages;
-    prevBtn.onclick = (e) => {
-        if (currentPage > 1) {
-            e.target.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                e.target.style.transform = '';
-            }, 150);
-            changePage(currentPage - 1);
-        }
-    };
-    nextBtn.onclick = (e) => {
-        if (currentPage < totalPages) {
-            e.target.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                e.target.style.transform = '';
-            }, 150);
-            changePage(currentPage + 1);
-        }
-    };
-}
-
-function changePage(page) {
-    if (page < 1 || page > totalPages || page === currentPage) {
-        return;
-    }
-
-    // Add click animation to the clicked button
-    const clickedButton = event.target.closest('button');
-    if (clickedButton) {
-        clickedButton.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            clickedButton.style.transform = '';
-        }, 150);
-    }
-
-    currentPage = page;
-    loadDasarHukum(page);
 }
 
 // Initialize Lucide icons
 lucide.createIcons();
+
+// Handle form submission with loading animation and content sync
+document.getElementById('dasarHukumForm').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = document.getElementById('submitText');
+
+    // Sync contenteditable content to hidden input
+    const editorElement = document.getElementById('editor');
+    const kontenInput = document.getElementById('konten');
+    if (editorElement && kontenInput) {
+        kontenInput.value = editorElement.innerHTML;
+    }
+
+    // Show loading state
+    if (submitBtn) {
+        submitBtn.classList.add('btn-loading');
+        submitBtn.disabled = true;
+    }
+    if (submitText) {
+        submitText.textContent = 'Menyimpan...';
+    }
+});
+
+// Modern notification function
+function showNotification(message, type = 'success') {
+    const container = document.getElementById('notificationContainer');
+    const notification = document.createElement('div');
+
+    const icon = type === 'success'
+        ? '<svg class="notification-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>'
+        : '<svg class="notification-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>';
+
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            ${icon}
+            <div class="notification-text">${message}</div>
+            <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+            </button>
+        </div>
+    `;
+
+    container.appendChild(notification);
+
+    // Trigger animation
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 100);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 400);
+    }, 5000);
+}
+
+// Check for flash messages and show notifications
+@if(session('success'))
+    showNotification('{{ session('success') }}', 'success');
+@endif
+
+@if(session('error'))
+    showNotification('{{ session('error') }}', 'error');
+@endif
 </script>
 @endpush
 @endsection
