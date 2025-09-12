@@ -347,15 +347,15 @@
                     <table class="w-full divide-y divide-gray-200">
                         <thead class="bg-white">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold uppercase tracking-wider w-16 text-center">No</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold uppercase tracking-wider w-24 text-center">Jenis</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold uppercase tracking-wider w-48 text-center">Judul</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold uppercase tracking-wider w-28 text-center">Nomor Dokumen</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold uppercase tracking-wider w-28 text-center">Instansi</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold uppercase tracking-wider w-20 text-center">Status</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold uppercase tracking-wider w-24 text-center">Tanggal</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold uppercase tracking-wider w-24 text-center">Dokumen</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold uppercase tracking-wider w-28 text-center">Aksi</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-16 text-center">No</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-24 text-center">Jenis</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-48 text-center">Judul</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-28 text-center">Nomor Dokumen</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-28 text-center">Instansi</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-20 text-center">Status</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-24 text-center">Tanggal</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-24 text-center">Dokumen</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-28 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -372,7 +372,7 @@
                                 <td class="px-2 sm:px-4 py-3 text-sm text-gray-900 max-w-xs">
                                     <div class="truncate" title="{{ $item->judul }}">
                                         {{ $item->judul }}
-                </div>
+                                    </div>
                                 </td>
                                 <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-center text-sm text-gray-900">
                                     {{ $item->nomor_dokumen }}
@@ -380,7 +380,7 @@
                                 <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-center text-sm text-gray-900">
                                     <div class="truncate max-w-24" title="{{ $item->nama_instansi }}">
                                         {{ $item->nama_instansi }}
-            </div>
+                                    </div>
                                 </td>
                                 <td class="px-2 sm:px-4 py-3 whitespace-nowrap text-center">
                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{
@@ -430,7 +430,7 @@
                                                 <span class="hidden sm:inline">Hapus</span>
                                             </button>
                                         </form>
-        </div>
+                                    </div>
                                 </td>
                             </tr>
                             @empty
@@ -767,8 +767,6 @@
                             </label>
                         </div>
                     </div>
-                </div>
-
                 </div>
 
                 <!-- Modal Footer -->
@@ -1127,34 +1125,6 @@ function toggleSubJenis() {
         }
     }
 }
-
-// Initialize editor
-function initializeEditor() {
-    // Simple rich text editor initialization
-    const editor = document.getElementById('editor');
-    if (editor) {
-        // Basic contenteditable functionality
-        editor.setAttribute('contenteditable', 'true');
-    }
-}
-
-// Initialize Lucide icons
-lucide.createIcons();
-
-// Debounce function
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-
 
 // Initialize editor
 function initializeEditor() {

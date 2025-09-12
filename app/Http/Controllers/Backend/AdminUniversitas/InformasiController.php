@@ -145,8 +145,8 @@ class InformasiController extends Controller
             if ($request->hasFile('thumbnail')) {
                 $thumbnail = $request->file('thumbnail');
                 $thumbnailName = time() . '_' . $thumbnail->getClientOriginalName();
-                $thumbnailPath = $thumbnail->storeAs('public/informasi/thumbnails', $thumbnailName);
-                $data['thumbnail'] = '/storage/' . str_replace('public/', '', $thumbnailPath);
+                $thumbnailPath = $thumbnail->storeAs('informasi/thumbnails', $thumbnailName, 'public');
+                $data['thumbnail'] = '/storage/' . $thumbnailPath;
             }
 
             // Upload lampiran
@@ -154,7 +154,7 @@ class InformasiController extends Controller
                 $lampiranFiles = [];
                 foreach ($request->file('lampiran') as $file) {
                     $fileName = time() . '_' . $file->getClientOriginalName();
-                    $filePath = $file->storeAs('public/informasi/lampiran', $fileName);
+                    $filePath = $file->storeAs('informasi/lampiran', $fileName, 'public');
                     $lampiranFiles[] = [
                         'name' => $file->getClientOriginalName(),
                         'path' => $fileName, // Store relative filename only
@@ -284,14 +284,17 @@ class InformasiController extends Controller
             if ($request->hasFile('thumbnail')) {
                 // Delete old thumbnail
                 if ($informasi->thumbnail) {
-                    $oldThumbnail = str_replace('/storage/', 'public/', $informasi->thumbnail);
-                    Storage::delete($oldThumbnail);
+                    $oldThumbnail = str_replace('/storage/', '', $informasi->thumbnail);
+                    Storage::disk('public')->delete($oldThumbnail);
                 }
 
                 $thumbnail = $request->file('thumbnail');
                 $thumbnailName = time() . '_' . $thumbnail->getClientOriginalName();
-                $thumbnailPath = $thumbnail->storeAs('public/informasi/thumbnails', $thumbnailName);
-                $data['thumbnail'] = '/storage/' . str_replace('public/', '', $thumbnailPath);
+                $thumbnailPath = $thumbnail->storeAs('informasi/thumbnails', $thumbnailName, 'public');
+                $data['thumbnail'] = '/storage/' . $thumbnailPath;
+            } else {
+                // Jika tidak ada thumbnail baru yang di-upload, gunakan thumbnail yang sudah ada
+                $data['thumbnail'] = $informasi->thumbnail;
             }
 
             // Upload lampiran
@@ -299,7 +302,7 @@ class InformasiController extends Controller
                 $lampiranFiles = [];
                 foreach ($request->file('lampiran') as $file) {
                     $fileName = time() . '_' . $file->getClientOriginalName();
-                    $filePath = $file->storeAs('public/informasi/lampiran', $fileName);
+                    $filePath = $file->storeAs('informasi/lampiran', $fileName, 'public');
                     $lampiranFiles[] = [
                         'name' => $file->getClientOriginalName(),
                         'path' => $fileName, // Store relative filename only
@@ -307,6 +310,9 @@ class InformasiController extends Controller
                     ];
                 }
                 $data['lampiran'] = $lampiranFiles;
+            } else {
+                // Jika tidak ada file baru yang di-upload, gunakan lampiran yang sudah ada
+                $data['lampiran'] = $informasi->lampiran;
             }
 
             // Parse tags
@@ -393,14 +399,14 @@ class InformasiController extends Controller
 
             // Delete files
             if ($informasi->thumbnail) {
-                $thumbnail = str_replace('/storage/', 'public/', $informasi->thumbnail);
-                Storage::delete($thumbnail);
+                $thumbnail = str_replace('/storage/', '', $informasi->thumbnail);
+                Storage::disk('public')->delete($thumbnail);
             }
 
             if ($informasi->lampiran) {
                 foreach ($informasi->lampiran as $file) {
-                    $filePath = str_replace('/storage/', 'public/', $file['path']);
-                    Storage::delete($filePath);
+                    $filePath = $file['path'];
+                    Storage::disk('public')->delete('informasi/lampiran/' . $filePath);
                 }
             }
 
@@ -463,23 +469,43 @@ class InformasiController extends Controller
             abort(403, 'Unauthorized. Anda harus login untuk mengakses dokumen ini.');
         }
 
-        // Get file path from storage - check both lampiran and thumbnails
-        $filePath = 'public/informasi/lampiran/' . $filename;
+        // Decode filename if it's URL encoded
+        $filename = urldecode($filename);
 
-        // Check if file exists in lampiran folder
-        if (!Storage::disk('local')->exists($filePath)) {
-            // Check in thumbnails folder
-            $thumbnailPath = 'public/informasi/thumbnails/' . $filename;
-            if (Storage::disk('local')->exists($thumbnailPath)) {
-                $filePath = $thumbnailPath;
-            } else {
-                abort(404, 'File tidak ditemukan: ' . $filename);
+        // Try multiple possible paths where the file might be stored
+        $possiblePaths = [
+            'public/informasi/lampiran/' . $filename,
+            'public/informasi/thumbnails/' . $filename,
+            'informasi/lampiran/' . $filename,
+            'informasi/thumbnails/' . $filename,
+            'private/public/informasi/lampiran/' . $filename,
+            'private/public/informasi/thumbnails/' . $filename,
+        ];
+
+        $filePath = null;
+        foreach ($possiblePaths as $path) {
+            if (Storage::disk('public')->exists($path)) {
+                $filePath = $path;
+                break;
             }
+        }
+
+        if (!$filePath) {
+            Log::error('Informasi document not found', [
+                'filename' => $filename,
+                'searched_paths' => $possiblePaths,
+                'user_id' => Auth::id(),
+                'user_name' => Auth::user()->name ?? 'Unknown',
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent()
+            ]);
+            abort(404, 'File tidak ditemukan: ' . $filename);
         }
 
         // Log document access for security
         Log::info('Informasi document accessed', [
             'filename' => $filename,
+            'file_path' => $filePath,
             'user_id' => Auth::id(),
             'user_name' => Auth::user()->name ?? 'Unknown',
             'ip_address' => request()->ip(),
@@ -488,11 +514,11 @@ class InformasiController extends Controller
 
         // Check if this is a download request
         if (request()->has('download') && request()->get('download') == '1') {
-            return Storage::disk('local')->download($filePath, $filename);
+            return Storage::disk('public')->download($filePath, $filename);
         }
 
         // Return file for viewing
-        return Storage::disk('local')->response($filePath);
+        return Storage::disk('public')->response($filePath);
     }
 
     /**
@@ -509,24 +535,45 @@ class InformasiController extends Controller
             // Find the informasi record
             $informasi = Informasi::findOrFail($id);
 
-            // Get file path from storage - check both lampiran and thumbnails
-            $filePath = 'public/informasi/lampiran/' . $filename;
+            // Decode filename if it's URL encoded
+            $filename = urldecode($filename);
 
-            // Check if file exists in lampiran folder
-            if (!Storage::disk('local')->exists($filePath)) {
-                // Check in thumbnails folder
-                $thumbnailPath = 'public/informasi/thumbnails/' . $filename;
-                if (Storage::disk('local')->exists($thumbnailPath)) {
-                    $filePath = $thumbnailPath;
-                } else {
-                    abort(404, 'File tidak ditemukan: ' . $filename);
+            // Try multiple possible paths where the file might be stored
+            $possiblePaths = [
+                'public/informasi/lampiran/' . $filename,
+                'public/informasi/thumbnails/' . $filename,
+                'informasi/lampiran/' . $filename,
+                'informasi/thumbnails/' . $filename,
+                'private/public/informasi/lampiran/' . $filename,
+                'private/public/informasi/thumbnails/' . $filename,
+            ];
+
+            $filePath = null;
+            foreach ($possiblePaths as $path) {
+                if (Storage::disk('public')->exists($path)) {
+                    $filePath = $path;
+                    break;
                 }
+            }
+
+            if (!$filePath) {
+                Log::error('Informasi document not found for download', [
+                    'id' => $id,
+                    'filename' => $filename,
+                    'searched_paths' => $possiblePaths,
+                    'user_id' => Auth::id(),
+                    'user_name' => Auth::user()->name ?? 'Unknown',
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->userAgent()
+                ]);
+                abort(404, 'File tidak ditemukan: ' . $filename);
             }
 
             // Log document access for security
             Log::info('Informasi document downloaded', [
                 'id' => $id,
                 'filename' => $filename,
+                'file_path' => $filePath,
                 'user_id' => Auth::id(),
                 'user_name' => Auth::user()->name ?? 'Unknown',
                 'ip_address' => request()->ip(),
@@ -534,16 +581,102 @@ class InformasiController extends Controller
             ]);
 
             // Return file for download
-            return Storage::disk('local')->download($filePath, $filename);
+            return Storage::disk('public')->download($filePath, $filename);
 
         } catch (\Exception $e) {
             Log::error('Error downloading informasi document', [
                 'id' => $id,
                 'filename' => $filename,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             abort(404, 'File tidak ditemukan atau tidak dapat diakses.');
+        }
+    }
+
+    /**
+     * Helper method to find file path for informasi documents
+     * This method tries multiple possible paths where files might be stored
+     */
+    private function findFilePath($filename, $type = 'both')
+    {
+        $filename = urldecode($filename);
+        $possiblePaths = [];
+
+        if ($type === 'both' || $type === 'lampiran') {
+            $possiblePaths[] = 'public/informasi/lampiran/' . $filename;
+            $possiblePaths[] = 'informasi/lampiran/' . $filename;
+            $possiblePaths[] = 'private/public/informasi/lampiran/' . $filename;
+        }
+
+        if ($type === 'both' || $type === 'thumbnail') {
+            $possiblePaths[] = 'public/informasi/thumbnails/' . $filename;
+            $possiblePaths[] = 'informasi/thumbnails/' . $filename;
+            $possiblePaths[] = 'private/public/informasi/thumbnails/' . $filename;
+        }
+
+        foreach ($possiblePaths as $path) {
+            if (Storage::disk('public')->exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Debug method to check file storage status
+     * This can be called via route for debugging purposes
+     */
+    public function debugFileStorage($id)
+    {
+        try {
+            $informasi = Informasi::findOrFail($id);
+
+            $debugInfo = [
+                'informasi_id' => $id,
+                'thumbnail' => $informasi->thumbnail,
+                'lampiran' => $informasi->lampiran,
+                'storage_paths' => []
+            ];
+
+            // Check thumbnail
+            if ($informasi->thumbnail) {
+                $thumbnailFilename = basename($informasi->thumbnail);
+                $thumbnailPath = $this->findFilePath($thumbnailFilename, 'thumbnail');
+                $debugInfo['storage_paths']['thumbnail'] = [
+                    'filename' => $thumbnailFilename,
+                    'stored_path' => $informasi->thumbnail,
+                    'found_path' => $thumbnailPath,
+                    'exists' => $thumbnailPath ? Storage::disk('public')->exists($thumbnailPath) : false
+                ];
+            }
+
+            // Check lampiran
+            if ($informasi->lampiran && is_array($informasi->lampiran)) {
+                $debugInfo['storage_paths']['lampiran'] = [];
+                foreach ($informasi->lampiran as $index => $file) {
+                    $fileInfo = is_array($file) ? $file : ['path' => $file, 'name' => $file];
+                    $filename = $fileInfo['path'] ?? $fileInfo['name'];
+                    $lampiranPath = $this->findFilePath($filename, 'lampiran');
+
+                    $debugInfo['storage_paths']['lampiran'][$index] = [
+                        'filename' => $filename,
+                        'stored_info' => $fileInfo,
+                        'found_path' => $lampiranPath,
+                        'exists' => $lampiranPath ? Storage::disk('public')->exists($lampiranPath) : false
+                    ];
+                }
+            }
+
+            return response()->json($debugInfo);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
     }
 }

@@ -4,7 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Frontend\ProfilController as FrontendProfil;
 use App\Http\Controllers\Frontend\LayananController as FrontendLayanan;
 use App\Http\Controllers\Frontend\HomeController;
-use App\Http\Controllers\Backend\AdminUniversitas\DasarHukumController;
+use App\Http\Controllers\Frontend\DasarHukumController;
+use App\Http\Controllers\Backend\AdminUniversitas\DasarHukumController as AdminDasarHukumController;
 
 // ------ RUTE HALAMAN FRONTEND ------//
 Route::get('/', [HomeController::class, 'index'])->name('frontend.home');
@@ -15,41 +16,55 @@ Route::prefix('profil')->group(function () {
 });
 
 // Informasi Routes
-Route::get('/berita', function () {
-    return view('frontend.layouts.informasi.berita');
-})->name('frontend.berita');
+Route::get('/berita', [App\Http\Controllers\Frontend\InformasiController::class, 'berita'])->name('frontend.berita');
+Route::get('/berita/{informasi}', [App\Http\Controllers\Frontend\InformasiController::class, 'show'])->name('berita.show');
+Route::get('/berita/{informasi}/download/{filename}', [App\Http\Controllers\Frontend\InformasiController::class, 'download'])->name('berita.download');
 
-Route::get('/pengumuman', function () {
-    return view('frontend.layouts.informasi.pengumuman');
-})->name('frontend.pengumuman');
+Route::get('/pengumuman', [App\Http\Controllers\Frontend\InformasiController::class, 'pengumuman'])->name('frontend.pengumuman');
+Route::get('/pengumuman/{informasi}', [App\Http\Controllers\Frontend\InformasiController::class, 'show'])->name('pengumuman.show');
+Route::get('/pengumuman/{informasi}/download/{filename}', [App\Http\Controllers\Frontend\InformasiController::class, 'download'])->name('pengumuman.download');
 
-Route::get('/keputusan', function () {
-    return view('frontend.layouts.dasar-hukum.keputusan');
-})->name('keputusan');
+// Dasar Hukum Routes with Controller
+Route::prefix('dasar-hukum')->name('dasar-hukum.')->group(function () {
+    Route::get('/keputusan', [DasarHukumController::class, 'index'])->name('keputusan.index');
+    Route::get('/keputusan/{keputusan}', [DasarHukumController::class, 'show'])->name('keputusan.show');
+    Route::get('/keputusan/{keputusan}/download/{filename}', [DasarHukumController::class, 'download'])->name('keputusan.download');
+        Route::get('/peraturan', [DasarHukumController::class, 'peraturan'])->name('peraturan.index');
+        Route::get('/peraturan/{peraturan}', [DasarHukumController::class, 'show'])->name('peraturan.show');
+        Route::get('/peraturan/{peraturan}/download/{filename}', [DasarHukumController::class, 'download'])->name('peraturan.download');
+        Route::get('/surat-edaran', [DasarHukumController::class, 'suratEdaran'])->name('surat-edaran.index');
+        Route::get('/surat-edaran/{surat_edaran}', [DasarHukumController::class, 'show'])->name('surat-edaran.show');
+        Route::get('/surat-edaran/{surat_edaran}/download/{filename}', [DasarHukumController::class, 'download'])->name('surat-edaran.download');
+        Route::get('/surat-kementerian', [DasarHukumController::class, 'suratKementerian'])->name('surat-kementerian.index');
+        Route::get('/surat-kementerian/{surat_kementerian}', [DasarHukumController::class, 'show'])->name('surat-kementerian.show');
+        Route::get('/surat-kementerian/{surat_kementerian}/download/{filename}', [DasarHukumController::class, 'download'])->name('surat-kementerian.download');
+        Route::get('/surat-rektor-unmul', [DasarHukumController::class, 'suratRektorUnmul'])->name('surat-rektor-unmul.index');
+        Route::get('/surat-rektor-unmul/{surat_rektor_unmul}', [DasarHukumController::class, 'show'])->name('surat-rektor-unmul.show');
+        Route::get('/surat-rektor-unmul/{surat_rektor_unmul}/download/{filename}', [DasarHukumController::class, 'download'])->name('surat-rektor-unmul.download');
+        Route::get('/undang-undang', [DasarHukumController::class, 'undangUndang'])->name('undang-undang.index');
+        Route::get('/undang-undang/{undang_undang}', [DasarHukumController::class, 'show'])->name('undang-undang.show');
+        Route::get('/undang-undang/{undang_undang}/download/{filename}', [DasarHukumController::class, 'download'])->name('undang-undang.download');
+        Route::get('/pedoman', [DasarHukumController::class, 'pedoman'])->name('pedoman.index');
+        Route::get('/pedoman/{pedoman}', [DasarHukumController::class, 'show'])->name('pedoman.show');
+        Route::get('/pedoman/{pedoman}/download/{filename}', [DasarHukumController::class, 'download'])->name('pedoman.download');
+    Route::get('/search-suggestions', [DasarHukumController::class, 'searchSuggestions'])->name('search-suggestions');
+});
 
-Route::get('/pedoman', function () {
-    return view('frontend.layouts.dasar-hukum.pedoman');
-})->name('pedoman');
+// Legacy route for backward compatibility
+Route::get('/keputusan', [DasarHukumController::class, 'index'])->name('keputusan');
+Route::get('/peraturan', [DasarHukumController::class, 'peraturan'])->name('peraturan');
+Route::get('/pedoman', [DasarHukumController::class, 'pedoman'])->name('pedoman');
+Route::get('/surat-edaran', [DasarHukumController::class, 'suratEdaran'])->name('surat-edaran');
+Route::get('/surat-kementerian', [DasarHukumController::class, 'suratKementerian'])->name('surat-kementerian');
+Route::get('/surat-rektor-unmul', [DasarHukumController::class, 'suratRektorUnmul'])->name('surat-rektor-unmul');
+Route::get('/undang-undang', [DasarHukumController::class, 'undangUndang'])->name('undang-undang');
 
-Route::get('/peraturan', function () {
-    return view('frontend.layouts.dasar-hukum.peraturan');
-})->name('peraturan');
 
-Route::get('/surat-edaran', function () {
-    return view('frontend.layouts.dasar-hukum.surat-edaran');
-})->name('surat-edaran');
 
-Route::get('/surat-kementerian', function () {
-    return view('frontend.layouts.dasar-hukum.surat-kementerian');
-})->name('surat-kementerian');
 
-Route::get('/undang-undang', function () {
-    return view('frontend.layouts.dasar-hukum.undang-undang');
-})->name('undang-undang');
 
-Route::get('/surat-rektor-unmul', function () {
-    return view('frontend.layouts.dasar-hukum.surat-rektor-unmul');
-})->name('surat-rektor-unmul');
+
+
 
 // Public route for dasar hukum documents (no authentication required)
 Route::get('/dasar-hukum-document/{filename}', [DasarHukumController::class, 'showDocument'])
@@ -57,23 +72,16 @@ Route::get('/dasar-hukum-document/{filename}', [DasarHukumController::class, 'sh
 
 // Admin Universitas Routes (using frontend routes)
 Route::prefix('admin-universitas')->middleware(['auth', 'web'])->group(function () {
-    Route::get('/visi-misi', function () {
-        return view('backend.layouts.views.admin-universitas.visi-misi');
-    })->name('admin-universitas.visi-misi.index');
-    Route::get('/visi-misi/data', [App\Http\Controllers\Backend\AdminUniversitas\VisiMisiController::class, 'getData'])
-        ->name('admin-universitas.visi-misi.data');
 
-    Route::get('/struktur-organisasi', function () {
-        return view('backend.layouts.views.admin-universitas.struktur-organisasi');
-    })->name('admin-universitas.struktur-organisasi.index');
+    // Struktur Organisasi Routes
+    Route::get('/struktur-organisasi', [App\Http\Controllers\Backend\AdminUniversitas\StrukturOrganisasiController::class, 'index'])
+        ->name('admin-universitas.struktur-organisasi.index');
+    Route::post('/struktur-organisasi', [App\Http\Controllers\Backend\AdminUniversitas\StrukturOrganisasiController::class, 'store'])
+        ->name('admin-universitas.struktur-organisasi.store');
+    Route::delete('/struktur-organisasi', [App\Http\Controllers\Backend\AdminUniversitas\StrukturOrganisasiController::class, 'destroy'])
+        ->name('admin-universitas.struktur-organisasi.destroy');
 
-    // API Routes for Admin Universitas
-    Route::post('/visi-misi', [App\Http\Controllers\Backend\AdminUniversitas\VisiMisiController::class, 'store'])
-        ->name('admin-universitas.visi-misi.store');
-    Route::put('/visi-misi/{id}', [App\Http\Controllers\Backend\AdminUniversitas\VisiMisiController::class, 'update'])
-        ->name('admin-universitas.visi-misi.update');
-    Route::delete('/visi-misi/{id}', [App\Http\Controllers\Backend\AdminUniversitas\VisiMisiController::class, 'destroy'])
-        ->name('admin-universitas.visi-misi.destroy');
+    // API Routes for Admin Universitas (other controllers)
 
     Route::get('/aplikasi-kepegawaian', [App\Http\Controllers\Backend\AdminUniversitas\AplikasiKepegawaianController::class, 'index'])
         ->name('admin-universitas.aplikasi-kepegawaian.index');
@@ -115,6 +123,8 @@ Route::prefix('admin-universitas')->middleware(['auth', 'web'])->group(function 
         ->name('admin-universitas.informasi.generate-nomor-surat');
     Route::get('/informasi/{id}/download/{filename}', [App\Http\Controllers\Backend\AdminUniversitas\InformasiController::class, 'download'])
         ->name('admin-universitas.informasi.download');
+    Route::get('/informasi/{id}/debug-storage', [App\Http\Controllers\Backend\AdminUniversitas\InformasiController::class, 'debugFileStorage'])
+        ->name('admin-universitas.informasi.debug-storage');
 });
 
 // Simple endpoints for informasi (alternative to admin-universitas routes)

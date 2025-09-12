@@ -20,7 +20,7 @@
                         HOME
                     </a>
                 </li>
-                
+
                 <li class="relative group">
                     <a href="#" class="flex items-center gap-1 rounded px-2 py-2 text-sm font-semibold transition-colors duration-300 hover:bg-gray-800">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

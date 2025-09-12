@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Models\Informasi;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class HomeController extends Controller
 {
@@ -37,14 +39,48 @@ class HomeController extends Controller
             ->limit(5)
             ->get();
 
-        // Ambil data struktur organisasi (jika ada model/table khusus)
-        // Untuk sementara kita akan menggunakan data dummy atau dari config
-        $strukturOrganisasi = [
-            'title' => 'Struktur Organisasi Universitas Mulawarman',
-            'image_url' => asset('images/struktur-organisasi.jpg'), // Ganti dengan path yang sesuai
-            'description' => 'Struktur organisasi Universitas Mulawarman yang menunjukkan hierarki dan hubungan antar unit kerja.'
-        ];
+        // Ambil data struktur organisasi dari storage
+        $strukturOrganisasi = $this->getCurrentStrukturData();
 
         return view('frontend.index', compact('berita', 'pengumuman', 'pengumumanFeatured', 'strukturOrganisasi'));
+    }
+
+    /**
+     * Get current struktur organisasi data
+     *
+     * @return array|null
+     */
+    private function getCurrentStrukturData()
+    {
+        try {
+            $directory = 'struktur-organisasi';
+            $files = Storage::disk('public')->files($directory);
+
+            if (empty($files)) {
+                return null;
+            }
+
+            // Get the most recent file
+            $latestFile = collect($files)->sortByDesc(function ($file) {
+                return Storage::disk('public')->lastModified($file);
+            })->first();
+
+            $filename = basename($latestFile);
+            $imageUrl = '/storage/' . $latestFile;
+
+            return [
+                'title' => 'Struktur Organisasi Universitas Mulawarman',
+                'image_url' => $imageUrl,
+                'description' => 'Struktur organisasi Universitas Mulawarman yang menunjukkan hierarki dan hubungan antar unit kerja.',
+                'filename' => $filename,
+                'path' => $latestFile,
+                'created_at' => date('Y-m-d H:i:s', Storage::disk('public')->lastModified($latestFile)),
+                'updated_at' => date('Y-m-d H:i:s', Storage::disk('public')->lastModified($latestFile))
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Error getting current struktur data in HomeController:', ['error' => $e->getMessage()]);
+            return null;
+        }
     }
 }

@@ -338,15 +338,15 @@
                     <table class="w-full divide-y divide-gray-200">
                         <thead class="bg-white">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold text-center uppercase tracking-wider w-16">No</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold text-center uppercase tracking-wider w-24">Jenis</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold text-center uppercase tracking-wider">Judul</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold text-center uppercase tracking-wider w-32">Nomor Surat</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold text-center uppercase tracking-wider w-24">Status</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold text-center uppercase tracking-wider w-32">Featured/Pinned</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold text-center uppercase tracking-wider w-28">Tanggal</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold text-center uppercase tracking-wider w-24">Dokumen</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-black font-bold text-center tracking-wider w-32">Aksi</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-16 text-center">No</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-24 text-center">Jenis</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider text-center">Judul</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-32 text-center">Nomor Surat</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-24 text-center">Status</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-32 text-center">Featured/Pinned</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-28 text-center">Tanggal</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-24 text-center">Dokumen</th>
+                                <th class="px-4 py-3 text-xs font-bold text-black uppercase tracking-wider w-32 text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -506,9 +506,10 @@
             </div>
 
             <!-- Modal Body -->
-            <form id="informasiForm" class="mt-6" enctype="multipart/form-data">
+            <form id="informasiForm" class="mt-6" enctype="multipart/form-data" action="{{ route('admin-universitas.informasi.store') }}" method="POST">
                 <input type="hidden" id="editId" name="id">
                 <input type="hidden" id="formMethod" name="_method" value="POST">
+                @csrf
 
                 <div class="space-y-6">
                     <!-- Jenis -->
@@ -525,7 +526,7 @@
                     </div>
 
                     <!-- Fields khusus untuk Pengumuman -->
-                    <div id="pengumumanFields" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div id="pengumumanFields" class="hidden grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Nomor Surat -->
                         <div>
                             <label for="nomor_surat" class="block text-sm font-semibold text-gray-700 mb-3">
@@ -886,7 +887,7 @@ function updateHiddenContent() {
 }
 
 // Toggle pengumuman fields
-function togglePengumumanFields() {
+function togglePengumumanFields(isEdit = false) {
     const jenis = document.getElementById('jenis').value;
     const pengumumanFields = document.getElementById('pengumumanFields');
     const nomorSurat = document.getElementById('nomor_surat');
@@ -903,11 +904,32 @@ function togglePengumumanFields() {
         nomorSurat.required = true;
         tanggalSurat.required = true;
 
-        // Lampiran wajib untuk pengumuman
-        lampiranField.required = true;
-        lampiranRequired.style.display = 'inline';
-        lampiranNote.textContent = '(Wajib untuk Pengumuman)';
-        lampiranNote.className = 'text-red-600 font-medium';
+        // Lampiran wajib untuk pengumuman baru, tapi tidak wajib untuk edit jika sudah ada lampiran
+        if (isEdit) {
+            // Saat edit, cek apakah sudah ada lampiran
+            const currentAttachments = document.getElementById('currentAttachments');
+            const hasExistingAttachments = currentAttachments && !currentAttachments.classList.contains('hidden');
+
+            if (hasExistingAttachments) {
+                // Jika sudah ada lampiran, tidak wajib upload baru
+                lampiranField.required = false;
+                lampiranRequired.style.display = 'none';
+                lampiranNote.textContent = '(Opsional - gunakan file yang sudah ada atau upload file baru)';
+                lampiranNote.className = 'text-blue-600 font-medium';
+            } else {
+                // Jika belum ada lampiran, tetap wajib
+                lampiranField.required = true;
+                lampiranRequired.style.display = 'inline';
+                lampiranNote.textContent = '(Wajib untuk Pengumuman)';
+                lampiranNote.className = 'text-red-600 font-medium';
+            }
+        } else {
+            // Untuk pengumuman baru, lampiran wajib
+            lampiranField.required = true;
+            lampiranRequired.style.display = 'inline';
+            lampiranNote.textContent = '(Wajib untuk Pengumuman)';
+            lampiranNote.className = 'text-red-600 font-medium';
+        }
 
         // Disable penulis field and set to current user
         penulisField.disabled = true;
@@ -1008,10 +1030,17 @@ function closeModal() {
 }
 
 function resetForm() {
-    document.getElementById('informasiForm').reset();
+    const form = document.getElementById('informasiForm');
+    if (form) {
+        form.reset();
+        form.action = '{{ route("admin-universitas.informasi.store") }}';
+        form.method = 'POST';
+    }
+
     document.getElementById('editId').value = '';
     document.getElementById('modalTitle').textContent = 'Tambah Informasi';
     document.getElementById('submitText').textContent = 'Simpan';
+    document.getElementById('formMethod').value = 'POST';
 
     // Clear rich text editor
     if (document.getElementById('editor')) {
@@ -1267,9 +1296,11 @@ function openModal(isEdit = false) {
         if (isEdit) {
             modalTitle.textContent = 'Edit Informasi';
             formMethod.value = 'PUT';
-    } else {
+        } else {
             modalTitle.textContent = 'Tambah Informasi';
             formMethod.value = 'POST';
+            form.action = '{{ route("admin-universitas.informasi.store") }}';
+            form.method = 'POST';
             form.reset();
 
             // Reset editor content
@@ -1366,7 +1397,10 @@ function editInformasi(id) {
     }
 
     const form = document.getElementById('informasiForm');
-    if (form) form.action = `{{ route('admin-universitas.informasi.update', ':id') }}`.replace(':id', id);
+    if (form) {
+        form.action = `{{ route('admin-universitas.informasi.update', ':id') }}`.replace(':id', id);
+        form.method = 'POST'; // Laravel method spoofing
+    }
 
     // Fill form fields with null checks
     const judulElement = document.getElementById('judul');
@@ -1383,7 +1417,8 @@ function editInformasi(id) {
     if (jenisElement) jenisElement.value = jenis;
 
     // Call togglePengumumanFields to show/hide pengumuman fields based on jenis
-    togglePengumumanFields();
+    // Pass isEdit = true to handle lampiran validation properly
+    togglePengumumanFields(true);
 
     const nomorSuratElement = document.getElementById('nomor_surat');
     if (nomorSuratElement) nomorSuratElement.value = nomorSurat || '';
@@ -1459,6 +1494,11 @@ function editInformasi(id) {
 
     // Display current files
     displayCurrentFiles(thumbnail, lampiran, id);
+
+    // Update lampiran validation after displaying current files
+    setTimeout(() => {
+        togglePengumumanFields(true);
+    }, 100);
 }
 
 // Function to display current files

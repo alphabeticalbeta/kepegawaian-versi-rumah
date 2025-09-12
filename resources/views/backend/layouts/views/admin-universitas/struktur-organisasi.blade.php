@@ -4,86 +4,146 @@
 
 @push('styles')
 <style>
-/* Image Upload Styles */
-.image-upload-container {
-    border: 2px dashed #D1D5DB;
-    border-radius: 0.5rem;
-    transition: all 0.3s ease;
-}
+    .image-upload-container {
+        border: 2px dashed #d1d5db;
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+    }
 
-.image-upload-container:hover {
-    border-color: #3B82F6;
-    background-color: #F8FAFC;
-}
+    .image-upload-container:hover {
+        border-color: #6366f1;
+        background-color: #f8fafc;
+    }
 
-.image-upload-container.dragover {
-    border-color: #3B82F6;
-    background-color: #EBF8FF;
-}
+    .image-upload-container.dragover {
+        border-color: #6366f1;
+        background-color: #eef2ff;
+    }
 
-.image-preview {
-    max-width: 100%;
-    max-height: 400px;
-    object-fit: contain;
-    border-radius: 0.5rem;
-}
+    .upload-icon {
+        color: #9ca3af;
+        transition: color 0.3s ease;
+    }
 
-.upload-icon {
-    color: #9CA3AF;
-    transition: color 0.3s ease;
-}
+    .image-upload-container:hover .upload-icon {
+        color: #6366f1;
+    }
 
-.image-upload-container:hover .upload-icon {
-    color: #3B82F6;
-}
+    .image-preview {
+        max-width: 100%;
+        max-height: 400px;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
 
-/* Loading overlay */
-.loading-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.5rem;
-}
+    .image-actions {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+    }
 
-/* Image actions */
-.image-actions {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    display: flex;
-    gap: 0.5rem;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
+    .current-image {
+        max-width: 100%;
+        max-height: 400px;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
 
-.image-container:hover .image-actions {
-    opacity: 1;
-}
+    .notification {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1000;
+        max-width: 400px;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .notification.success {
+        background: #d1fae5;
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+    }
+
+    .notification.error {
+        background: #fee2e2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .notification-icon {
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+    }
+
+    .notification.success .notification-icon {
+        color: #10b981;
+    }
+
+    .notification.error .notification-icon {
+        color: #ef4444;
+    }
+
+    .notification-text {
+        flex: 1;
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+        line-height: 1.4;
+    }
+
+    .notification-close {
+        flex-shrink: 0;
+        background: none;
+        border: none;
+        color: #9ca3af;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: all 0.2s;
+    }
+
+    .notification-close:hover {
+        color: #6b7280;
+        background: #f3f4f6;
+    }
 </style>
 @endpush
 
 @section('content')
+<!-- Notification Container -->
+<div id="notificationContainer"></div>
+
 <div class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
     <!-- Header Section -->
-    <div class="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-2xl">
+    <div class="relative overflow-hidden shadow-2xl">
         <div class="absolute inset-0 bg-black opacity-10"></div>
-        <div class="relative px-6 py-12 sm:px-8 sm:py-16">
-            <div class="mx-auto max-w-4xl text-center">
-                <div class="mb-6">
-                    <div class="mx-auto h-16 w-16 rounded-full bg-white bg-opacity-20 flex items-center justify-center backdrop-blur-sm">
-                        <i data-lucide="sitemap" class="h-8 w-8 text-white"></i>
-                    </div>
+        <div class="relative px-4 py-8 sm:px-6 sm:py-10">
+            <div class="mx-auto max-w-full text-center">
+                <div class="mb-4 flex justify-center">
+                    <img src="{{ asset('images/logo-unmul.png') }}" alt="Logo UNMUL" class="h-20 w-auto object-contain">
                 </div>
-                <h1 class="text-3xl font-bold tracking-tight text-white sm:text-4xl mb-4">
+                <h1 class="text-2xl font-bold tracking-tight text-black sm:text-3xl mb-2">
                     Struktur Organisasi
                 </h1>
-                <p class="text-lg text-blue-100 sm:text-xl">
+                <p class="text-base text-black sm:text-lg">
                     Kelola Struktur Organisasi Universitas Mulawarman
                 </p>
             </div>
@@ -91,13 +151,81 @@
     </div>
 
     <!-- Main Content Section -->
-    <div class="relative z-10 -mt-8 px-6 sm:px-8">
-        <div class="mx-auto max-w-7xl">
-            <!-- Header Section -->
-            <div class="mb-8">
-                <h2 class="text-2xl font-bold text-gray-900">Data Struktur Organisasi</h2>
-                <p class="text-gray-600 mt-1">Kelola gambar struktur organisasi universitas</p>
-            </div>
+    <div class="relative z-10 -mt-8 px-4 py-6 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-4xl pt-4 mt-4 animate-fade-in">
+            <!-- Flash Messages -->
+            @if(session('success'))
+                <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg">
+                    <div class="flex items-center">
+                        <i data-lucide="check-circle" class="h-5 w-5 mr-2"></i>
+                        {{ session('success') }}
+                    </div>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+                    <div class="flex items-center">
+                        <i data-lucide="alert-circle" class="h-5 w-5 mr-2"></i>
+                        {{ session('error') }}
+                    </div>
+                </div>
+            @endif
+
+            @if($errors->any())
+                <div class="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+                    <div class="flex items-center mb-2">
+                        <i data-lucide="alert-circle" class="h-5 w-5 mr-2"></i>
+                        <strong>Terjadi kesalahan:</strong>
+                    </div>
+                    <ul class="list-disc list-inside">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <!-- Current Image Display -->
+            @if($strukturData)
+                <div class="mb-6 bg-white rounded-2xl shadow-xl overflow-hidden">
+                    <div class="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <div class="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                        <i data-lucide="image" class="h-6 w-6 text-green-600"></i>
+                                    </div>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-xl font-bold text-gray-900">Gambar Saat Ini</h3>
+                                    <p class="text-gray-600 text-sm">Struktur organisasi yang sedang aktif</p>
+                                </div>
+                            </div>
+                            <form method="POST" action="{{ route('admin-universitas.struktur-organisasi.destroy') }}" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus gambar ini?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 flex items-center">
+                                    <i data-lucide="trash-2" class="h-4 w-4 mr-2"></i>
+                                    Hapus
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div class="text-center">
+                            <img src="{{ $strukturData['image_url'] }}" alt="Struktur Organisasi" class="current-image mx-auto">
+                            @if($strukturData['description'])
+                                <p class="mt-4 text-gray-600">{{ $strukturData['description'] }}</p>
+                            @endif
+                            <p class="mt-2 text-sm text-gray-500">
+                                <i data-lucide="calendar" class="h-4 w-4 inline mr-1"></i>
+                                Terakhir diupdate: {{ \Carbon\Carbon::parse($strukturData['updated_at'])->format('d M Y H:i') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <!-- Image Upload Section -->
             <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -109,31 +237,28 @@
                             </div>
                         </div>
                         <div class="ml-4">
-                            <h3 class="text-xl font-bold text-gray-900">Upload Struktur Organisasi</h3>
-                            <p class="text-gray-600 text-sm">Upload atau update gambar struktur organisasi</p>
+                            <h3 class="text-xl font-bold text-gray-900">
+                                {{ $strukturData ? 'Update Struktur Organisasi' : 'Upload Struktur Organisasi' }}
+                            </h3>
+                            <p class="text-gray-600 text-sm">
+                                {{ $strukturData ? 'Upload gambar baru untuk mengganti yang lama' : 'Upload gambar struktur organisasi universitas' }}
+                            </p>
                         </div>
                     </div>
                 </div>
 
                 <div class="p-6">
-                    <!-- Current Image Display -->
-                    <div id="currentImageSection" class="mb-6">
-                        <h4 class="text-lg font-semibold text-gray-900 mb-4">Gambar Saat Ini</h4>
-                        <div id="currentImageContainer" class="relative inline-block">
-                            <!-- Current image will be loaded here -->
-                        </div>
-                    </div>
-
                     <!-- Image Upload Form -->
-                    <form id="imageUploadForm" enctype="multipart/form-data">
+                    <form method="POST" action="{{ route('admin-universitas.struktur-organisasi.store') }}" enctype="multipart/form-data" id="imageUploadForm">
+                        @csrf
                         <div class="space-y-6">
                             <!-- File Upload -->
                             <div>
-                                <label for="strukturImage" class="block text-sm font-medium text-gray-700 mb-2">
+                                <label for="struktur_image" class="block text-sm font-medium text-gray-700 mb-2">
                                     Pilih Gambar <span class="text-red-500">*</span>
                                 </label>
-                                <div class="image-upload-container p-8 text-center cursor-pointer" onclick="document.getElementById('strukturImage').click()">
-                                    <input type="file" id="strukturImage" name="struktur_image" accept="image/*" class="hidden" required>
+                                <div class="image-upload-container p-8 text-center cursor-pointer" onclick="document.getElementById('struktur_image').click()">
+                                    <input type="file" id="struktur_image" name="struktur_image" accept="image/*" class="hidden" required>
                                     <div class="space-y-4">
                                         <div class="mx-auto h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center">
                                             <i data-lucide="image" class="h-8 w-8 upload-icon"></i>
@@ -169,7 +294,7 @@
                                 </label>
                                 <textarea id="description" name="description" rows="3"
                                           placeholder="Masukkan deskripsi struktur organisasi (opsional)..."
-                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"></textarea>
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none">{{ old('description') }}</textarea>
                             </div>
                         </div>
 
@@ -181,7 +306,7 @@
                             </button>
                             <button type="submit" id="submitBtn"
                                     class="inline-flex items-center px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-600 border border-transparent rounded-lg hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 shadow-lg hover:shadow-xl">
-                                <span id="submitBtnText">Update Struktur Organisasi</span>
+                                <span id="submitBtnText">{{ $strukturData ? 'Update Struktur Organisasi' : 'Upload Struktur Organisasi' }}</span>
                                 <i data-lucide="loader-2" class="h-4 w-4 animate-spin hidden ml-2" id="submitBtnLoader"></i>
                             </button>
                         </div>
@@ -192,329 +317,109 @@
     </div>
 </div>
 
-@push('scripts')
 <script>
-// Global variables
-let currentImageData = null;
-
-// Escape HTML function for XSS protection
-function escapeHtml(text) {
-    if (text === null || text === undefined) {
-        return '';
-    }
-    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-    return text.toString().replace(/[&<>"']/g, function(m) { return map[m]; });
-}
-
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
-    loadCurrentImage();
-    initializeForm();
-    initializeDragAndDrop();
+    try {
+        initializeImageUpload();
+        initializeLucideIcons();
+    } catch (error) {
+        console.error('Error initializing page:', error);
+    }
 });
 
-// Load current image
-async function loadCurrentImage() {
-    try {
-        const response = await fetch('/struktur-organisasi/data', {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            },
-            credentials: 'same-origin'
-        });
-
-        if (response.ok) {
-            const result = await response.json();
-            if (result.success && result.data) {
-                displayCurrentImage(result.data);
-            } else {
-                showNoImageMessage();
-            }
-        } else {
-            showNoImageMessage();
-        }
-    } catch (error) {
-        showNoImageMessage();
-    }
-}
-
-// Display current image
-function displayCurrentImage(data) {
-    const container = document.getElementById('currentImageContainer');
-    container.innerHTML = `
-        <div class="relative inline-block">
-            <img src="${escapeHtml(data.image_url)}" alt="Struktur Organisasi" class="image-preview">
-            <div class="image-actions">
-                <button type="button" onclick="editImage()" class="p-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-full hover:from-blue-700 hover:to-cyan-700 transition-all duration-200 shadow-md hover:shadow-lg" title="Edit">
-                    <i data-lucide="edit" class="h-4 w-4"></i>
-                </button>
-                <button type="button" onclick="deleteImage()" class="p-3 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-full hover:from-red-700 hover:to-pink-700 transition-all duration-200 shadow-md hover:shadow-lg" title="Hapus">
-                    <i data-lucide="trash-2" class="h-4 w-4"></i>
-                </button>
-            </div>
-        </div>
-        ${data.description ? `<p class="text-sm text-gray-600 mt-2">${escapeHtml(data.description)}</p>` : ''}
-    `;
-
-    currentImageData = data;
-
-    // Reinitialize Lucide icons
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-}
-
-// Show no image message
-function showNoImageMessage() {
-    const container = document.getElementById('currentImageContainer');
-    container.innerHTML = `
-        <div class="text-center py-8 text-gray-500">
-            <i data-lucide="image-off" class="h-12 w-12 mx-auto mb-4 text-gray-300"></i>
-            <p>Belum ada gambar struktur organisasi</p>
-            <p class="text-sm">Upload gambar untuk memulai</p>
-        </div>
-    `;
-
-    // Reinitialize Lucide icons
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-}
-
-// Initialize form
-function initializeForm() {
-    const form = document.getElementById('imageUploadForm');
-    const fileInput = document.getElementById('strukturImage');
-
-    form.addEventListener('submit', handleFormSubmit);
-    fileInput.addEventListener('change', handleFileSelect);
-}
-
-// Handle file selection
-function handleFileSelect(event) {
-    const file = event.target.files[0];
-    if (file) {
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-            showError('Harap pilih file gambar yang valid');
-            return;
-        }
-
-        // Validate file size (5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            showError('Ukuran file maksimal 5MB');
-            return;
-        }
-
-        // Show preview
-        showImagePreview(file);
-    }
-}
-
-// Show image preview
-function showImagePreview(file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const previewSection = document.getElementById('imagePreviewSection');
-        const previewImage = document.getElementById('imagePreview');
-
-        previewImage.src = e.target.result;
-        previewSection.classList.remove('hidden');
-    };
-    reader.readAsDataURL(file);
-}
-
-// Remove preview
-function removePreview() {
+// Initialize image upload functionality
+function initializeImageUpload() {
+    const fileInput = document.getElementById('struktur_image');
     const previewSection = document.getElementById('imagePreviewSection');
-    const fileInput = document.getElementById('strukturImage');
-
-    previewSection.classList.add('hidden');
-    fileInput.value = '';
-}
-
-// Initialize drag and drop
-function initializeDragAndDrop() {
+    const previewImage = document.getElementById('imagePreview');
     const uploadContainer = document.querySelector('.image-upload-container');
 
-    uploadContainer.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        uploadContainer.classList.add('dragover');
-    });
-
-    uploadContainer.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        uploadContainer.classList.remove('dragover');
-    });
-
-    uploadContainer.addEventListener('drop', function(e) {
-        e.preventDefault();
-        uploadContainer.classList.remove('dragover');
-
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            const fileInput = document.getElementById('strukturImage');
-            fileInput.files = files;
-            handleFileSelect({ target: { files: files } });
-        }
-    });
-}
-
-// Handle form submit
-function handleFormSubmit(e) {
-    e.preventDefault();
-
-    const formData = new FormData(e.target);
-    const fileInput = document.getElementById('strukturImage');
-
-    if (!fileInput.files[0]) {
-        showError('Harap pilih gambar terlebih dahulu');
-        return;
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewSection.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
     }
 
-    // Show loading
-    showSubmitLoading(true);
+    // Drag and drop functionality
+    if (uploadContainer) {
+        uploadContainer.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadContainer.classList.add('dragover');
+        });
 
-    // Make API call
-    fetch('/struktur-organisasi/store', {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        credentials: 'same-origin',
-        body: formData
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        uploadContainer.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadContainer.classList.remove('dragover');
+        });
 
-        return response.json();
-    })
-    .then(result => {
-        if (result.success) {
-            showSuccess('Gambar berhasil diupload');
-            loadCurrentImage();
-            resetForm();
-        } else {
-            showError('Upload gagal');
-        }
-    })
-    .catch(error => {
-        showError('Terjadi kesalahan saat mengupload gambar');
-    })
-    .finally(() => {
-        showSubmitLoading(false);
-    });
+        uploadContainer.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadContainer.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+    }
 }
 
-// Edit image
-function editImage() {
-    document.getElementById('strukturImage').click();
+// Remove preview function
+function removePreview() {
+    const fileInput = document.getElementById('struktur_image');
+    const previewSection = document.getElementById('imagePreviewSection');
+
+    if (fileInput) {
+        fileInput.value = '';
+    }
+
+    if (previewSection) {
+        previewSection.classList.add('hidden');
+    }
 }
 
-// Delete image
-function deleteImage() {
-    Swal.fire({
-        title: 'Konfirmasi Hapus',
-        text: 'Apakah Anda yakin ingin menghapus gambar struktur organisasi?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#d33',
-        cancelButtonColor: '#3085d6',
-        confirmButtonText: 'Ya, Hapus!',
-        cancelButtonText: 'Batal',
-        customClass: {
-            popup: 'bg-gray-800 text-white',
-            title: 'text-white',
-            content: 'text-gray-300',
-            confirmButton: 'bg-red-600 hover:bg-red-700 text-white',
-            cancelButton: 'bg-gray-600 hover:bg-gray-700 text-white'
-        }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            fetch('/struktur-organisasi/delete', {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                credentials: 'same-origin'
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    showSuccess('Gambar berhasil dihapus');
-                    loadCurrentImage();
-                } else {
-                    showError('Gagal menghapus gambar');
-                }
-            })
-            .catch(error => {
-                showError('Terjadi kesalahan saat menghapus gambar');
-            });
-        }
-    });
-}
-
-// Reset form
+// Reset form function
 function resetForm() {
-    document.getElementById('imageUploadForm').reset();
-    document.getElementById('imagePreviewSection').classList.add('hidden');
-}
+    const form = document.getElementById('imageUploadForm');
+    const previewSection = document.getElementById('imagePreviewSection');
 
-// Show submit loading
-function showSubmitLoading(show) {
-    const btn = document.getElementById('submitBtn');
-    const text = document.getElementById('submitBtnText');
-    const loader = document.getElementById('submitBtnLoader');
+    if (form) {
+        form.reset();
+    }
 
-    if (show) {
-        btn.disabled = true;
-        text.textContent = 'Mengupload...';
-        loader.classList.remove('hidden');
-    } else {
-        btn.disabled = false;
-        text.textContent = 'Update Struktur Organisasi';
-        loader.classList.add('hidden');
+    if (previewSection) {
+        previewSection.classList.add('hidden');
     }
 }
 
-// Show success message
-function showSuccess(message) {
-    Swal.fire({
-        title: 'Berhasil!',
-        text: message,
-        icon: 'success',
-        confirmButtonText: 'OK',
-        customClass: {
-            popup: 'bg-gray-800 text-white',
-            title: 'text-white',
-            content: 'text-gray-300',
-            confirmButton: 'bg-green-600 hover:bg-green-700 text-white'
-        }
-    });
+// Initialize Lucide icons
+function initializeLucideIcons() {
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
-// Show error message
-function showError(message) {
-    Swal.fire({
-        title: 'Error!',
-        text: message,
-        icon: 'error',
-        confirmButtonText: 'OK',
-        customClass: {
-            popup: 'bg-gray-800 text-white',
-            title: 'text-white',
-            content: 'text-gray-300',
-            confirmButton: 'bg-red-600 hover:bg-red-700 text-white'
-        }
-    });
-}
+// Form submission handling
+document.getElementById('imageUploadForm').addEventListener('submit', function(e) {
+    const submitBtn = document.getElementById('submitBtn');
+    const submitBtnText = document.getElementById('submitBtnText');
+    const submitBtnLoader = document.getElementById('submitBtnLoader');
+
+    if (submitBtn && submitBtnText && submitBtnLoader) {
+        submitBtn.disabled = true;
+        submitBtnText.textContent = 'Mengupload...';
+        submitBtnLoader.classList.remove('hidden');
+    }
+});
 </script>
-@endpush
 @endsection
